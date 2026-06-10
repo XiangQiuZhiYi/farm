@@ -3,7 +3,7 @@
 // ============================================================
 
 /** 时间加速倍率（开发调试用） */
-export type TimeScale = 1 | 10 | 60 | 1000;
+export type TimeScale = 1 | 10 | 60 | 1440;
 
 /** 季节枚举 */
 export type Season = 'spring' | 'summer' | 'autumn' | 'winter';
@@ -14,8 +14,6 @@ export interface ClockState {
   totalMinutes: number;
   /** 当前游戏月份（1-12） */
   month: number;
-  /** 当前游戏日（1-30） */
-  day: number;
   /** 当前季节 */
   season: Season;
   /** 时间加速倍率 */

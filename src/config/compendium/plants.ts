@@ -2436,7 +2436,7 @@ function harvestCountLabel(plant: PlantConfig): string {
 
   // 多年生：在寿命内首次收获 + 后续按 reharvestMinutes 重复收获
   if (plant.maxLifespanYears && plant.reharvestMinutes) {
-    const MINUTES_PER_GAME_YEAR = 360 * 1440; // 360天 × 1440分
+    const MINUTES_PER_GAME_YEAR = 12 * 1440; // 12个月 × 1440分
     const lifespanMinutes = plant.maxLifespanYears * MINUTES_PER_GAME_YEAR;
     const totalHarvests = 1 + Math.floor(
       (lifespanMinutes - plant.growthMinutes) / plant.reharvestMinutes,
@@ -2476,7 +2476,7 @@ function buildEntry(plant: PlantConfig): PlantCompendiumEntry {
       { label: '区域', value: regionName },
       { label: '购种价格', value: `${plant.purchasePrice} 金/粒` },
       { label: '售卖单价', value: `${plant.sellPricePerUnit} 金/单位` },
-      { label: '生长周期', value: `${Math.round(plant.growthMinutes / 1440)} 天` },
+      { label: '生长周期', value: `${Math.round(plant.growthMinutes / 1440)} 个月` },
       { label: '适宜土地', value: plant.soilMatch.best.map((id) => LAND_NAME_MAP[id] ?? id).join('、') },
       { label: '兼容土地', value: plant.soilMatch.compatible.length
           ? plant.soilMatch.compatible.map((id) => LAND_NAME_MAP[id] ?? id).join('、')
@@ -2488,7 +2488,7 @@ function buildEntry(plant: PlantConfig): PlantCompendiumEntry {
       // 可收割次数（一年生=1次，多年生按寿命和再生周期推算）
       { label: '可收割次数', value: harvestCountLabel(plant) },
       ...(plant.harvestType === 'perennial' && plant.reharvestMinutes
-        ? [{ label: '再生周期', value: `${Math.round(plant.reharvestMinutes / 1440)} 天` }]
+        ? [{ label: '再生周期', value: `${Math.round(plant.reharvestMinutes / 1440)} 个月` }]
         : []),
     ],
     stages: stageArt ?? {

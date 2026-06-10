@@ -11,15 +11,21 @@ import { useGameStore } from './store/gameStore';
 import { REGION_CONFIGS } from './config/regions';
 import { LAND_TYPE_CONFIGS } from './config/lands';
 
-const MINUTES_PER_DAY = 1440;
+const MINUTES_PER_MONTH = 1440;
 
-function getAbsoluteDay(totalMinutes: number) {
-  return Math.floor(totalMinutes / MINUTES_PER_DAY) + 1;
+function getAbsoluteMonthIndex(totalMinutes: number) {
+  return Math.floor(totalMinutes / MINUTES_PER_MONTH) + 1;
 }
 
-function formatRemainingDays(expiresOnDay: number | null, currentDay: number) {
-  if (expiresOnDay === null) return '不限时';
-  return `剩余 ${Math.max(0, expiresOnDay - currentDay + 1)} 天`;
+function formatGameYearMonthByAbsoluteMonth(absoluteMonth: number) {
+  const year = Math.floor((absoluteMonth - 1) / 12) + 1;
+  const month = ((absoluteMonth - 1) % 12) + 1;
+  return `第 ${year} 年 ${month} 月`;
+}
+
+function formatRemainingMonths(expiresOnMonth: number | null, currentMonthIndex: number) {
+  if (expiresOnMonth === null) return '不限时';
+  return `剩余 ${Math.max(0, expiresOnMonth - currentMonthIndex + 1)} 个月`;
 }
 
 function TaskBoardModal({ onClose }: { onClose: () => void }) {
@@ -29,7 +35,7 @@ function TaskBoardModal({ onClose }: { onClose: () => void }) {
   const taskBoard = useGameStore((s) => s.taskBoard);
   const acceptTask = useGameStore((s) => s.acceptTask);
   const submitActiveTask = useGameStore((s) => s.submitActiveTask);
-  const currentDay = getAbsoluteDay(clock.totalMinutes);
+  const currentAbsoluteMonth = getAbsoluteMonthIndex(clock.totalMinutes);
 
   const activeTaskDefinition = taskBoard.activeTask ? getTaskById(taskBoard.activeTask.taskId) : null;
 
@@ -80,7 +86,7 @@ function TaskBoardModal({ onClose }: { onClose: () => void }) {
                       <div className="taskOfferHead">
                         <div>
                           <h4>{task.title}</h4>
-                          <p>{task.isTimed ? `${task.timeLimitDays} 天限时` : '不限时任务'} / 奖励 {task.rewardGold} 金</p>
+                          <p>{task.isTimed ? `${task.timeLimitMonths} 个月限时` : '不限时任务'} / 奖励 {task.rewardGold} 金</p>
                         </div>
                         <span className={`taskDifficultyBadge taskDifficulty-${task.difficulty}`}>
                           {task.difficulty}
@@ -95,7 +101,7 @@ function TaskBoardModal({ onClose }: { onClose: () => void }) {
                         ))}
                       </ul>
                       <div className="taskOfferFooter">
-                        <span>{formatRemainingDays(offer.expiresOnDay, currentDay)}</span>
+                        <span>{formatRemainingMonths(offer.expiresOnMonth, currentAbsoluteMonth)}</span>
                         <button
                           type="button"
                           className="toolbarBtn toolbarBtnPrimary"
@@ -125,9 +131,9 @@ function TaskBoardModal({ onClose }: { onClose: () => void }) {
                   <div>
                     <h4>{activeTaskDefinition.title}</h4>
                     <p>
-                      已接于第 {taskBoard.activeTask.acceptedDay} 天
+                      已接于 {formatGameYearMonthByAbsoluteMonth(taskBoard.activeTask.acceptedMonth)}
                       {' / '}
-                      {formatRemainingDays(taskBoard.activeTask.expiresOnDay, currentDay)}
+                      {formatRemainingMonths(taskBoard.activeTask.expiresOnMonth, currentAbsoluteMonth)}
                     </p>
                   </div>
                   <span className="taskStatusBadge">已登记</span>

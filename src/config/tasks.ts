@@ -8,8 +8,8 @@ import type { TaskBoardRules, TaskDefinition, TaskDifficulty, TaskRequirement } 
 
 /** 任务板固定刷新规则 */
 export const TASK_BOARD_RULES: TaskBoardRules = {
-  skipFirstDay: false,
-  offerIntervalDays: 5,
+  skipFirstMonth: false,
+  offerIntervalMonths: 5,
   offerChoices: 2,
   submissionMode: 'all-at-once',
   completedTasksRemoved: true,
@@ -32,7 +32,7 @@ type TaskSeed = {
   title: string;
   difficulty: TaskDifficulty;
   isTimed: boolean;
-  timeLimitDays?: number;
+  timeLimitMonths?: number;
   requirements: TaskRequirement[];
 };
 
@@ -52,7 +52,7 @@ function createTask(seed: TaskSeed): TaskDefinition {
 
   return {
     ...seed,
-    timeLimitDays: seed.isTimed ? seed.timeLimitDays ?? defaultTimeLimitDays(seed.difficulty) : null,
+    timeLimitMonths: seed.isTimed ? seed.timeLimitMonths ?? defaultTimeLimitMonths(seed.difficulty) : null,
     baseSaleValue,
     difficultyMultiplier,
     timedBonusMultiplier,
@@ -61,7 +61,7 @@ function createTask(seed: TaskSeed): TaskDefinition {
   };
 }
 
-function defaultTimeLimitDays(difficulty: TaskDifficulty) {
+function defaultTimeLimitMonths(difficulty: TaskDifficulty) {
   switch (difficulty) {
     case 'easy':
       return 2;
@@ -138,7 +138,7 @@ const TASK_SEEDS: TaskSeed[] = [
     title: '晨市空心菜',
     difficulty: 'easy',
     isTimed: true,
-    timeLimitDays: 2,
+    timeLimitMonths: 2,
     requirements: [{ plantId: 'water_spinach', quantity: 8 }],
   },
   {
@@ -160,7 +160,7 @@ const TASK_SEEDS: TaskSeed[] = [
     title: '脆萝卜急单',
     difficulty: 'easy',
     isTimed: true,
-    timeLimitDays: 2,
+    timeLimitMonths: 2,
     requirements: [{ plantId: 'radish', quantity: 7 }],
   },
   {
@@ -202,7 +202,7 @@ const TASK_SEEDS: TaskSeed[] = [
     title: '辛香铺催货',
     difficulty: 'medium',
     isTimed: true,
-    timeLimitDays: 3,
+    timeLimitMonths: 3,
     requirements: [
       { plantId: 'tobacco', quantity: 3 },
       { plantId: 'pepper', quantity: 4 },
@@ -224,7 +224,7 @@ const TASK_SEEDS: TaskSeed[] = [
     title: '水田宴席备货',
     difficulty: 'medium',
     isTimed: true,
-    timeLimitDays: 3,
+    timeLimitMonths: 3,
     requirements: [
       { plantId: 'rice', quantity: 8 },
       { plantId: 'lotus_root', quantity: 4 },
@@ -287,7 +287,7 @@ const TASK_SEEDS: TaskSeed[] = [
     title: '滋补礼盒催单',
     difficulty: 'medium',
     isTimed: true,
-    timeLimitDays: 3,
+    timeLimitMonths: 3,
     requirements: [
       { plantId: 'wolfberry', quantity: 3 },
       { plantId: 'ginseng', quantity: 2 },
@@ -320,7 +320,7 @@ const TASK_SEEDS: TaskSeed[] = [
     title: '油坊出口单',
     difficulty: 'hard',
     isTimed: true,
-    timeLimitDays: 4,
+    timeLimitMonths: 4,
     requirements: [
       { plantId: 'cotton', quantity: 5 },
       { plantId: 'sesame', quantity: 4 },
@@ -357,7 +357,7 @@ const TASK_SEEDS: TaskSeed[] = [
     title: '高寒杂粮车',
     difficulty: 'hard',
     isTimed: true,
-    timeLimitDays: 4,
+    timeLimitMonths: 4,
     requirements: [
       { plantId: 'flax', quantity: 4 },
       { plantId: 'buckwheat', quantity: 5 },
@@ -392,7 +392,7 @@ const TASK_SEEDS: TaskSeed[] = [
     title: '水乡盛宴急件',
     difficulty: 'hard',
     isTimed: true,
-    timeLimitDays: 4,
+    timeLimitMonths: 4,
     requirements: [
       { plantId: 'water_chestnut', quantity: 4 },
       { plantId: 'lotus_root', quantity: 4 },
@@ -430,7 +430,7 @@ const TASK_SEEDS: TaskSeed[] = [
     title: '经济作物冲榜单',
     difficulty: 'hell',
     isTimed: true,
-    timeLimitDays: 5,
+    timeLimitMonths: 5,
     requirements: [
       { plantId: 'cotton', quantity: 6 },
       { plantId: 'sesame', quantity: 6 },

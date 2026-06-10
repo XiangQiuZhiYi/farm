@@ -54,7 +54,7 @@ export function Shop() {
                 <span className={styles.price}>
                   采购 {p.purchasePrice} 金/份
                   {p.harvestType === 'perennial' && p.reharvestMinutes
-                    ? ` · 再采 ${Math.round(p.reharvestMinutes / 1440)} 天 · 越季暂停`
+                    ? ` · 再采 ${Math.round(p.reharvestMinutes / 1440)} 个月 · 越季暂停`
                     : ' · 越季枯萎'}
                 </span>
                 <button

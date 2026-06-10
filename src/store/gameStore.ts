@@ -78,25 +78,23 @@ interface GameStore {
 }
 
 // ─────────────────────────────────────────────────────────────
-// 工具函数：根据游戏总分钟推算月/日/季节
+// 工具函数：根据游戏总分钟推算月份进度与季节
 // ─────────────────────────────────────────────────────────────
 
-const MINUTES_PER_DAY = 1440;
-const DAYS_PER_MONTH = 30;
+const MINUTES_PER_MONTH = 1440;
 const MONTHS_PER_YEAR = 12;
-const MINUTES_PER_YEAR = MINUTES_PER_DAY * DAYS_PER_MONTH * MONTHS_PER_YEAR;
-const GAME_START_DAY = Math.floor((MINUTES_PER_DAY * DAYS_PER_MONTH * 3) / MINUTES_PER_DAY) + 1;
+const MINUTES_PER_YEAR = MINUTES_PER_MONTH * MONTHS_PER_YEAR;
+const GAME_START_ABSOLUTE_MONTH = Math.floor((MINUTES_PER_MONTH * 3) / MINUTES_PER_MONTH) + 1;
 
 function minutesToCalendar(total: number) {
-  const dayIndex = Math.floor(total / MINUTES_PER_DAY);
-  const month = (Math.floor(dayIndex / DAYS_PER_MONTH) % 12) + 1;
-  const day = (dayIndex % DAYS_PER_MONTH) + 1;
+  const absoluteMonthIndex = Math.floor(total / MINUTES_PER_MONTH);
+  const month = (absoluteMonthIndex % 12) + 1;
   const seasons = ['spring', 'spring', 'spring',
                    'summer', 'summer', 'summer',
                    'autumn', 'autumn', 'autumn',
                    'winter', 'winter', 'winter'] as const;
   const season = seasons[month - 1];
-  return { month, day, season };
+  return { month, season };
 }
 
 function createBlankPlotState(base: Pick<PlotState, 'id' | 'regionId' | 'landTypeId' | 'waterState'>): PlotState {
@@ -154,20 +152,20 @@ function getEligibleTasksForBoard(
     .filter((task) => task.id !== activeTaskId);
 }
 
-function getAbsoluteDay(totalMinutes: number) {
-  return Math.floor(totalMinutes / MINUTES_PER_DAY) + 1;
+function getAbsoluteMonthIndex(totalMinutes: number) {
+  return Math.floor(totalMinutes / MINUTES_PER_MONTH) + 1;
 }
 
-function isTaskExpired(expiresOnDay: number | null, currentDay: number) {
-  return expiresOnDay !== null && currentDay > expiresOnDay;
+function isTaskExpired(expiresOnMonth: number | null, currentMonthIndex: number) {
+  return expiresOnMonth !== null && currentMonthIndex > expiresOnMonth;
 }
 
-function buildTaskOffer(task: TaskDefinition, offeredDay: number): TaskOffer {
+function buildTaskOffer(task: TaskDefinition, offeredMonth: number): TaskOffer {
   return {
     taskId: task.id,
-    offeredDay,
-    // 限时从出现在任务板的当天开始计入，因此到期日基于 offeredDay 推导。
-    expiresOnDay: task.timeLimitDays ? offeredDay + task.timeLimitDays - 1 : null,
+    offeredMonth,
+    // 限时从出现在任务板的当月开始计入，因此到期月基于 offeredMonth 推导。
+    expiresOnMonth: task.timeLimitMonths ? offeredMonth + task.timeLimitMonths - 1 : null,
   };
 }
 
@@ -179,8 +177,8 @@ function hashTaskSeed(seed: string) {
   return hash;
 }
 
-function seededNoise(taskId: string, currentDay: number) {
-  const seed = hashTaskSeed(`${taskId}:${currentDay}`);
+function seededNoise(taskId: string, currentMonthIndex: number) {
+  const seed = hashTaskSeed(`${taskId}:${currentMonthIndex}`);
   const x = Math.sin(seed) * 10000;
   return x - Math.floor(x);
 }
@@ -201,14 +199,14 @@ function difficultyTrendWeight(difficulty: TaskDefinition['difficulty'], refresh
   }
 }
 
-function shouldRefreshTaskBoard(day: number) {
-  if (TASK_BOARD_RULES.skipFirstDay && day <= GAME_START_DAY) return false;
-  return (day - GAME_START_DAY) % TASK_BOARD_RULES.offerIntervalDays === 0;
+function shouldRefreshTaskBoard(absoluteMonth: number) {
+  if (TASK_BOARD_RULES.skipFirstMonth && absoluteMonth <= GAME_START_ABSOLUTE_MONTH) return false;
+  return (absoluteMonth - GAME_START_ABSOLUTE_MONTH) % TASK_BOARD_RULES.offerIntervalMonths === 0;
 }
 
 function createInitialTaskBoardState(unlockedPlants: string[]) {
   const initialOffers = selectTaskOffers({
-    day: GAME_START_DAY,
+    absoluteMonth: GAME_START_ABSOLUTE_MONTH,
     unlockedPlants,
     discoveredTasks: [],
     completedTasks: [],
@@ -219,20 +217,20 @@ function createInitialTaskBoardState(unlockedPlants: string[]) {
     taskBoard: {
       currentOffers: initialOffers,
       activeTask: null,
-      lastRefreshDay: initialOffers.length > 0 ? GAME_START_DAY : null,
+      lastRefreshMonth: initialOffers.length > 0 ? GAME_START_ABSOLUTE_MONTH : null,
     },
     unlockedTasks: initialOffers.map((offer) => offer.taskId),
   };
 }
 
 function selectTaskOffers(params: {
-  day: number;
+  absoluteMonth: number;
   unlockedPlants: string[];
   discoveredTasks: string[];
   completedTasks: string[];
   activeTask: ActiveTaskState | null;
 }) {
-  const refreshIndex = Math.max(1, Math.floor((params.day - GAME_START_DAY) / TASK_BOARD_RULES.offerIntervalDays));
+  const refreshIndex = Math.max(1, Math.floor((params.absoluteMonth - GAME_START_ABSOLUTE_MONTH) / TASK_BOARD_RULES.offerIntervalMonths));
 
   const eligibleTasks = getEligibleTasksForBoard(
     params.unlockedPlants,
@@ -244,7 +242,7 @@ function selectTaskOffers(params: {
   const candidates = eligibleTasks
     .map((task) => {
       const trendWeight = difficultyTrendWeight(task.difficulty, refreshIndex);
-      const randomWeight = 0.72 + seededNoise(task.id, params.day) * 0.9;
+      const randomWeight = 0.72 + seededNoise(task.id, params.absoluteMonth) * 0.9;
       return {
         task,
         score: trendWeight * randomWeight,
@@ -252,20 +250,20 @@ function selectTaskOffers(params: {
     })
     .sort((left, right) => right.score - left.score)
     .slice(0, TASK_BOARD_RULES.offerChoices)
-    .map(({ task }) => buildTaskOffer(task, params.day));
+    .map(({ task }) => buildTaskOffer(task, params.absoluteMonth));
 
   // 再次兜底，防止后续改动绕过前置过滤步骤，把未满足解锁条件的任务塞回任务板。
   const eligibleTaskIdSet = new Set(eligibleTasks.map((task) => task.id));
   return candidates.filter((offer) => eligibleTaskIdSet.has(offer.taskId));
 }
 
-function processTaskBoardForDay(state: Pick<GameStore, 'taskBoard' | 'unlockedPlants' | 'completedTasks' | 'unlockedTasks'>, day: number) {
+function processTaskBoardForMonth(state: Pick<GameStore, 'taskBoard' | 'unlockedPlants' | 'completedTasks' | 'unlockedTasks'>, absoluteMonth: number) {
   let nextTaskBoard = state.taskBoard;
   let nextUnlockedTasks = state.unlockedTasks;
 
-  // 每天切换时先清理已过期的限时任务，已失败任务会重新回到候选池。
-  const filteredOffers = nextTaskBoard.currentOffers.filter((offer) => !isTaskExpired(offer.expiresOnDay, day));
-  const activeTaskExpired = nextTaskBoard.activeTask && isTaskExpired(nextTaskBoard.activeTask.expiresOnDay, day);
+  // 每月切换时先清理已过期的限时任务，已失败任务会重新回到候选池。
+  const filteredOffers = nextTaskBoard.currentOffers.filter((offer) => !isTaskExpired(offer.expiresOnMonth, absoluteMonth));
+  const activeTaskExpired = nextTaskBoard.activeTask && isTaskExpired(nextTaskBoard.activeTask.expiresOnMonth, absoluteMonth);
 
   if (filteredOffers.length !== nextTaskBoard.currentOffers.length || activeTaskExpired) {
     nextTaskBoard = {
@@ -275,9 +273,9 @@ function processTaskBoardForDay(state: Pick<GameStore, 'taskBoard' | 'unlockedPl
     };
   }
 
-  if (shouldRefreshTaskBoard(day)) {
+  if (shouldRefreshTaskBoard(absoluteMonth)) {
     const nextOffers = selectTaskOffers({
-      day,
+      absoluteMonth,
       unlockedPlants: state.unlockedPlants,
       discoveredTasks: nextUnlockedTasks,
       completedTasks: state.completedTasks,
@@ -288,7 +286,7 @@ function processTaskBoardForDay(state: Pick<GameStore, 'taskBoard' | 'unlockedPl
     nextTaskBoard = {
       ...nextTaskBoard,
       currentOffers: nextOffers,
-      lastRefreshDay: day,
+      lastRefreshMonth: absoluteMonth,
     };
     nextUnlockedTasks = [...new Set([...nextUnlockedTasks, ...offeredTaskIds])];
   }
@@ -377,11 +375,10 @@ function buildInitialPlots(): PlotState[] {
 // ─────────────────────────────────────────────────────────────
 
 export const useGameStore = create<GameStore>((set, get) => ({
-  // ── 时钟初始值（夏季第一个月 = 第4月，第1440*30*3 分钟处）─────
+  // ── 时钟初始值（夏季第一个月 = 第4月）──────────────────────
   clock: {
-    totalMinutes: MINUTES_PER_DAY * DAYS_PER_MONTH * 3, // 跳过春季 3 个月
+    totalMinutes: MINUTES_PER_MONTH * 3, // 跳过春季 3 个月
     month: 4,
-    day: 1,
     season: 'summer',
     timeScale: 1,
     running: true,
@@ -397,10 +394,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const { clock, plots, taskBoard, unlockedPlants, unlockedTasks, completedTasks } = get();
     if (!clock.running) return;
 
-    const previousDay = getAbsoluteDay(clock.totalMinutes);
+    const previousAbsoluteMonth = getAbsoluteMonthIndex(clock.totalMinutes);
     const newTotal = clock.totalMinutes + deltaMinutes;
     const cal = minutesToCalendar(newTotal);
-    const nextDay = getAbsoluteDay(newTotal);
+    const nextAbsoluteMonth = getAbsoluteMonthIndex(newTotal);
 
     // 更新地块成熟状态
     const updatedPlots = plots.map((plot) => {
@@ -411,16 +408,16 @@ export const useGameStore = create<GameStore>((set, get) => ({
     });
 
     let nextTaskState = { taskBoard, unlockedTasks };
-    if (nextDay > previousDay) {
-      for (let day = previousDay + 1; day <= nextDay; day += 1) {
-        nextTaskState = processTaskBoardForDay(
+    if (nextAbsoluteMonth > previousAbsoluteMonth) {
+      for (let absoluteMonth = previousAbsoluteMonth + 1; absoluteMonth <= nextAbsoluteMonth; absoluteMonth += 1) {
+        nextTaskState = processTaskBoardForMonth(
           {
             taskBoard: nextTaskState.taskBoard,
             unlockedPlants,
             completedTasks,
             unlockedTasks: nextTaskState.unlockedTasks,
           },
-          day,
+          absoluteMonth,
         );
       }
     }
@@ -570,7 +567,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const offer = taskBoard.currentOffers.find((item) => item.taskId === taskId);
     if (!offer) return false;
 
-    const acceptedDay = getAbsoluteDay(clock.totalMinutes);
+    const acceptedMonth = getAbsoluteMonthIndex(clock.totalMinutes);
 
     set((state) => ({
       taskBoard: {
@@ -578,7 +575,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         currentOffers: state.taskBoard.currentOffers.filter((item) => item.taskId !== taskId),
         activeTask: {
           ...offer,
-          acceptedDay,
+          acceptedMonth,
         },
       },
     }));

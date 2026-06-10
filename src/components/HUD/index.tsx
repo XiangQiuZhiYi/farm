@@ -6,7 +6,7 @@ import { useGameStore } from '../../store/gameStore';
 import type { TimeScale } from '../../types/game';
 import styles from './HUD.module.css';
 
-const TIME_SCALES: TimeScale[] = [1, 10, 60, 1000];
+const TIME_SCALES: TimeScale[] = [1, 10, 60, 1440];
 const SEASON_LABELS = {
   spring: '🌸 春',
   summer: '☀️ 夏',
@@ -20,6 +20,11 @@ const SEASON_MONTHS = {
   autumn: '7–9 月',
   winter: '10–12 月',
 };
+
+function formatGameDate(totalMinutes: number, month: number) {
+  const year = Math.floor(totalMinutes / 1440 / 12) + 1;
+  return `第 ${year} 年 ${month} 月`;
+}
 
 export function HUD() {
   const clock = useGameStore((s) => s.clock);
@@ -36,8 +41,7 @@ export function HUD() {
           <span className={styles.seasonMonths}>（{SEASON_MONTHS[clock.season]}）</span>
         </span>
         <span className={styles.date}>
-          第 {Math.floor(clock.totalMinutes / 1440 / 30 / 12) + 1} 年&nbsp;
-          {clock.month} 月 {clock.day} 日
+          {formatGameDate(clock.totalMinutes, clock.month)}
         </span>
       </div>
 

@@ -60,7 +60,7 @@ export interface PlantConfig {
    */
   reharvestMinutes?: number;
   /**
-   * 多年生：植物最大生命年数（游戏年，1年=360天=518400分钟）
+    * 多年生：植物最大生命年数（游戏年，1年=12个月=17280分钟）
    * 超过后自动枯死，需重新购买种植
    */
   maxLifespanYears?: number;

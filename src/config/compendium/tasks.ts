@@ -6,7 +6,7 @@ export interface TaskCompendiumEntry {
   title: string;
   difficulty: string;
   isTimed: boolean;
-  timeLimitDays: number | null;
+  timeLimitMonths: number | null;
   summary: string;
   highlights: string[];
   details: Array<{ label: string; value: string }>;
@@ -41,18 +41,18 @@ export const TASK_COMPENDIUM_ENTRIES: TaskCompendiumEntry[] = TASK_BOARD_TASKS.m
     title: task.title,
     difficulty: task.difficulty,
     isTimed: task.isTimed,
-    timeLimitDays: task.timeLimitDays,
+    timeLimitMonths: task.timeLimitMonths,
     summary: `${TASK_DIFFICULTY_LABELS[task.difficulty]}任务，需要 ${task.requirements.length} 种作物，共 ${totalQuantity} 单位。`,
     highlights: [
       TASK_DIFFICULTY_LABELS[task.difficulty],
       task.isTimed ? '限时任务' : '常驻任务',
-      task.isTimed && task.timeLimitDays ? `${task.timeLimitDays} 天时限` : '无时限',
+      task.isTimed && task.timeLimitMonths ? `${task.timeLimitMonths} 个月时限` : '无时限',
       `${Math.round(task.rewardMultiplier * 100)}% 奖励倍率`,
     ].filter(Boolean) as string[],
     details: [
       { label: '难度', value: TASK_DIFFICULTY_LABELS[task.difficulty] },
       { label: '任务类型', value: task.isTimed ? '限时' : '不限时' },
-      { label: '任务时限', value: task.isTimed && task.timeLimitDays ? `${task.timeLimitDays} 天` : '无' },
+      { label: '任务时限', value: task.isTimed && task.timeLimitMonths ? `${task.timeLimitMonths} 个月` : '无' },
       { label: '需求清单', value: buildRequirementsLabel(task.id) },
       { label: '基础售价', value: `${task.baseSaleValue} 金` },
       { label: '奖励倍数', value: `${task.rewardMultiplier.toFixed(2)} 倍` },
