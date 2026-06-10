@@ -1,0 +1,259 @@
+/* ── 覆盖层背景（半透明，点击可关闭） ─────────────────── */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: flex-end;
+  background: rgba(0, 8, 8, 0.38);
+}
+
+/* ── 操作面板（底部滑入） ──────────────────────────────── */
+.panel {
+  position: relative;
+  width: 100%;
+  max-height: 55vh;
+  overflow-y: auto;
+  background:
+    linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px),
+    rgba(5, 22, 20, 0.97);
+  background-size: 4px 4px, 4px 4px, auto;
+  border-top: 1px solid rgba(229, 159, 74, 0.56);
+  padding: 18px 22px 22px;
+  color: #c9d8cc;
+  font-family: Georgia, 'Times New Roman', serif;
+  animation: slideUp 0.18s ease-out;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(60px); opacity: 0.3; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+/* ── 关闭按钮 ──────────────────────────────────────────── */
+.closeBtn {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  width: 30px;
+  height: 30px;
+  border: 1px solid rgba(229, 159, 74, 0.5);
+  background: rgba(8, 31, 29, 0.9);
+  color: #f1b96d;
+  cursor: pointer;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.closeBtn:hover {
+  background: rgba(201, 139, 58, 0.18);
+  color: #fff1c7;
+}
+
+/* ── 标题行 ────────────────────────────────────────────── */
+.titleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+  padding-right: 42px;
+}
+
+.plotId {
+  color: #fff1c7;
+  font-size: 15px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-right: 10px;
+}
+
+.landType {
+  color: #8ea49b;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.waterBadge {
+  border: 1px solid rgba(95, 168, 255, 0.4);
+  color: #5fa8ff;
+  padding: 3px 9px;
+  font-size: 12px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── 植物状态区 ─────────────────────────────────────────── */
+.plantSection {
+  display: grid;
+  gap: 10px;
+}
+
+.plantStatus {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.plantName {
+  color: #fff1c7;
+  font-size: 17px;
+}
+
+.lifecycle {
+  font-size: 13px;
+  color: #8ca198;
+  padding: 2px 8px;
+  border: 1px solid rgba(140, 161, 152, 0.4);
+}
+
+.lifecycle.ready {
+  color: #ffe066;
+  border-color: rgba(255, 224, 102, 0.52);
+}
+
+.lifecycle.wilted {
+  color: #e07050;
+  border-color: rgba(224, 112, 80, 0.5);
+}
+
+/* ── 成长进度条 ─────────────────────────────────────────── */
+.progressRow {
+  display: grid;
+  grid-template-columns: 1fr 52px;
+  gap: 10px;
+  align-items: center;
+}
+
+.progressTrack {
+  height: 6px;
+  border: 1px solid rgba(229, 159, 74, 0.4);
+  background: rgba(3, 16, 15, 0.8);
+}
+
+.progressTrack span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #c88b39, #f4c47e);
+  transition: width 0.3s ease;
+}
+
+.progressLabel {
+  color: #c88b39;
+  font-size: 12px;
+  text-align: right;
+}
+
+/* ── 元信息标签组 ───────────────────────────────────────── */
+.meta {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.meta span {
+  font-size: 12px;
+  color: #7f968d;
+  border: 1px solid rgba(127, 150, 141, 0.3);
+  padding: 2px 7px;
+}
+
+/* ── 操作按钮组 ─────────────────────────────────────────── */
+.actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.actionBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 20px;
+  border: 1px solid rgba(187, 139, 62, 0.5);
+  background: rgba(8, 31, 29, 0.92);
+  color: #c9a96a;
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+}
+
+.actionBtn:hover:not(:disabled) {
+  border-color: rgba(235, 151, 61, 0.82);
+  color: #fff1c7;
+  background: rgba(201, 139, 58, 0.1);
+}
+
+.actionBtn:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+}
+
+/* 收获按钮强调色 */
+.harvestBtn {
+  border-color: rgba(255, 224, 102, 0.56);
+  color: #ffe066;
+}
+
+.harvestBtn:hover:not(:disabled) {
+  border-color: rgba(255, 224, 102, 0.9);
+  color: #fff8cc;
+}
+
+.btnNote {
+  font-size: 11px;
+  color: #7f968d;
+  margin-left: 4px;
+}
+
+/* ── 种植列表 ───────────────────────────────────────────── */
+.emptyHint {
+  margin: 0;
+  color: #a6b6ae;
+  font-size: 13px;
+}
+
+.wiltHint {
+  margin: 0;
+  color: #e07050;
+  font-size: 13px;
+}
+
+.plantList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.plantBtn {
+  padding: 7px 14px;
+  background: rgba(8, 31, 29, 0.92);
+  color: #d7dfcf;
+  border: 1px solid rgba(187, 139, 62, 0.42);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+}
+
+.plantBtn:hover:not(:disabled) {
+  border-color: rgba(235, 151, 61, 0.78);
+  color: #fff1c7;
+}
+
+.plantBtn:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+}
+
+.empty {
+  font-size: 12px;
+  color: #7f968d;
+  padding: 4px 0;
+}
+

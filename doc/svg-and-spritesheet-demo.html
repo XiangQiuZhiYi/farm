@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SVG vs Sprite Sheet Demo - 水稻成长阶段</title>
+  <style>
+    :root {
+      --bg: #0b1220;
+      --panel: rgba(15, 23, 42, 0.9);
+      --line: #2a3950;
+      --text: #e6eefc;
+      --muted: #9cb0ca;
+      --accent: #8ecae6;
+      --accent-2: #74c69d;
+      --accent-3: #ffd166;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: var(--text);
+      font-family: "SF Pro SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background:
+        radial-gradient(circle at top, #1d2a44 0%, #101827 55%, #0b1220 100%);
+    }
+
+    .page {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 32px 20px 48px;
+    }
+
+    .hero {
+      margin-bottom: 22px;
+    }
+
+    .hero h1 {
+      margin: 0 0 12px;
+      font-size: 30px;
+    }
+
+    .hero p {
+      margin: 0;
+      line-height: 1.75;
+      color: var(--muted);
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 18px 0 24px;
+    }
+
+    button {
+      border: 1px solid #38506d;
+      background: #162235;
+      color: var(--text);
+      border-radius: 10px;
+      padding: 8px 14px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    button.active {
+      border-color: var(--accent);
+      background: rgba(142, 202, 230, 0.15);
+      color: #dbf4ff;
+    }
+
+    .status {
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(116, 198, 157, 0.12);
+      color: var(--accent-2);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 20px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 20px;
+      box-shadow: 0 20px 48px rgba(0, 0, 0, 0.22);
+      backdrop-filter: blur(10px);
+    }
+
+    .panel h2 {
+      margin: 0 0 10px;
+      font-size: 20px;
+    }
+
+    .panel p {
+      margin: 0 0 16px;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .art-frame {
+      border: 1px solid #33445d;
+      border-radius: 16px;
+      padding: 12px;
+      background: rgba(8, 15, 27, 0.55);
+      margin-bottom: 16px;
+    }
+
+    svg,
+    canvas {
+      width: 100%;
+      display: block;
+      border-radius: 12px;
+      background: linear-gradient(#a8ddff 0 34%, #7bd0ff 34% 100%);
+    }
+
+    canvas {
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+
+    .atlas-wrap {
+      display: grid;
+      gap: 12px;
+    }
+
+    .split-preview {
+      display: grid;
+      grid-template-columns: 1.3fr 0.9fr;
+      gap: 12px;
+      align-items: start;
+    }
+
+    .meta {
+      margin: 0;
+      padding-left: 18px;
+      display: grid;
+      gap: 8px;
+      color: var(--muted);
+    }
+
+    .compare {
+      margin-top: 20px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: rgba(8, 15, 27, 0.55);
+    }
+
+    th,
+    td {
+      padding: 12px 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      text-align: left;
+      vertical-align: top;
+      font-size: 14px;
+    }
+
+    th {
+      color: #d8e7ff;
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    td {
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .note {
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    @media (max-width: 920px) {
+      .layout,
+      .split-preview {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <section class="hero">
+      <h1>SVG 与 Sprite Sheet 图集 Demo</h1>
+      <p>
+        这里用同一棵 <strong>水稻</strong> 的 <strong>seed / sprout / grow / mature</strong> 四阶段做对比。
+        左边是 <strong>SVG</strong>：更适合 UI 图标、说明页、可缩放插画；右边是 <strong>Sprite Sheet 图集</strong>：
+        更适合游戏内帧切换、批量资源管理和像素风显示。
+      </p>
+    </section>
+
+    <div class="status">当前阶段：<span id="stage-label">seed</span></div>
+    <div id="controls" class="controls"></div>
+
+    <div class="layout">
+      <section class="panel">
+        <h2>SVG Demo</h2>
+        <p>
+          这一侧用向量图形绘制同一株水稻。优点是缩放不会糊，线条和造型调整也更方便。
+        </p>
+        <div class="art-frame">
+          <svg id="rice-svg" viewBox="0 0 320 320" aria-label="SVG 水稻成长阶段预览">
+            <defs>
+              <linearGradient id="sky" x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0%" stop-color="#bce7ff"></stop>
+                <stop offset="100%" stop-color="#8fd5ff"></stop>
+              </linearGradient>
+              <linearGradient id="water" x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0%" stop-color="#68b7ec"></stop>
+                <stop offset="100%" stop-color="#5aa9e6"></stop>
+              </linearGradient>
+            </defs>
+
+            <rect width="320" height="320" fill="url(#sky)"></rect>
+
+            <!-- 固定保留水田地形，便于和植物阶段做解耦。 -->
+            <rect x="0" y="112" width="320" height="48" fill="url(#water)"></rect>
+            <rect x="0" y="160" width="320" height="18" fill="#7b4f2f"></rect>
+            <rect x="0" y="178" width="320" height="26" fill="#6d4427"></rect>
+            <rect x="0" y="204" width="320" height="48" fill="url(#water)"></rect>
+            <rect x="0" y="252" width="320" height="18" fill="#7b4f2f"></rect>
+            <rect x="0" y="270" width="320" height="50" fill="#6d4427"></rect>
+
+            <g id="svg-seed">
+              <ellipse cx="160" cy="246" rx="11" ry="8" fill="#7d5a32"></ellipse>
+              <ellipse cx="172" cy="246" rx="9" ry="6" fill="#8a6438"></ellipse>
+            </g>
+
+            <g id="svg-sprout" display="none">
+              <path d="M160 244 C156 228, 156 214, 160 198" stroke="#2f8f46" stroke-width="7" fill="none" stroke-linecap="round"></path>
+              <path d="M160 214 C145 210, 137 201, 132 188" stroke="#8ddf64" stroke-width="6" fill="none" stroke-linecap="round"></path>
+              <path d="M160 210 C174 204, 183 194, 188 181" stroke="#79d75a" stroke-width="6" fill="none" stroke-linecap="round"></path>
+              <ellipse cx="160" cy="246" rx="14" ry="8" fill="#7d5a32"></ellipse>
+            </g>
+
+            <g id="svg-grow" display="none">
+              <path d="M160 244 C155 222, 154 198, 160 156" stroke="#2f8f46" stroke-width="8" fill="none" stroke-linecap="round"></path>
+              <path d="M160 208 C143 201, 130 187, 120 165" stroke="#8ddf64" stroke-width="8" fill="none" stroke-linecap="round"></path>
+              <path d="M160 194 C180 187, 194 173, 205 149" stroke="#8ddf64" stroke-width="8" fill="none" stroke-linecap="round"></path>
+              <path d="M160 180 C146 174, 139 161, 132 142" stroke="#2f8f46" stroke-width="7" fill="none" stroke-linecap="round"></path>
+              <path d="M160 171 C172 166, 179 154, 186 136" stroke="#2f8f46" stroke-width="7" fill="none" stroke-linecap="round"></path>
+              <ellipse cx="160" cy="246" rx="16" ry="9" fill="#7d5a32"></ellipse>
+            </g>
+
+            <g id="svg-mature" display="none">
+              <path d="M160 244 C155 222, 154 198, 160 148" stroke="#2f8f46" stroke-width="8" fill="none" stroke-linecap="round"></path>
+              <path d="M160 208 C143 201, 130 187, 120 165" stroke="#8ddf64" stroke-width="8" fill="none" stroke-linecap="round"></path>
+              <path d="M160 194 C180 187, 194 173, 205 149" stroke="#8ddf64" stroke-width="8" fill="none" stroke-linecap="round"></path>
+              <path d="M160 184 C145 176, 137 162, 132 144" stroke="#2f8f46" stroke-width="7" fill="none" stroke-linecap="round"></path>
+              <path d="M160 173 C172 167, 178 154, 182 138" stroke="#2f8f46" stroke-width="7" fill="none" stroke-linecap="round"></path>
+              <path d="M172 160 C197 158, 216 166, 228 185" stroke="#e0c14d" stroke-width="6" fill="none" stroke-linecap="round"></path>
+              <ellipse cx="190" cy="162" rx="7" ry="5" fill="#f0d86f"></ellipse>
+              <ellipse cx="202" cy="166" rx="7" ry="5" fill="#f0d86f"></ellipse>
+              <ellipse cx="213" cy="172" rx="7" ry="5" fill="#f0d86f"></ellipse>
+              <ellipse cx="222" cy="180" rx="7" ry="5" fill="#f0d86f"></ellipse>
+              <ellipse cx="160" cy="246" rx="16" ry="9" fill="#7d5a32"></ellipse>
+            </g>
+          </svg>
+        </div>
+        <ul class="meta">
+          <li>适合做菜单图标、百科图鉴、插画式 UI、缩放型展示。</li>
+          <li>同一资源可以放大到很大仍然清晰，但风格更偏矢量插画，不像传统像素农场。</li>
+          <li>如果你以后想加描边、阴影、主题换色，SVG 改起来会很舒服。</li>
+        </ul>
+      </section>
+
+      <section class="panel">
+        <h2>Sprite Sheet 图集 Demo</h2>
+        <p>
+          这一侧先把 4 帧拼成一张图集，再从图集里裁切当前帧显示。这就是游戏里常见的精灵图工作流。
+        </p>
+        <div class="split-preview">
+          <div class="art-frame atlas-wrap">
+            <canvas id="atlas-canvas" width="512" height="128" aria-label="Sprite Sheet 图集"></canvas>
+            <div class="note">上面这张就是图集：4 帧横向排在一起，运行时只裁切当前阶段。</div>
+          </div>
+          <div class="art-frame atlas-wrap">
+            <canvas id="sprite-preview" width="256" height="256" aria-label="Sprite Sheet 当前帧预览"></canvas>
+            <div class="note">这里显示的是从图集中取出的当前帧。</div>
+          </div>
+        </div>
+        <ul class="meta">
+          <li>适合做游戏角色、植物成长帧、收获动画、批量资源打包。</li>
+          <li>性能和接入方式都更贴近实际游戏开发，特别适合你这个终端/像素农场方向。</li>
+          <li>如果以后每种植物都是 4 帧或 8 帧，图集会比散文件更容易统一管理。</li>
+        </ul>
+      </section>
+    </div>
+
+    <section class="compare">
+      <table>
+        <thead>
+          <tr>
+            <th>方案</th>
+            <th>优点</th>
+            <th>更适合你现在的用途</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>SVG</td>
+            <td>缩放清晰、修改方便、适合做图标和说明页。</td>
+            <td>做图鉴页、帮助页、菜单 UI 很合适。</td>
+          </tr>
+          <tr>
+            <td>Sprite Sheet</td>
+            <td>接近游戏资源工作流、切帧简单、最适合像素成长动画。</td>
+            <td>做土地和植物成长阶段时更推荐优先用它。</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+  </div>
+
+  <script>
+    const stages = [
+      {
+        id: "seed",
+        note: "播种期"
+      },
+      {
+        id: "sprout",
+        note: "发芽期"
+      },
+      {
+        id: "grow",
+        note: "生长期"
+      },
+      {
+        id: "mature",
+        note: "成熟期"
+      }
+    ];
+
+    const frameSize = 16;
+    const atlasScale = 8;
+    const previewScale = 16;
+
+    const palette = {
+      ".": null,
+      "S": "#b7e3ff",
+      "W": "#5aa9e6",
+      "R": "#7b4f2f",
+      "D": "#6d4427",
+      "G": "#2f8f46",
+      "L": "#8ddf64",
+      "Y": "#f0d86f",
+      "T": "#7d5a32"
+    };
+
+    const paddyTile = [
+      "SSSSSSSSSSSSSSSS",
+      "SSSSSSSSSSSSSSSS",
+      "SSSSSSSSSSSSSSSS",
+      "WWWWWWWWWWWWWWWW",
+      "WWWWWWWWWWWWWWWW",
+      "WWWWWWWWWWWWWWWW",
+      "RRRRRRRRRRRRRRRR",
+      "DDDDDDDDDDDDDDDD",
+      "WWWWWWWWWWWWWWWW",
+      "WWWWWWWWWWWWWWWW",
+      "WWWWWWWWWWWWWWWW",
+      "RRRRRRRRRRRRRRRR",
+      "DDDDDDDDDDDDDDDD",
+      "WWWWWWWWWWWWWWWW",
+      "WWWWWWWWWWWWWWWW",
+      "WWWWWWWWWWWWWWWW"
+    ];
+
+    const spriteLayers = {
+      seed: [
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        ".......TT.......",
+        "......TTTT......",
+        "................",
+        "................",
+        "................"
+      ],
+      sprout: [
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "........L.......",
+        ".......GL.......",
+        "........G.......",
+        ".......GT.......",
+        "......TTTT......",
+        "................",
+        "................",
+        "................"
+      ],
+      grow: [
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        ".......L........",
+        "......LGG.......",
+        ".....LGGL.......",
+        ".......GG.......",
+        "......LGGL......",
+        ".....LGGGGL.....",
+        ".......GT.......",
+        "......TTTT......",
+        "................",
+        "................",
+        "................"
+      ],
+      mature: [
+        "................",
+        "................",
+        "................",
+        "................",
+        "......YYY.......",
+        ".....YYYYY......",
+        "......LGG.......",
+        ".....LGGLL......",
+        "....LGGGGG......",
+        ".....LGGLL......",
+        "....LGGGGGL.....",
+        "......GTT.......",
+        ".....TTTTT......",
+        "................",
+        "................",
+        "................"
+      ]
+    };
+
+    const controls = document.getElementById("controls");
+    const stageLabel = document.getElementById("stage-label");
+
+    const svgGroups = {
+      seed: document.getElementById("svg-seed"),
+      sprout: document.getElementById("svg-sprout"),
+      grow: document.getElementById("svg-grow"),
+      mature: document.getElementById("svg-mature")
+    };
+
+    const atlasCanvas = document.getElementById("atlas-canvas");
+    const atlasCtx = atlasCanvas.getContext("2d");
+    const previewCanvas = document.getElementById("sprite-preview");
+    const previewCtx = previewCanvas.getContext("2d");
+
+    const atlasSource = document.createElement("canvas");
+    atlasSource.width = frameSize * stages.length;
+    atlasSource.height = frameSize;
+    const atlasSourceCtx = atlasSource.getContext("2d");
+
+    const drawLayer = (ctx, layer, pixelSize, offsetX = 0) => {
+      layer.forEach((row, y) => {
+        [...row].forEach((cell, x) => {
+          const color = palette[cell];
+          if (!color) return;
+          ctx.fillStyle = color;
+          ctx.fillRect(offsetX + x * pixelSize, y * pixelSize, pixelSize, pixelSize);
+        });
+      });
+    };
+
+    const buildAtlas = () => {
+      atlasSourceCtx.clearRect(0, 0, atlasSource.width, atlasSource.height);
+
+      // 图集按固定顺序横向排帧，这样运行时只需要按索引裁切。
+      stages.forEach((stage, index) => {
+        const frameOffset = index * frameSize;
+        drawLayer(atlasSourceCtx, paddyTile, 1, frameOffset);
+        drawLayer(atlasSourceCtx, spriteLayers[stage.id], 1, frameOffset);
+      });
+
+      atlasCtx.imageSmoothingEnabled = false;
+      atlasCtx.clearRect(0, 0, atlasCanvas.width, atlasCanvas.height);
+      atlasCtx.drawImage(
+        atlasSource,
+        0,
+        0,
+        atlasSource.width,
+        atlasSource.height,
+        0,
+        0,
+        atlasSource.width * atlasScale,
+        atlasSource.height * atlasScale
+      );
+    };
+
+    const renderPreviewFrame = (index) => {
+      previewCtx.imageSmoothingEnabled = false;
+      previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+
+      // 这里只截取图集中的一个 frame，模拟游戏里植物成长切帧的真实流程。
+      previewCtx.drawImage(
+        atlasSource,
+        index * frameSize,
+        0,
+        frameSize,
+        frameSize,
+        0,
+        0,
+        frameSize * previewScale,
+        frameSize * previewScale
+      );
+    };
+
+    const showSvgStage = (id) => {
+      Object.entries(svgGroups).forEach(([stageId, element]) => {
+        element.setAttribute("display", stageId === id ? "inline" : "none");
+      });
+    };
+
+    let activeIndex = 0;
+
+    const syncStage = (index) => {
+      activeIndex = index;
+      const stage = stages[index];
+      stageLabel.textContent = `${stage.id}（${stage.note}）`;
+
+      showSvgStage(stage.id);
+      renderPreviewFrame(index);
+
+      [...controls.querySelectorAll("button")].forEach((button, buttonIndex) => {
+        button.classList.toggle("active", buttonIndex === index);
+      });
+    };
+
+    stages.forEach((stage, index) => {
+      const button = document.createElement("button");
+      button.textContent = stage.id;
+      button.addEventListener("click", () => syncStage(index));
+      controls.appendChild(button);
+    });
+
+    buildAtlas();
+    syncStage(0);
+
+    // 自动轮播只是为了快速演示两种资源表现的一致性。
+    setInterval(() => {
+      syncStage((activeIndex + 1) % stages.length);
+    }, 1800);
+  </script>
+</body>
+</html>

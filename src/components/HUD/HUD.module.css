@@ -1,0 +1,82 @@
+.hud {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 10px 24px;
+  background: rgba(7, 31, 29, 0.84);
+  border-bottom: 1px solid rgba(187, 139, 62, 0.32);
+  color: #c9d8cc;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 14px;
+}
+
+.timeBlock {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  border: 1px solid rgba(187, 139, 62, 0.34);
+  padding: 7px 10px;
+}
+
+.season {
+  color: #f1b96d;
+  font-size: 14px;
+}
+
+.seasonMonths {
+  font-size: 11px;
+  color: #a08848;
+  margin-left: 2px;
+  letter-spacing: 0;
+}
+
+.date {
+  color: #d7dfcf;
+}
+
+.goldBlock {
+  border: 1px solid rgba(187, 139, 62, 0.34);
+  padding: 7px 10px;
+  color: #fff1c7;
+  font-weight: 700;
+}
+
+.timeControls {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.pauseBtn,
+.scaleBtn {
+  padding: 6px 10px;
+  background: rgba(8, 31, 29, 0.92);
+  color: #aebdb5;
+  border: 1px solid rgba(187, 139, 62, 0.36);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+}
+
+.pauseBtn:hover,
+.scaleBtn:hover {
+  border-color: rgba(241, 185, 109, 0.72);
+  color: #fff1c7;
+}
+
+.scaleBtn.active {
+  background: rgba(216, 145, 67, 0.15);
+  border-color: rgba(241, 185, 109, 0.82);
+  color: #f1b96d;
+}
+
+@media (max-width: 760px) {
+  .hud {
+    flex-wrap: wrap;
+  }
+
+  .timeControls {
+    margin-left: 0;
+  }
+}
+

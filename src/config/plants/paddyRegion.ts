@@ -1,0 +1,207 @@
+// ============================================================
+// 植物静态配置 — 水稻土区（10 种）
+// ============================================================
+
+import type { PlantConfig } from '../../types/plant';
+
+/** 通用 Sprite 占位：图集尚未制作，用颜色色块代替 */
+const placeholderSprite = (name: string) => ({
+  sheet: `plants/${name}/spritesheet.png`,
+  frameWidth: 16,
+  frameHeight: 16,
+  // 横向 4 帧：0=seed 1=sprout 2=grow 3=mature
+  stageFrameIndex: { seed: 0, sprout: 1, grow: 2, mature: 3 },
+});
+
+export const PADDY_REGION_PLANTS: PlantConfig[] = [
+  {
+    id: 'rice',
+    name: '水稻',
+    regionId: 'region_paddy',
+    unlockCumulativeGold: 0,       // 初始解锁
+    purchasePrice: 5,
+    sellPricePerUnit: 10,
+    expectedBestYield: 3,
+    growthMinutes: 5760,           // 4 游戏天
+    stageBoundaries: { seed: 0, sprout: 0.15, grow: 0.45, mature: 0.85 },
+    soilMatch: {
+      best: ['paddy_field'],
+      compatible: ['tidal_soil'],
+    },
+    season: { bestMonths: [4, 5, 6, 7, 8], okMonths: [3, 9] },
+    preferredWaterState: 'flooded',
+    sprite: placeholderSprite('rice'),
+    difficultyFactor: 1.0,
+  },
+  {
+    id: 'wheat',
+    name: '小麦',
+    regionId: 'region_paddy',
+    unlockCumulativeGold: 30,
+    purchasePrice: 6,
+    sellPricePerUnit: 12,
+    expectedBestYield: 3,
+    growthMinutes: 7200,           // 5 天
+    stageBoundaries: { seed: 0, sprout: 0.1, grow: 0.4, mature: 0.8 },
+    soilMatch: {
+      best: ['dry_land'],
+      compatible: ['brown_soil', 'tidal_soil'],
+    },
+    season: { bestMonths: [10, 11, 12, 1, 2, 3], okMonths: [4, 9] },
+    preferredWaterState: 'moist',
+    sprite: placeholderSprite('wheat'),
+    difficultyFactor: 1.0,
+  },
+  {
+    id: 'corn',
+    name: '玉米',
+    regionId: 'region_paddy',
+    unlockCumulativeGold: 60,
+    purchasePrice: 7,
+    sellPricePerUnit: 14,
+    expectedBestYield: 3,
+    growthMinutes: 8640,           // 6 天
+    stageBoundaries: { seed: 0, sprout: 0.12, grow: 0.42, mature: 0.82 },
+    soilMatch: {
+      best: ['dry_land'],
+      compatible: ['brown_soil', 'black_soil'],
+    },
+    season: { bestMonths: [4, 5, 6, 7, 8], okMonths: [3, 9] },
+    preferredWaterState: 'moist',
+    sprite: placeholderSprite('corn'),
+    difficultyFactor: 1.0,
+  },
+  {
+    id: 'soybean',
+    name: '大豆',
+    regionId: 'region_paddy',
+    unlockCumulativeGold: 100,
+    purchasePrice: 8,
+    sellPricePerUnit: 16,
+    expectedBestYield: 3,
+    growthMinutes: 8640,
+    stageBoundaries: { seed: 0, sprout: 0.12, grow: 0.42, mature: 0.82 },
+    soilMatch: {
+      best: ['dry_land'],
+      compatible: ['brown_soil', 'tidal_soil'],
+    },
+    season: { bestMonths: [5, 6, 7, 8], okMonths: [4, 9] },
+    preferredWaterState: 'moist',
+    sprite: placeholderSprite('soybean'),
+    difficultyFactor: 1.0,
+  },
+  {
+    id: 'potato',
+    name: '土豆',
+    regionId: 'region_paddy',
+    unlockCumulativeGold: 150,
+    purchasePrice: 9,
+    sellPricePerUnit: 18,
+    expectedBestYield: 4,
+    growthMinutes: 10080,          // 7 天
+    stageBoundaries: { seed: 0, sprout: 0.1, grow: 0.4, mature: 0.8 },
+    soilMatch: {
+      best: ['dry_land'],
+      compatible: ['brown_soil'],
+    },
+    season: { bestMonths: [3, 4, 5, 9, 10], okMonths: [2, 11] },
+    preferredWaterState: 'moist',
+    sprite: placeholderSprite('potato'),
+    difficultyFactor: 1.1,
+  },
+  {
+    id: 'peanut',
+    name: '花生',
+    regionId: 'region_paddy',
+    unlockCumulativeGold: 200,
+    purchasePrice: 10,
+    sellPricePerUnit: 20,
+    expectedBestYield: 3,
+    growthMinutes: 10080,
+    stageBoundaries: { seed: 0, sprout: 0.12, grow: 0.45, mature: 0.85 },
+    soilMatch: {
+      best: ['dry_land'],
+      compatible: ['tidal_soil'],
+    },
+    season: { bestMonths: [4, 5, 6, 7, 8], okMonths: [3, 9] },
+    preferredWaterState: 'dry',
+    sprite: placeholderSprite('peanut'),
+    difficultyFactor: 1.1,
+  },
+  {
+    id: 'sweet_potato',
+    name: '红薯',
+    regionId: 'region_paddy',
+    unlockCumulativeGold: 260,
+    purchasePrice: 11,
+    sellPricePerUnit: 22,
+    expectedBestYield: 4,
+    growthMinutes: 11520,          // 8 天
+    stageBoundaries: { seed: 0, sprout: 0.1, grow: 0.4, mature: 0.8 },
+    soilMatch: {
+      best: ['dry_land'],
+      compatible: ['tidal_soil', 'brown_soil'],
+    },
+    season: { bestMonths: [4, 5, 6, 7, 8, 9], okMonths: [3, 10] },
+    preferredWaterState: 'moist',
+    sprite: placeholderSprite('sweet_potato'),
+    difficultyFactor: 1.1,
+  },
+  {
+    id: 'lotus_root',
+    name: '莲藕',
+    regionId: 'region_paddy',
+    unlockCumulativeGold: 350,
+    purchasePrice: 14,
+    sellPricePerUnit: 28,
+    expectedBestYield: 3,
+    growthMinutes: 14400,          // 10 天
+    stageBoundaries: { seed: 0, sprout: 0.1, grow: 0.45, mature: 0.85 },
+    soilMatch: {
+      best: ['paddy_field'],
+      compatible: [],
+    },
+    season: { bestMonths: [4, 5, 6, 7, 8, 9], okMonths: [3, 10] },
+    preferredWaterState: 'flooded',
+    sprite: placeholderSprite('lotus_root'),
+    difficultyFactor: 1.3,
+  },
+  {
+    id: 'water_spinach',
+    name: '空心菜',
+    regionId: 'region_paddy',
+    unlockCumulativeGold: 450,
+    purchasePrice: 16,
+    sellPricePerUnit: 32,
+    expectedBestYield: 4,
+    growthMinutes: 4320,           // 3 天（短周期但需水田）
+    stageBoundaries: { seed: 0, sprout: 0.2, grow: 0.5, mature: 0.85 },
+    soilMatch: {
+      best: ['paddy_field'],
+      compatible: ['tidal_soil'],
+    },
+    season: { bestMonths: [5, 6, 7, 8, 9], okMonths: [4, 10] },
+    preferredWaterState: 'flooded',
+    sprite: placeholderSprite('water_spinach'),
+    difficultyFactor: 1.2,
+  },
+  {
+    id: 'water_chestnut',
+    name: '茭白',
+    regionId: 'region_paddy',
+    unlockCumulativeGold: 600,
+    purchasePrice: 20,
+    sellPricePerUnit: 40,
+    expectedBestYield: 3,
+    growthMinutes: 17280,          // 12 天
+    stageBoundaries: { seed: 0, sprout: 0.1, grow: 0.4, mature: 0.8 },
+    soilMatch: {
+      best: ['paddy_field'],
+      compatible: [],
+    },
+    season: { bestMonths: [5, 6, 7, 8], okMonths: [4, 9] },
+    preferredWaterState: 'flooded',
+    sprite: placeholderSprite('water_chestnut'),
+    difficultyFactor: 1.5,
+  },
+];

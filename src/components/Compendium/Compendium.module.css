@@ -1,0 +1,696 @@
+.page {
+  position: relative;
+  display: grid;
+  gap: 16px;
+  color: #c9d8cc;
+}
+
+.scanline {
+  height: 16px;
+  border: 1px solid rgba(191, 137, 60, 0.32);
+  background:
+    repeating-linear-gradient(90deg, rgba(238, 176, 91, 0.12) 0 1px, transparent 1px 6px),
+    rgba(30, 68, 54, 0.36);
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.stats article,
+.levelPanel,
+.card {
+  border: 1px solid rgba(190, 135, 57, 0.34);
+  background:
+    linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px),
+    rgba(7, 34, 31, 0.74);
+  background-size: 4px 4px, 4px 4px, auto;
+}
+
+.stats article {
+  min-height: 108px;
+  padding: 14px 16px;
+  display: grid;
+  align-content: start;
+  gap: 7px;
+}
+
+.stats span,
+.modalHead span {
+  color: #95aaa0;
+  font-size: 12px;
+}
+
+.stats strong {
+  color: #fff2ce;
+  font-size: 24px;
+  line-height: 1;
+}
+
+.stats p,
+.levelPanel p,
+.cardText {
+  margin: 0;
+  color: #a6b6ae;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.levelPanel {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 0.7fr);
+  gap: 12px;
+  padding: 14px 16px;
+}
+
+.levelPanel h2 {
+  margin: 0 0 12px;
+  color: #fff1c7;
+  font-size: 14px;
+  letter-spacing: 0.08em;
+}
+
+.levels,
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.levels .tierLabel,
+.filterBtn {
+  border: 1px solid rgba(190, 135, 57, 0.38);
+  color: #b9c9c0;
+  padding: 6px 10px;
+  font-size: 12px;
+  background: rgba(9, 39, 36, 0.72);
+}
+
+.levels .tierLabel {
+  cursor: default;
+}
+
+.levels .tierLabel::before {
+  content: '■';
+  font-size: 7px;
+  display: inline-block;
+  margin-right: 7px;
+  vertical-align: middle;
+}
+
+.levels .tierArrow {
+  background: none;
+  border: none;
+  color: #546862;
+  padding: 0 2px;
+  font-size: 13px;
+}
+
+.levels .tierCopper { color: #e69b48; border-color: rgba(230, 155, 72, 0.5); }
+.levels .tierSilver { color: #b8cad0; border-color: rgba(184, 202, 208, 0.45); }
+.levels .tierGold { color: #f4c44a; border-color: rgba(244, 196, 74, 0.5); }
+.levels .tierDiamond { color: #46e0d4; border-color: rgba(70, 224, 212, 0.45); }
+.levels .tierOlympian { color: #bf7af8; border-color: rgba(191, 122, 248, 0.45); }
+
+.filterBtn {
+  cursor: pointer;
+  font: inherit;
+}
+
+.filterBtn:hover {
+  border-color: rgba(235, 151, 61, 0.7);
+  color: #e8c987;
+  background: rgba(9, 39, 36, 0.92);
+}
+
+.filterActive {
+  color: #fff2ce !important;
+  border-color: rgba(255, 234, 186, 0.65) !important;
+  background: rgba(201, 139, 58, 0.12) !important;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(330px, 1fr));
+  gap: 12px;
+}
+
+.card {
+  min-height: 214px;
+  padding: 16px;
+  color: inherit;
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  gap: 14px;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+
+.card:hover {
+  border-color: rgba(235, 151, 61, 0.88);
+  background-color: rgba(11, 48, 43, 0.82);
+}
+
+.discovered {
+  opacity: 0.82;
+}
+
+.cardIcon {
+  width: 48px;
+  height: 48px;
+  border: 1px solid rgba(232, 151, 59, 0.66);
+  background: rgba(232, 151, 59, 0.08);
+  image-rendering: pixelated;
+}
+
+.cardMain {
+  min-width: 0;
+  display: grid;
+  gap: 14px;
+}
+
+.cardHead {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: start;
+}
+
+.cardHead h3 {
+  margin: 0;
+  color: #fff1c7;
+  font-size: 17px;
+  line-height: 1.15;
+  text-transform: uppercase;
+}
+
+.cardHead p {
+  margin-top: 4px;
+  color: #9aada4;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.cardBadges {
+  display: grid;
+  gap: 5px;
+  justify-items: end;
+}
+
+.cardBadges span {
+  border: 1px solid rgba(232, 151, 59, 0.58);
+  color: #d89143;
+  padding: 3px 8px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.condition {
+  border: 1px solid rgba(190, 135, 57, 0.34);
+  color: #d89143;
+  padding: 7px 9px;
+  font-size: 12px;
+}
+
+.condition::before {
+  content: '>';
+  margin-right: 7px;
+}
+
+.progressRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 72px;
+  gap: 12px;
+  align-items: center;
+  color: #aebdb5;
+  font-size: 12px;
+}
+
+.progressTrack {
+  height: 7px;
+  border: 1px solid rgba(229, 159, 74, 0.52);
+  background: rgba(3, 16, 15, 0.75);
+}
+
+.progressTrack span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #d89143, #f4c47e);
+}
+
+.modalBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: 22px;
+  background: rgba(1, 10, 10, 0.72);
+  backdrop-filter: blur(4px);
+}
+
+.modal {
+  position: relative;
+  width: min(980px, 100%);
+  max-height: min(90vh, 820px);
+  overflow: auto;
+  border: 1px solid rgba(229, 159, 74, 0.58);
+  background:
+    linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px),
+    #071f1d;
+  background-size: 4px 4px, 4px 4px, auto;
+  box-shadow: 0 22px 70px rgba(0, 0, 0, 0.56);
+  padding: 20px;
+}
+
+.closeBtn {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(229, 159, 74, 0.58);
+  background: rgba(8, 31, 29, 0.9);
+  color: #f1b96d;
+  cursor: pointer;
+}
+
+.modalHead {
+  display: flex;
+  justify-content: space-between;
+  gap: 52px;
+  padding-right: 42px;
+}
+
+.modalHead h2 {
+  margin: 4px 0 8px;
+  color: #fff1c7;
+  font-size: 26px;
+  text-transform: uppercase;
+}
+
+.modalHead p {
+  margin: 0;
+  color: #a8b7af;
+  line-height: 1.65;
+}
+
+.modalHead strong {
+  align-self: start;
+  border: 1px solid rgba(229, 159, 74, 0.58);
+  color: #f1b96d;
+  padding: 7px 10px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.modalBody {
+  display: grid;
+  grid-template-columns: minmax(260px, 360px) minmax(0, 1fr);
+  gap: 20px;
+  margin-top: 18px;
+}
+
+.modalCanvas {
+  width: 100%;
+  aspect-ratio: 1;
+  border: 1px solid rgba(229, 159, 74, 0.46);
+  background: #0b2926;
+  image-rendering: pixelated;
+}
+
+.modalInfo {
+  display: grid;
+  gap: 16px;
+  align-content: start;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tags span {
+  border: 1px solid rgba(229, 159, 74, 0.42);
+  color: #f1b96d;
+  padding: 5px 9px;
+  font-size: 12px;
+}
+
+.statusUnlocked {
+  border-color: rgba(74, 195, 104, 0.56) !important;
+  color: #4ac368 !important;
+}
+
+.statusDiscovered {
+  border-color: rgba(190, 135, 57, 0.58);
+  color: #d89143;
+}
+
+.recentSection {
+  display: grid;
+  gap: 10px;
+}
+
+.recentTitle {
+  margin: 0;
+  color: #c8a05a;
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.recentScroll {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(190, 135, 57, 0.38) transparent;
+}
+
+.recentChip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(230, 155, 72, 0.56);
+  background: rgba(9, 39, 36, 0.72);
+  color: #f1b96d;
+  padding: 6px 14px 6px 8px;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.recentChip:hover {
+  border-color: rgba(235, 151, 61, 0.88);
+  color: #fff2ce;
+  background: rgba(201, 139, 58, 0.12);
+}
+
+.recentIcon {
+  width: 20px;
+  height: 20px;
+  image-rendering: pixelated;
+  border: 1px solid rgba(230, 155, 72, 0.3);
+}
+
+.modalInfo dl {
+  display: grid;
+  gap: 0;
+  margin: 0;
+}
+
+.modalInfo dl > div {
+  display: grid;
+  grid-template-columns: minmax(80px, 140px) 1fr;
+  gap: 0 12px;
+  padding: 7px 0;
+  border-bottom: 1px solid rgba(190, 135, 57, 0.18);
+  align-items: baseline;
+}
+
+.modalInfo dl > div:first-child {
+  border-top: 1px solid rgba(190, 135, 57, 0.18);
+}
+
+.modalInfo dt {
+  color: #95aaa0;
+  font-size: 12px;
+  margin: 0;
+}
+
+.modalInfo dd {
+  color: #fff1c7;
+  font-size: 14px;
+  margin: 0;
+}
+
+.modalInfo dl {
+  margin: 0;
+  display: grid;
+  gap: 9px;
+}
+
+.modalInfo dl div {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: 12px;
+  border-bottom: 1px solid rgba(190, 135, 57, 0.24);
+  padding-bottom: 9px;
+}
+
+/* ── 主 Tab 切换 ────────────────────────────────────────────── */
+
+.mainTabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid rgba(190, 135, 57, 0.3);
+  padding-bottom: 0;
+}
+
+.mainTab {
+  padding: 9px 22px;
+  border: 1px solid rgba(190, 135, 57, 0.3);
+  border-bottom: none;
+  background: rgba(9, 39, 36, 0.6);
+  color: #9aada4;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  letter-spacing: 0.06em;
+  translate: 0 1px;
+}
+
+.mainTab:hover {
+  color: #e8c987;
+  border-color: rgba(235, 151, 61, 0.6);
+}
+
+.mainTabActive {
+  color: #fff1c7 !important;
+  border-color: rgba(229, 159, 74, 0.7) !important;
+  background: rgba(22, 58, 50, 0.9) !important;
+  border-bottom-color: rgba(22, 58, 50, 0.9) !important;
+}
+
+/* ── 植物卡片网格 ─────────────────────────────────────────── */
+
+.plantGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 12px;
+}
+
+.plantCard {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid rgba(190, 135, 57, 0.34);
+  background:
+    linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px),
+    rgba(7, 34, 31, 0.74);
+  background-size: 4px 4px, 4px 4px, auto;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+.plantCard:hover {
+  border-color: rgba(235, 151, 61, 0.88);
+  background-color: rgba(11, 48, 43, 0.82);
+}
+
+.plantStageRow {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.plantStageCell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.plantStageCell span {
+  color: #95aaa0;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+
+.plantStageCanvas {
+  width: 48px;
+  height: 48px;
+  border: 1px solid rgba(90, 144, 118, 0.42);
+  background: rgba(5, 26, 22, 0.8);
+  image-rendering: pixelated;
+}
+
+.plantCardInfo {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+}
+
+.plantCardHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.plantCardHead h3 {
+  margin: 0;
+  color: #fff1c7;
+  font-size: 17px;
+  line-height: 1.15;
+  text-transform: uppercase;
+}
+
+.plantRegionTag {
+  border: 1px solid rgba(90, 176, 168, 0.52);
+  color: #50b0a8;
+  padding: 3px 8px;
+  font-size: 11px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── 植物弹框生长阶段区 ──────────────────────────────────── */
+
+.plantModalStages {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-top: 18px;
+  padding: 14px;
+  border: 1px solid rgba(190, 135, 57, 0.28);
+  background: rgba(5, 22, 20, 0.55);
+}
+
+.plantModalStageItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.plantModalStageItem span {
+  color: #95aaa0;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.plantModalCanvas {
+  width: 100%;
+  aspect-ratio: 1;
+  border: 1px solid rgba(90, 144, 118, 0.46);
+  background: #0b2926;
+  image-rendering: pixelated;
+}
+
+.modalInfo dt {
+  color: #8ca198;
+  font-size: 12px;
+}
+
+.modalInfo dd {
+  margin: 0;
+  color: #d7dfcf;
+  font-size: 14px;
+}
+
+/* ── 植物卡片：锁定状态 ──────────────────────────────────── */
+
+.plantCardLocked {
+  opacity: 0.6;
+  filter: saturate(0.4);
+}
+
+.plantCardLocked .plantStageCanvas {
+  filter: brightness(0.55);
+}
+
+/* 未解锁徽章（红棕色调，与已解锁绿色区分） */
+.statusLocked {
+  border: 1px solid rgba(200, 80, 60, 0.56);
+  color: #c85040;
+  padding: 3px 8px;
+  font-size: 11px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* 解锁条件提示文字 */
+.plantUnlockHint {
+  margin: 0;
+  color: #9a7848;
+  font-size: 12px;
+  line-height: 1.5;
+  border-left: 2px solid rgba(200, 140, 60, 0.4);
+  padding-left: 8px;
+}
+
+/* 植物卡头部右侧徽章组 */
+.plantCardBadges {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+/* 植物弹框右侧徽章组 */
+.plantModalBadges {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* 解锁条件标签（弹框内） */
+.unlockCondition {
+  border: 1px solid rgba(200, 140, 60, 0.46);
+  color: #c8a050;
+  padding: 5px 9px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+@media (max-width: 1100px) {
+  .levelPanel {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .card {
+    grid-template-columns: 1fr;
+  }
+
+  .modalBody,
+  .modalHead {
+    grid-template-columns: 1fr;
+    flex-direction: column;
+  }
+}
+

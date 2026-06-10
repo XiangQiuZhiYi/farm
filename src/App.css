@@ -1,0 +1,474 @@
+.shell {
+  min-height: 100svh;
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  background:
+    linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px),
+    radial-gradient(circle at 70% 10%, rgba(46, 98, 78, 0.24), transparent 34%),
+    #061d1b;
+  background-size: 4px 4px, 4px 4px, auto, auto;
+  color: #d7dfcf;
+  font-family: Georgia, 'Times New Roman', serif;
+}
+
+.sidebar {
+  min-height: 100svh;
+  border-right: 1px solid rgba(187, 139, 62, 0.32);
+  background:
+    linear-gradient(rgba(8, 34, 31, 0.92), rgba(5, 26, 25, 0.92)),
+    repeating-linear-gradient(0deg, rgba(255,255,255,0.02) 0 1px, transparent 1px 3px);
+  display: flex;
+  flex-direction: column;
+}
+
+.brand {
+  padding: 14px 16px 12px;
+  border-bottom: 1px solid rgba(187, 139, 62, 0.32);
+  display: grid;
+  gap: 2px;
+}
+
+.brandTitle {
+  color: #fff3d4;
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 0.92;
+  letter-spacing: 0;
+}
+
+.brandSub {
+  color: #c1a46b;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+}
+
+.sideNav {
+  display: grid;
+  gap: 4px;
+  padding: 14px 10px;
+}
+
+.navBtn {
+  height: 40px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #9eb1a8;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 10px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+}
+
+.navBtn:hover,
+.navBtn.active {
+  border-color: rgba(201, 139, 58, 0.58);
+  background: rgba(201, 139, 58, 0.08);
+  color: #fff0c2;
+}
+
+.navIcon {
+  color: #c88b39;
+}
+
+.sidebarFooter {
+  margin-top: auto;
+  padding: 14px 16px;
+  border-top: 1px solid rgba(187, 139, 62, 0.32);
+  display: grid;
+  gap: 4px;
+  color: #7f968d;
+  font-size: 12px;
+}
+
+.sidebarFooter strong {
+  color: #8ce0a1;
+  font-weight: 600;
+}
+
+.workspace {
+  min-width: 0;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar {
+  min-height: 70px;
+  border-bottom: 1px solid rgba(187, 139, 62, 0.32);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 24px;
+  background: rgba(7, 31, 29, 0.72);
+}
+
+.topbar h1 {
+  margin: 0;
+  color: #fff1c7;
+  font-size: 20px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.eyebrow {
+  margin: 0 0 4px;
+  color: #c88b39;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+}
+
+.topStatus {
+  min-width: 150px;
+  border: 1px solid rgba(187, 139, 62, 0.36);
+  padding: 8px 12px;
+  display: grid;
+  gap: 2px;
+  text-align: right;
+  color: #8ea49b;
+  font-size: 11px;
+}
+
+.topStatus strong {
+  color: #fff1c7;
+  font-size: 14px;
+}
+
+.main,
+.compendiumMain {
+  flex: 1;
+  overflow: auto;
+}
+
+/* 农场主视图：中性深色背景，把焦点留给像素画地块 */
+.main {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 0;
+  background: #1a1108;
+}
+
+/* Canvas：微细描边区分画布边界 */
+.main canvas {
+  display: block;
+  image-rendering: pixelated;
+}
+
+
+.compendiumMain {
+  padding: 16px 24px 24px;
+  background:
+    radial-gradient(circle at 45% 0%, rgba(34, 86, 67, 0.25), transparent 36%),
+    rgba(4, 24, 23, 0.62);
+}
+
+/* ── 操作工具栏 ─────────────────────────────────────────── */
+
+.gameToolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
+  background:
+    linear-gradient(rgba(15, 45, 10, 0.90), rgba(10, 32, 8, 0.90)),
+    repeating-linear-gradient(90deg, rgba(255,255,255,0.012) 0 1px, transparent 1px 8px);
+  border-bottom: 1px solid rgba(90, 60, 20, 0.48);
+}
+
+.toolbarBtn {
+  padding: 7px 16px;
+  border: 1px solid rgba(187, 139, 62, 0.42);
+  background: rgba(8, 31, 29, 0.92);
+  color: #c9a96a;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+}
+
+.toolbarBtn:hover {
+  border-color: rgba(235, 151, 61, 0.78);
+  color: #fff1c7;
+  background: rgba(201, 139, 58, 0.10);
+}
+
+/* 购买种子按钮突出显示 */
+.toolbarBtnPrimary {
+  border-color: rgba(229, 159, 74, 0.62);
+  color: #f1b96d;
+}
+
+/* ── 区域 Tab ────────────────────────────────────────────── */
+
+.regionTabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid rgba(90, 60, 20, 0.55);
+  background: #120d05;
+  padding: 0 18px;
+}
+
+.regionTab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px 9px;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  color: #8a7a58;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  letter-spacing: 0.03em;
+  transition: color 0.15s, border-color 0.15s;
+  position: relative;
+  top: 2px;
+}
+
+.regionTab:hover:not(:disabled) {
+  color: #c9a96a;
+}
+
+.regionTabActive {
+  color: #ffe08a !important;
+  border-bottom-color: #e59f4a !important;
+}
+
+.regionTabLocked {
+  opacity: 0.42;
+  cursor: not-allowed;
+}
+
+.regionTabIcon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.regionTabLabel {
+  white-space: nowrap;
+}
+
+.regionTabBadge {
+  font-size: 10px;
+  padding: 1px 5px;
+  border: 1px solid rgba(187, 139, 62, 0.38);
+  color: #a08848;
+  background: rgba(187, 139, 62, 0.08);
+}
+
+.regionTabBadgeLocked {
+  border-color: rgba(150, 100, 60, 0.28);
+  color: #7a6040;
+  background: transparent;
+}
+
+/* ── 通用弹框遮罩 ───────────────────────────────────────── */
+
+.modalBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(1, 10, 10, 0.76);
+  backdrop-filter: blur(4px);
+}
+
+.modalBox {
+  position: relative;
+  width: min(600px, 100%);
+  max-height: min(88vh, 720px);
+  overflow: auto;
+  border: 1px solid rgba(229, 159, 74, 0.58);
+  background:
+    linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px),
+    #071f1d;
+  background-size: 4px 4px, 4px 4px, auto;
+  box-shadow: 0 22px 70px rgba(0, 0, 0, 0.56);
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid rgba(187, 139, 62, 0.32);
+}
+
+.modalHeader h2 {
+  margin: 0;
+  color: #fff1c7;
+  font-size: 17px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.modalClose {
+  width: 32px;
+  height: 32px;
+  border: 1px solid rgba(229, 159, 74, 0.5);
+  background: rgba(8, 31, 29, 0.9);
+  color: #f1b96d;
+  cursor: pointer;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modalClose:hover {
+  background: rgba(201, 139, 58, 0.15);
+  color: #fff1c7;
+}
+
+/* ── 扩建地块弹框 ───────────────────────────────────────── */
+
+.expandList {
+  list-style: none;
+  margin: 0;
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.expandItem {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid rgba(187, 139, 62, 0.3);
+  background: rgba(5, 22, 20, 0.6);
+}
+
+.expandLocked {
+  opacity: 0.5;
+}
+
+.expandRegionHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.expandInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.expandName {
+  color: #fff1c7;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.expandCount {
+  color: #8ca198;
+  font-size: 12px;
+}
+
+.expandPrice {
+  color: #c88b39;
+  font-size: 12px;
+}
+
+.expandStatus {
+  color: #7f968d;
+  font-size: 12px;
+}
+
+/* 土地类型细分列表 */
+.expandLandList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.expandLandItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(187,139,62,0.18);
+}
+
+.expandLandName {
+  color: #d7dfcf;
+  font-size: 13px;
+  flex: 1;
+}
+
+.expandLandPrice {
+  color: #c88b39;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.expandBtn {
+  padding: 7px 16px;
+  border: 1px solid rgba(187, 139, 62, 0.4);
+  background: rgba(8, 31, 29, 0.9);
+  color: #c9a96a;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.expandBtn:hover:not(:disabled) {
+  border-color: rgba(235, 151, 61, 0.78);
+  color: #fff1c7;
+}
+
+.expandBtn:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+}
+
+.expandGold {
+  margin: 0;
+  padding: 10px 18px 14px;
+  color: #c88b39;
+  font-size: 13px;
+  border-top: 1px solid rgba(187, 139, 62, 0.2);
+}
+
+button {
+  letter-spacing: 0;
+}
+
+@media (max-width: 900px) {
+  .shell {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    min-height: auto;
+    border-right: 0;
+  }
+
+  .sideNav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .sidebarFooter {
+    display: none;
+  }
+}
+
