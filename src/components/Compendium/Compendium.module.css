@@ -348,6 +348,11 @@
   color: #4ac368 !important;
 }
 
+.statusCompleted {
+  border-color: rgba(82, 174, 210, 0.62) !important;
+  color: #6fd6ff !important;
+}
+
 .statusDiscovered {
   border-color: rgba(190, 135, 57, 0.58);
   color: #d89143;
@@ -519,6 +524,7 @@
 }
 
 .plantStageCell {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -617,12 +623,26 @@
 /* ── 植物卡片：锁定状态 ──────────────────────────────────── */
 
 .plantCardLocked {
-  opacity: 0.6;
+  opacity: 0.82;
   filter: saturate(0.4);
 }
 
 .plantCardLocked .plantStageCanvas {
   filter: brightness(0.55);
+}
+
+.pixelMask {
+  position: absolute;
+  inset: 0 0 18px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(190, 135, 57, 0.24);
+  background: rgba(2, 10, 10, 0.55);
+  color: #d89143;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  pointer-events: none;
 }
 
 /* 未解锁徽章（红棕色调，与已解锁绿色区分） */
@@ -672,6 +692,133 @@
   white-space: nowrap;
 }
 
+.taskGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 12px;
+}
+
+.taskCard {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid rgba(190, 135, 57, 0.34);
+  background:
+    linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px),
+    rgba(7, 34, 31, 0.74);
+  background-size: 4px 4px, 4px 4px, auto;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+.taskCard:hover {
+  border-color: rgba(235, 151, 61, 0.88);
+  background-color: rgba(11, 48, 43, 0.82);
+}
+
+.taskCardLocked {
+  cursor: default;
+}
+
+.taskCardHead {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: start;
+}
+
+.taskCardHead h3 {
+  margin: 0;
+  color: #fff1c7;
+  font-size: 17px;
+  line-height: 1.2;
+}
+
+.taskCardHead p {
+  margin: 6px 0 0;
+  color: #a6b6ae;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.taskCardBadges {
+  display: grid;
+  gap: 5px;
+  justify-items: end;
+}
+
+.taskCardBadges span {
+  border: 1px solid rgba(232, 151, 59, 0.58);
+  color: #d89143;
+  padding: 3px 8px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.taskPreviewRow {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.taskPreviewItem {
+  border: 1px solid rgba(190, 135, 57, 0.24);
+  background: rgba(4, 19, 18, 0.46);
+  padding: 8px 10px;
+  display: grid;
+  gap: 6px;
+}
+
+.taskPreviewItem span {
+  color: #8ca198;
+  font-size: 11px;
+}
+
+.taskPreviewItem strong {
+  color: #fff1c7;
+  font-size: 14px;
+}
+
+.taskModalBody {
+  display: grid;
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.taskDetailList {
+  display: grid;
+  gap: 0;
+  margin: 0;
+}
+
+.taskDetailList > div {
+  display: grid;
+  grid-template-columns: minmax(90px, 140px) minmax(0, 1fr);
+  gap: 0 12px;
+  padding: 9px 0;
+  border-bottom: 1px solid rgba(190, 135, 57, 0.18);
+  align-items: baseline;
+}
+
+.taskDetailList > div:first-child {
+  border-top: 1px solid rgba(190, 135, 57, 0.18);
+}
+
+.taskDetailList dt {
+  color: #95aaa0;
+  font-size: 12px;
+  margin: 0;
+}
+
+.taskDetailList dd {
+  color: #fff1c7;
+  font-size: 14px;
+  margin: 0;
+}
+
 @media (max-width: 1100px) {
   .levelPanel {
     grid-template-columns: 1fr;
@@ -680,6 +827,11 @@
 
 @media (max-width: 760px) {
   .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .plantGrid,
+  .taskGrid {
     grid-template-columns: 1fr;
   }
 

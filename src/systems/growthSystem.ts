@@ -51,11 +51,10 @@ export function calcGrowthStage(
 
 /**
  * 计算收获产量（0-5）
- * 公式：base + soilBonus + seasonBonus + harvestBonus + careBonus + random
+ * 公式：base + soilBonus + seasonBonus + harvestBonus + random
  *   - base = 2（任意情况下的基础产出）
- *   - soilBonus: best=+1, compatible=0, 不适配=-2
+ *   - soilBonus: best=+1, compatible=-1（轻微减产）, 不适配=-4（重度减产）
  *   - seasonBonus: bestMonths=+1, okMonths=0, 其他=-2
- *   - careBonus: waterCount=3 → +1，= 0 → -1
  *   - harvestBonus: 时机恰好（mature 阶段收）+1，提前/延误 0
  *   - random: [-1, +1] 随机扰动
  */
@@ -67,19 +66,16 @@ export function calcYield(
 ): number {
   let score = 2;
 
-  // soil bonus
+  // soil bonus：适宜土地加分，兼容轻减，不适配重罚
   if (landCfg) {
     if (plant.soilMatch.best.includes(plot.landTypeId)) score += 1;
-    else if (!plant.soilMatch.compatible.includes(plot.landTypeId)) score -= 2;
+    else if (plant.soilMatch.compatible.includes(plot.landTypeId)) score -= 1;
+    else score -= 4;
   }
 
   // season bonus
   if (plant.season.bestMonths.includes(currentMonth)) score += 1;
   else if (!plant.season.okMonths.includes(currentMonth)) score -= 2;
-
-  // care bonus（浇水次数）
-  if (plot.waterCount >= 3) score += 1;
-  else if (plot.waterCount === 0) score -= 1;
 
   // harvest timing bonus（isReadyToHarvest === true 说明刚好成熟）
   if (plot.isReadyToHarvest) score += 1;

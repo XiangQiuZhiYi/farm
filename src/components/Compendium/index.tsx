@@ -6,6 +6,10 @@ import {
   PLANT_PIXEL_PALETTE,
   type PlantCompendiumEntry,
 } from '../../config/compendium/plants';
+import {
+  TASK_COMPENDIUM_ENTRIES,
+  type TaskCompendiumEntry,
+} from '../../config/compendium/tasks';
 import type { LandTypeId } from '../../types/land';
 import styles from './Compendium.module.css';
 
@@ -151,11 +155,16 @@ function PlantCard({
   onOpen: (id: string) => void;
 }) {
   const stages = (['seed', 'sprout', 'grow', 'mature'] as const);
+
   return (
     <button
       type="button"
       className={`${styles.plantCard} ${unlocked ? '' : styles.plantCardLocked}`}
-      onClick={() => onOpen(entry.id)}
+      onClick={() => {
+        if (unlocked) {
+          onOpen(entry.id);
+        }
+      }}
     >
       <div className={styles.plantStageRow}>
         {stages.map((stage) => (
@@ -167,6 +176,7 @@ function PlantCard({
               className={styles.plantStageCanvas}
               title={`${entry.name} ${PLANT_STAGE_LABELS[stage]}`}
             />
+            {!unlocked ? <div className={styles.pixelMask}>未解锁</div> : null}
             <span>{PLANT_STAGE_LABELS[stage]}</span>
           </div>
         ))}
@@ -175,21 +185,85 @@ function PlantCard({
         <div className={styles.plantCardHead}>
           <h3>{entry.name}</h3>
           <div className={styles.plantCardBadges}>
-            <span className={styles.plantRegionTag}>{entry.bestSoilLabel}</span>
-            {/* 解锁状态徽章 */}
             <span className={unlocked ? styles.statusUnlocked : styles.statusLocked}>
               {unlocked ? '已解锁' : '未解锁'}
             </span>
+            {unlocked ? <span className={styles.plantRegionTag}>{entry.bestSoilLabel}</span> : null}
           </div>
         </div>
-        <p className={styles.cardText}>{entry.summary}</p>
-        {/* 未解锁时显示解锁条件 */}
-        {!unlocked && entry.unlockCumulativeGold > 0 && (
-          <p className={styles.plantUnlockHint}>
-            累计收入达 {entry.unlockCumulativeGold} 金 即可解锁
-          </p>
-        )}
+        {unlocked ? <p className={styles.cardText}>{entry.summary}</p> : null}
       </div>
+    </button>
+  );
+}
+
+function TaskCard({
+  entry,
+  status,
+  onOpen,
+}: {
+  entry: TaskCompendiumEntry;
+  status: 'locked' | 'undiscovered' | 'discovered' | 'completed';
+  onOpen: (id: string) => void;
+}) {
+  const canOpen = status === 'discovered' || status === 'completed';
+
+  return (
+    <button
+      type="button"
+      className={`${styles.taskCard} ${canOpen ? '' : styles.taskCardLocked}`}
+      onClick={() => {
+        if (canOpen) {
+          onOpen(entry.id);
+        }
+      }}
+    >
+      <div className={styles.taskCardHead}>
+        <div>
+          <h3>{entry.title}</h3>
+          {canOpen ? <p>{entry.summary}</p> : null}
+        </div>
+        <div className={styles.taskCardBadges}>
+          <span
+            className={
+              status === 'completed'
+                ? styles.statusCompleted
+                : status === 'discovered'
+                  ? styles.statusUnlocked
+                  : status === 'undiscovered'
+                    ? styles.statusDiscovered
+                  : styles.statusLocked
+            }
+          >
+            {status === 'completed'
+              ? '已完成'
+              : status === 'discovered'
+                ? '已发现'
+                : status === 'undiscovered'
+                  ? '未发现'
+                  : '未解锁'}
+          </span>
+          {canOpen ? <span>{entry.isTimed ? '限时' : '常驻'}</span> : null}
+        </div>
+      </div>
+
+      {canOpen ? (
+        <>
+          <div className={styles.tags}>
+            {entry.highlights.map((item) => (
+              <span key={item}>{item}</span>
+            ))}
+          </div>
+          <div className={styles.taskPreviewRow}>
+            {entry.details.slice(0, 2).map((row) => (
+              <div key={row.label} className={styles.taskPreviewItem}>
+                <span>{row.label}</span>
+                <strong>{row.value}</strong>
+              </div>
+            ))}
+          </div>
+        </>
+      ) : null}
     </button>
   );
 }
@@ -197,11 +271,15 @@ function PlantCard({
 export function Compendium() {
   const unlockedRegions = useGameStore((s) => s.unlockedRegions);
   const unlockedPlants = useGameStore((s) => s.unlockedPlants);
-  const [activeTab, setActiveTab] = useState<'land' | 'plant'>('land');
+  const unlockedTasks = useGameStore((s) => s.unlockedTasks);
+  const completedTasks = useGameStore((s) => s.completedTasks);
+  const [activeTab, setActiveTab] = useState<'land' | 'plant' | 'task'>('land');
   const [modalId, setModalId] = useState<LandTypeId | null>(null);
   const [plantModalId, setPlantModalId] = useState<string | null>(null);
+  const [taskModalId, setTaskModalId] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState('全部');
   const [plantFilter, setPlantFilter] = useState('全部');
+  const [taskFilter, setTaskFilter] = useState('全部');
 
   const modalEntry = useMemo(
     () => LAND_COMPENDIUM_ENTRIES.find((entry) => entry.id === modalId) ?? null,
@@ -211,6 +289,22 @@ export function Compendium() {
     () => PLANT_COMPENDIUM_ENTRIES.find((entry) => entry.id === plantModalId) ?? null,
     [plantModalId],
   );
+  const taskModalEntry = useMemo(
+    () => TASK_COMPENDIUM_ENTRIES.find((entry) => entry.id === taskModalId) ?? null,
+    [taskModalId],
+  );
+  const plantModalUnlocked = plantModalEntry ? unlockedPlants.includes(plantModalEntry.id) : false;
+  const getTaskStatus = (entry: TaskCompendiumEntry) => {
+    const requirementsUnlocked = entry.unlockPlantIds.every((plantId) => unlockedPlants.includes(plantId));
+    if (!requirementsUnlocked) return 'locked' as const;
+    if (completedTasks.includes(entry.id)) return 'completed' as const;
+    if (unlockedTasks.includes(entry.id)) return 'discovered' as const;
+    return 'undiscovered' as const;
+  };
+  const taskModalStatus = useMemo(() => {
+    if (!taskModalEntry) return 'locked' as const;
+    return getTaskStatus(taskModalEntry);
+  }, [completedTasks, taskModalEntry, unlockedPlants, unlockedTasks]);
 
   const landRegionNames = useMemo(
     () => [...new Set(LAND_COMPENDIUM_ENTRIES.map((e) => e.regionName))],
@@ -247,13 +341,45 @@ export function Compendium() {
     return PLANT_COMPENDIUM_ENTRIES;
   }, [plantFilter, unlockedPlants]);
 
-  const anyModal = modalEntry || plantModalEntry;
+  const taskFilterOptions = useMemo(
+    () => ['全部', '未解锁', '未发现', '已发现', '已完成', '简单', '中等', '困难', '地狱'],
+    [],
+  );
+  const filteredTasks = useMemo(() => {
+    if (taskFilter === '未解锁') {
+      return TASK_COMPENDIUM_ENTRIES.filter((entry) => getTaskStatus(entry) === 'locked');
+    }
+    if (taskFilter === '未发现') {
+      return TASK_COMPENDIUM_ENTRIES.filter((entry) => getTaskStatus(entry) === 'undiscovered');
+    }
+    if (taskFilter === '已发现') {
+      return TASK_COMPENDIUM_ENTRIES.filter((entry) => getTaskStatus(entry) === 'discovered');
+    }
+    if (taskFilter === '已完成') {
+      return TASK_COMPENDIUM_ENTRIES.filter((entry) => getTaskStatus(entry) === 'completed');
+    }
+    if (taskFilter !== '全部') {
+      const difficultyMap: Record<string, string> = {
+        简单: 'easy',
+        中等: 'medium',
+        困难: 'hard',
+        地狱: 'hell',
+      };
+
+      return TASK_COMPENDIUM_ENTRIES.filter((entry) => entry.difficulty === difficultyMap[taskFilter]);
+    }
+
+    return TASK_COMPENDIUM_ENTRIES;
+  }, [completedTasks, taskFilter, unlockedPlants, unlockedTasks]);
+
+  const anyModal = modalEntry || (plantModalEntry && plantModalUnlocked) || (taskModalEntry && (taskModalStatus === 'discovered' || taskModalStatus === 'completed'));
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setModalId(null);
         setPlantModalId(null);
+        setTaskModalId(null);
       }
     };
     window.addEventListener('keydown', onKeyDown);
@@ -285,6 +411,13 @@ export function Compendium() {
           onClick={() => setActiveTab('plant')}
         >
           植物图鉴
+        </button>
+        <button
+          type="button"
+          className={`${styles.mainTab} ${activeTab === 'task' ? styles.mainTabActive : ''}`}
+          onClick={() => setActiveTab('task')}
+        >
+          任务图鉴
         </button>
       </div>
 
@@ -375,6 +508,40 @@ export function Compendium() {
         </>
       )}
 
+      {activeTab === 'task' && (
+        <>
+          <div className={styles.filters} role="tablist" aria-label="筛选任务图鉴">
+            {taskFilterOptions.map((option) => (
+              <button
+                key={option}
+                type="button"
+                role="tab"
+                aria-selected={taskFilter === option}
+                className={`${styles.filterBtn} ${taskFilter === option ? styles.filterActive : ''}`}
+                onClick={() => setTaskFilter(option)}
+              >
+                {option}
+              </button>
+            ))}
+          </div>
+
+          <section className={styles.taskGrid} aria-label="任务图鉴列表">
+            {filteredTasks.map((entry) => {
+              const status = getTaskStatus(entry);
+
+              return (
+                <TaskCard
+                  key={entry.id}
+                  entry={entry}
+                  status={status}
+                  onOpen={setTaskModalId}
+                />
+              );
+            })}
+          </section>
+        </>
+      )}
+
       {/* ── 土地弹框 ── */}
       {modalEntry ? (
         <div
@@ -437,7 +604,7 @@ export function Compendium() {
       ) : null}
 
       {/* ── 植物弹框 ── */}
-      {plantModalEntry ? (
+      {plantModalEntry && plantModalUnlocked ? (
         <div
           className={styles.modalBackdrop}
           role="presentation"
@@ -500,6 +667,61 @@ export function Compendium() {
               </div>
               <dl>
                 {plantModalEntry.details.map((row) => (
+                  <div key={row.label}>
+                    <dt>{row.label}</dt>
+                    <dd>{row.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {taskModalEntry && (taskModalStatus === 'discovered' || taskModalStatus === 'completed') ? (
+        <div
+          className={styles.modalBackdrop}
+          role="presentation"
+          onClick={() => setTaskModalId(null)}
+        >
+          <div
+            className={styles.modal}
+            role="dialog"
+            aria-modal="true"
+            aria-label={`${taskModalEntry.title} 任务图鉴详情`}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              className={styles.closeBtn}
+              aria-label="关闭弹框"
+              onClick={() => setTaskModalId(null)}
+            >
+              X
+            </button>
+            <div className={styles.modalHead}>
+              <div>
+                <span>TASK COMPENDIUM</span>
+                <h2>{taskModalEntry.title}</h2>
+                <p>{taskModalEntry.summary}</p>
+              </div>
+              <div className={styles.plantModalBadges}>
+                <span className={taskModalStatus === 'completed' ? styles.statusCompleted : styles.statusUnlocked}>
+                  {taskModalStatus === 'completed' ? '已完成' : '已发现'}
+                </span>
+                <span className={styles.unlockCondition}>
+                  {taskModalEntry.isTimed ? '限时任务' : '不限时任务'}
+                </span>
+              </div>
+            </div>
+            <div className={styles.taskModalBody}>
+              <div className={styles.tags}>
+                {taskModalEntry.highlights.map((item) => (
+                  <span key={item}>{item}</span>
+                ))}
+              </div>
+              <dl className={styles.taskDetailList}>
+                {taskModalEntry.details.map((row) => (
                   <div key={row.label}>
                     <dt>{row.label}</dt>
                     <dd>{row.value}</dd>

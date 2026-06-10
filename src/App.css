@@ -12,6 +12,10 @@
   font-family: Georgia, 'Times New Roman', serif;
 }
 
+.shellCollapsed {
+  grid-template-columns: 78px minmax(0, 1fr);
+}
+
 .sidebar {
   min-height: 100svh;
   border-right: 1px solid rgba(187, 139, 62, 0.32);
@@ -29,6 +33,18 @@
   gap: 2px;
 }
 
+.brandRow {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.brandText {
+  display: grid;
+  gap: 2px;
+}
+
 .brandTitle {
   color: #fff3d4;
   font-size: 20px;
@@ -41,6 +57,22 @@
   color: #c1a46b;
   font-size: 11px;
   letter-spacing: 0.12em;
+}
+
+.sidebarToggle {
+  width: 28px;
+  height: 28px;
+  border: 1px solid rgba(187, 139, 62, 0.38);
+  background: rgba(8, 31, 29, 0.92);
+  color: #c9a96a;
+  cursor: pointer;
+  font: inherit;
+  flex-shrink: 0;
+}
+
+.sidebarToggle:hover {
+  border-color: rgba(235, 151, 61, 0.78);
+  color: #fff1c7;
 }
 
 .sideNav {
@@ -62,6 +94,19 @@
   font: inherit;
   font-size: 14px;
   text-align: left;
+}
+
+.sidebarCollapsed .sideNav {
+  padding-inline: 8px;
+}
+
+.sidebarCollapsed .navBtn {
+  justify-content: center;
+  padding-inline: 0;
+}
+
+.sidebarCollapsed .brand {
+  padding-inline: 10px;
 }
 
 .navBtn:hover,
@@ -88,6 +133,10 @@
 .sidebarFooter strong {
   color: #8ce0a1;
   font-weight: 600;
+}
+
+.sidebarFooterCollapsed {
+  display: none;
 }
 
 .workspace {
@@ -449,12 +498,177 @@
   border-top: 1px solid rgba(187, 139, 62, 0.2);
 }
 
+.taskBoardModal {
+  width: min(980px, 100%);
+}
+
+.taskBoardTabs {
+  display: flex;
+  gap: 4px;
+  padding: 12px 18px 0;
+  border-bottom: 1px solid rgba(187, 139, 62, 0.22);
+}
+
+.taskBoardTab {
+  padding: 9px 16px;
+  border: 1px solid rgba(187, 139, 62, 0.28);
+  border-bottom: none;
+  background: rgba(8, 31, 29, 0.72);
+  color: #8ca198;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+}
+
+.taskBoardTab:hover {
+  color: #fff1c7;
+  border-color: rgba(235, 151, 61, 0.7);
+}
+
+.taskBoardTabActive {
+  color: #fff1c7;
+  background: rgba(22, 58, 50, 0.92);
+  border-color: rgba(229, 159, 74, 0.62);
+}
+
+.taskBoardBody {
+  display: block;
+  padding: 16px 18px 18px;
+}
+
+.taskSection {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+
+.taskSectionHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.taskSectionHead h3 {
+  margin: 0;
+  color: #fff1c7;
+  font-size: 14px;
+  letter-spacing: 0.06em;
+}
+
+.taskSectionHead span {
+  color: #8ca198;
+  font-size: 12px;
+}
+
+.taskOfferList {
+  display: grid;
+  gap: 12px;
+}
+
+.taskOfferCard {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid rgba(187, 139, 62, 0.28);
+  background: rgba(6, 24, 22, 0.72);
+}
+
+.taskOfferCardActive {
+  border-color: rgba(90, 176, 168, 0.42);
+}
+
+.taskOfferHead {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: start;
+}
+
+.taskOfferHead h4 {
+  margin: 0;
+  color: #fff1c7;
+  font-size: 15px;
+}
+
+.taskOfferHead p {
+  margin: 6px 0 0;
+  color: #95aaa0;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.taskDifficultyBadge,
+.taskStatusBadge {
+  border: 1px solid rgba(229, 159, 74, 0.48);
+  color: #d89143;
+  padding: 4px 8px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.taskDifficulty-easy { color: #c8d88a; border-color: rgba(200, 216, 138, 0.42); }
+.taskDifficulty-medium { color: #f0d27e; border-color: rgba(240, 210, 126, 0.42); }
+.taskDifficulty-hard { color: #f39a64; border-color: rgba(243, 154, 100, 0.42); }
+.taskDifficulty-hell { color: #ff7b7b; border-color: rgba(255, 123, 123, 0.42); }
+
+.taskRequirementList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.taskRequirementList li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 7px 10px;
+  border: 1px solid rgba(187, 139, 62, 0.18);
+  background: rgba(255, 255, 255, 0.02);
+  color: #d7dfcf;
+  font-size: 13px;
+}
+
+.taskOfferFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  color: #c88b39;
+  font-size: 12px;
+}
+
+.taskEnough {
+  color: #8ce0a1;
+}
+
+.taskLack {
+  color: #e38b73;
+}
+
+.taskBoardEmpty {
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px dashed rgba(187, 139, 62, 0.26);
+  color: #8ca198;
+  font-size: 13px;
+  background: rgba(6, 24, 22, 0.4);
+}
+
 button {
   letter-spacing: 0;
 }
 
 @media (max-width: 900px) {
   .shell {
+    grid-template-columns: 1fr;
+  }
+
+  .shellCollapsed {
     grid-template-columns: 1fr;
   }
 
@@ -470,5 +684,6 @@ button {
   .sidebarFooter {
     display: none;
   }
+
 }
 

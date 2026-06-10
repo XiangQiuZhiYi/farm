@@ -5,9 +5,170 @@ import { GameCanvas } from './components/GameCanvas';
 import { PlotPanel } from './components/PlotPanel';
 import { Shop } from './components/Shop';
 import { Compendium } from './components/Compendium';
+import { getTaskById } from './config/tasks';
+import { getPlantById } from './config/plants';
 import { useGameStore } from './store/gameStore';
 import { REGION_CONFIGS } from './config/regions';
 import { LAND_TYPE_CONFIGS } from './config/lands';
+
+const MINUTES_PER_DAY = 1440;
+
+function getAbsoluteDay(totalMinutes: number) {
+  return Math.floor(totalMinutes / MINUTES_PER_DAY) + 1;
+}
+
+function formatRemainingDays(expiresOnDay: number | null, currentDay: number) {
+  if (expiresOnDay === null) return '不限时';
+  return `剩余 ${Math.max(0, expiresOnDay - currentDay + 1)} 天`;
+}
+
+function TaskBoardModal({ onClose }: { onClose: () => void }) {
+  const [activeTab, setActiveTab] = useState<'active' | 'offers'>('active');
+  const clock = useGameStore((s) => s.clock);
+  const inventory = useGameStore((s) => s.inventory);
+  const taskBoard = useGameStore((s) => s.taskBoard);
+  const acceptTask = useGameStore((s) => s.acceptTask);
+  const submitActiveTask = useGameStore((s) => s.submitActiveTask);
+  const currentDay = getAbsoluteDay(clock.totalMinutes);
+
+  const activeTaskDefinition = taskBoard.activeTask ? getTaskById(taskBoard.activeTask.taskId) : null;
+
+  return (
+    <div className="modalBackdrop" role="presentation" onClick={onClose}>
+      <div className="modalBox taskBoardModal" role="dialog" aria-label="任务板" onClick={(e) => e.stopPropagation()}>
+        <div className="modalHeader">
+          <h2>任务板</h2>
+          <button type="button" className="modalClose" onClick={onClose}>×</button>
+        </div>
+
+        <div className="taskBoardTabs" role="tablist" aria-label="任务板分页">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === 'active'}
+            className={activeTab === 'active' ? 'taskBoardTab taskBoardTabActive' : 'taskBoardTab'}
+            onClick={() => setActiveTab('active')}
+          >
+            已登记任务
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === 'offers'}
+            className={activeTab === 'offers' ? 'taskBoardTab taskBoardTabActive' : 'taskBoardTab'}
+            onClick={() => setActiveTab('offers')}
+          >
+            当前可选任务
+          </button>
+        </div>
+
+        <div className="taskBoardBody">
+          {activeTab === 'offers' ? (
+          <section className="taskSection">
+            <div className="taskSectionHead">
+              <h3>当前可选任务</h3>
+              <span>{taskBoard.currentOffers.length} / 2</span>
+            </div>
+            {taskBoard.currentOffers.length > 0 ? (
+              <div className="taskOfferList">
+                {taskBoard.currentOffers.map((offer) => {
+                  const task = getTaskById(offer.taskId);
+                  if (!task) return null;
+
+                  return (
+                    <article key={offer.taskId} className="taskOfferCard">
+                      <div className="taskOfferHead">
+                        <div>
+                          <h4>{task.title}</h4>
+                          <p>{task.isTimed ? `${task.timeLimitDays} 天限时` : '不限时任务'} / 奖励 {task.rewardGold} 金</p>
+                        </div>
+                        <span className={`taskDifficultyBadge taskDifficulty-${task.difficulty}`}>
+                          {task.difficulty}
+                        </span>
+                      </div>
+                      <ul className="taskRequirementList">
+                        {task.requirements.map((requirement) => (
+                          <li key={`${offer.taskId}-${requirement.plantId}`}>
+                              <span>{getPlantById(requirement.plantId)?.name ?? requirement.plantId}</span>
+                            <strong>× {requirement.quantity}</strong>
+                          </li>
+                        ))}
+                      </ul>
+                      <div className="taskOfferFooter">
+                        <span>{formatRemainingDays(offer.expiresOnDay, currentDay)}</span>
+                        <button
+                          type="button"
+                          className="toolbarBtn toolbarBtnPrimary"
+                          disabled={taskBoard.activeTask !== null}
+                          onClick={() => acceptTask(offer.taskId)}
+                        >
+                          接取任务
+                        </button>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="taskBoardEmpty">当前任务板没有可出现的任务。</p>
+            )}
+          </section>
+          ) : (
+          <section className="taskSection">
+            <div className="taskSectionHead">
+              <h3>已登记任务</h3>
+              <span>{taskBoard.activeTask ? '进行中' : '空闲'}</span>
+            </div>
+            {taskBoard.activeTask && activeTaskDefinition ? (
+              <article className="taskOfferCard taskOfferCardActive">
+                <div className="taskOfferHead">
+                  <div>
+                    <h4>{activeTaskDefinition.title}</h4>
+                    <p>
+                      已接于第 {taskBoard.activeTask.acceptedDay} 天
+                      {' / '}
+                      {formatRemainingDays(taskBoard.activeTask.expiresOnDay, currentDay)}
+                    </p>
+                  </div>
+                  <span className="taskStatusBadge">已登记</span>
+                </div>
+                <ul className="taskRequirementList">
+                  {activeTaskDefinition.requirements.map((requirement) => {
+                    const owned = inventory[requirement.plantId] ?? 0;
+                    const enough = owned >= requirement.quantity;
+
+                    return (
+                      <li key={`${taskBoard.activeTask?.taskId}-${requirement.plantId}`}>
+                        <span>{getPlantById(requirement.plantId)?.name ?? requirement.plantId}</span>
+                        <strong className={enough ? 'taskEnough' : 'taskLack'}>
+                          {owned} / {requirement.quantity}
+                        </strong>
+                      </li>
+                    );
+                  })}
+                </ul>
+                <div className="taskOfferFooter">
+                  <span>完成奖励 {activeTaskDefinition.rewardGold} 金</span>
+                  <button
+                    type="button"
+                    className="toolbarBtn toolbarBtnPrimary"
+                    disabled={!activeTaskDefinition.requirements.every((requirement) => (inventory[requirement.plantId] ?? 0) >= requirement.quantity)}
+                    onClick={() => submitActiveTask()}
+                  >
+                    一次性交付
+                  </button>
+                </div>
+              </article>
+            ) : (
+              <p className="taskBoardEmpty">当前还没有登记任务，先从上面的候选任务中接取一条。</p>
+            )}
+          </section>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 /**
  * 扩建地块弹框：按区域展示当前地块数/上限/扩建价格
@@ -76,8 +237,10 @@ function ExpandModal({ onClose }: { onClose: () => void }) {
 
 function App() {
   const [screen, setScreen] = useState<'game' | 'compendium'>('game');
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [shopOpen, setShopOpen] = useState(false);
   const [expandOpen, setExpandOpen] = useState(false);
+  const [taskBoardOpen, setTaskBoardOpen] = useState(false);
   // 当前展示的农田区域
   const [activeRegion, setActiveRegion] = useState('region_paddy');
 
@@ -92,11 +255,23 @@ function App() {
   ];
 
   return (
-    <div className="shell">
-      <aside className="sidebar">
+    <div className={sidebarCollapsed ? 'shell shellCollapsed' : 'shell'}>
+      <aside className={sidebarCollapsed ? 'sidebar sidebarCollapsed' : 'sidebar'}>
         <div className="brand">
-          <span className="brandTitle">XIAOBAO</span>
-          <span className="brandSub">FIELD AGENT</span>
+          <div className="brandRow">
+            <div className="brandText">
+              <span className="brandTitle">XIAOBAO</span>
+              {!sidebarCollapsed ? <span className="brandSub">FIELD AGENT</span> : null}
+            </div>
+            <button
+              type="button"
+              className="sidebarToggle"
+              aria-label={sidebarCollapsed ? '展开侧边栏' : '收起侧边栏'}
+              onClick={() => setSidebarCollapsed((value) => !value)}
+            >
+              {sidebarCollapsed ? '»' : '«'}
+            </button>
+          </div>
         </div>
         <nav className="sideNav" aria-label="页面切换">
           <button
@@ -105,7 +280,7 @@ function App() {
             onClick={() => setScreen('game')}
           >
             <span className="navIcon">□</span>
-            农场
+            {!sidebarCollapsed ? '农场' : null}
           </button>
           <button
             type="button"
@@ -113,10 +288,10 @@ function App() {
             onClick={() => setScreen('compendium')}
           >
             <span className="navIcon">☆</span>
-            图鉴
+            {!sidebarCollapsed ? '图鉴' : null}
           </button>
         </nav>
-        <div className="sidebarFooter">
+        <div className={sidebarCollapsed ? 'sidebarFooter sidebarFooterCollapsed' : 'sidebarFooter'}>
           <span>系统</span>
           <strong>运行中</strong>
         </div>
@@ -126,7 +301,7 @@ function App() {
         <header className="topbar">
           <div>
             <p className="eyebrow">{screen === 'game' ? 'FARM CONTROL' : 'ACHIEVEMENTS'}</p>
-            <h1>{screen === 'game' ? '农场控制台' : '植物图鉴'}</h1>
+            <h1>{screen === 'game' ? '农场控制台' : '图鉴总览'}</h1>
           </div>
           <div className="topStatus">
             <span>MODE</span>
@@ -152,6 +327,13 @@ function App() {
                 onClick={() => setShopOpen(true)}
               >
                 🛒 购买种子
+              </button>
+              <button
+                type="button"
+                className="toolbarBtn"
+                onClick={() => setTaskBoardOpen(true)}
+              >
+                📋 任务板
               </button>
             </div>
 
@@ -207,6 +389,10 @@ function App() {
             {/* 扩建地块弹框 */}
             {expandOpen && (
               <ExpandModal onClose={() => setExpandOpen(false)} />
+            )}
+
+            {taskBoardOpen && (
+              <TaskBoardModal onClose={() => setTaskBoardOpen(false)} />
             )}
           </>
         ) : (

@@ -5,8 +5,12 @@
 
 import { useGameStore } from '../store/gameStore';
 
-/** 每帧推进的真实毫秒数对应的游戏分钟数系数（1 realSec = 1 gameSec） */
-const REAL_MS_TO_GAME_MINUTES = 1 / 1000 / 60; // 1 ms = 1/60000 游戏分钟
+/**
+ * 每帧推进的真实毫秒数对应的游戏分钟数系数。
+ * 1 倍速下，现实 1 天 = 1 游戏月（30 游戏天 = 43200 游戏分钟）。
+ * 计算：43200 分钟 / 86400000 ms = 1/2000 游戏分钟/ms
+ */
+const REAL_MS_TO_GAME_MINUTES = 1 / 2000;
 
 let lastTimestamp: number | null = null;
 let rafId: number | null = null;

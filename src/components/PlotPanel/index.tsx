@@ -14,7 +14,6 @@ export function PlotPanel() {
   const clock = useGameStore((s) => s.clock);
   const seeds = useGameStore((s) => s.seeds);
   const unlockedPlants = useGameStore((s) => s.unlockedPlants);
-  const waterPlot = useGameStore((s) => s.waterPlot);
   const harvest = useGameStore((s) => s.harvest);
   const plantSeed = useGameStore((s) => s.plantSeed);
   const selectPlot = useGameStore((s) => s.selectPlot);
@@ -76,9 +75,6 @@ export function PlotPanel() {
             <span className={styles.plotId}>{plot.id}</span>
             <span className={styles.landType}>{plot.landTypeId.replace(/_/g, ' ')}</span>
           </div>
-          <div className={styles.waterBadge}>
-            💧 {plot.waterState === 'flooded' ? '充水' : plot.waterState === 'moist' ? '湿润' : '干燥'}
-          </div>
         </div>
 
         {plant ? (
@@ -106,7 +102,6 @@ export function PlotPanel() {
               {plant.harvestType === 'perennial' && plot.harvestCount > 0 && (
                 <span>已收 {plot.harvestCount} 次</span>
               )}
-              <span>浇水 {plot.waterCount}/3</span>
             </div>
 
             {/* 操作按钮区 */}
@@ -134,17 +129,8 @@ export function PlotPanel() {
                 </div>
               </>
             ) : (
-              // 正常状态：浇水 / 收获
+              // 正常状态：收获
               <div className={styles.actions}>
-                <button
-                  type="button"
-                  className={styles.actionBtn}
-                  onClick={() => waterPlot(plot.id)}
-                  disabled={plot.waterCount >= 3}
-                >
-                  💧 浇水
-                  {plot.waterCount >= 3 && <span className={styles.btnNote}>已满</span>}
-                </button>
                 {plot.isReadyToHarvest && (
                   <button
                     type="button"
