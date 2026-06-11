@@ -8,7 +8,7 @@ import { Warehouse } from './components/Warehouse';
 import { Compendium } from './components/Compendium';
 import { getTaskById } from './config/tasks';
 import { getPlantById } from './config/plants';
-import { createDefaultPersistedState, useGameStore } from './store/gameStore';
+import { createDefaultPersistedState, createSandboxPersistedState, useGameStore } from './store/gameStore';
 import type { SaveSlotSummary, SaveSlotType } from './types/save';
 import {
   createSaveSlot,
@@ -362,6 +362,12 @@ function SaveManagerModal(props: {
                 </span>
                 <span className="saveCreateCardDesc">可自由调节时间倍率，适合快速测试。</span>
               </button>
+              <button type="button" className="saveCreateCard saveCreateCardSandbox" onClick={() => onCreate('sandbox')}>
+                <span className="saveCreateCardTitle">
+                  <span style={{ color: '#c878ff' }}>●</span> 全解锁档
+                </span>
+                <span className="saveCreateCardDesc">10万金币、全部植物和地块已解锁、支持加速。适合自由探索。</span>
+              </button>
             </div>
           </div>
 
@@ -382,7 +388,7 @@ function SaveManagerModal(props: {
                       {/* 档位类型指示 */}
                       <div className="saveItemBadge">
                         <span className={`saveTypeDot ${slot.type}`} />
-                        <span className="saveTypeLabel">{slot.type === 'real' ? '真实' : '测试'}</span>
+                        <span className="saveTypeLabel">{slot.type === 'real' ? '真实' : slot.type === 'sandbox' ? '全解锁' : '测试'}</span>
                       </div>
 
                       {/* 档位信息 */}
@@ -659,7 +665,8 @@ function App() {
     try {
       setSaveError(null);
       const now = Date.now();
-      const baseState = createDefaultPersistedState();
+      // sandbox 档使用全解锁初始层态；其他档使用默认层态
+      const baseState = type === 'sandbox' ? createSandboxPersistedState() : createDefaultPersistedState();
       if (type === 'real') {
         baseState.clock.timeScale = 1;
       }

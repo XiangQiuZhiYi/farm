@@ -808,6 +808,20 @@
   box-shadow: 0 0 6px rgba(241, 185, 109, 0.4);
 }
 
+.saveTypeDot.sandbox {
+  background: #c878ff;
+  box-shadow: 0 0 6px rgba(200, 120, 255, 0.5);
+}
+
+.saveCreateCardSandbox {
+  border-color: rgba(200, 120, 255, 0.3);
+}
+
+.saveCreateCardSandbox:hover {
+  border-color: rgba(200, 120, 255, 0.7);
+  background: rgba(60, 10, 80, 0.5);
+}
+
 .saveTypeLabel {
   font-size: 10px;
   color: #8ca198;

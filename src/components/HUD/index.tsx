@@ -32,7 +32,7 @@ export function HUD() {
   const saveProfile = useGameStore((s) => s.saveProfile);
   const setTimeScale = useGameStore((s) => s.setTimeScale);
   const togglePause = useGameStore((s) => s.togglePause);
-  const showTimeScaleButtons = saveProfile.slotType === 'test';
+  const showTimeScaleButtons = saveProfile.slotType === 'test' || saveProfile.slotType === 'sandbox';
 
   return (
     <div className={styles.hud}>

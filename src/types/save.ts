@@ -2,7 +2,7 @@ import type { ClockState, Compendium, EconomyState, Inventory, MiscInventory, Se
 import type { PlotState } from './land';
 import type { TaskBoardState } from './task';
 
-export type SaveSlotType = 'real' | 'test';
+export type SaveSlotType = 'real' | 'test' | 'sandbox';
 
 export interface PersistedGameState {
   clock: ClockState;

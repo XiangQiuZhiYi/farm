@@ -17,10 +17,13 @@ import styles from './Compendium.module.css';
 
 const LAND_PIXEL_PALETTE: Record<string, string | null> = {
   '.': null,
-  W: '#5fa8ff',
-  R: '#7f5539',
+  W: '#5fa8ff',  // 普通水面
+  A: '#90cbf0',  // 水面反光（浅蓝）
+  F: '#2d6090',  // 水深阴影（深蓝）
+  S: '#412816',  // 深色土色边界
+  R: '#7f5539',  // 田埂泥土
   B: '#9c6b43',
-  C: '#b77b4f',
+  C: '#b77b4f',  // 浅棕（田埂高光）
   L: '#c9a96a',
   M: '#7b8f6a',
   G: '#4f8f4b',

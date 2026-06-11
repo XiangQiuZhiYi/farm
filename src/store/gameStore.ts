@@ -435,7 +435,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   setSaveProfile: (profile) =>
     set((state) => {
-      // real 档位禁止调速，切换到 real 时强制倍率回到 1。
+      // real 档位禁止调速，切换到 real 时强制倍率回到 1。sandbox 全解锁不限速。
       const nextTimeScale = profile.slotType === 'real' ? 1 : state.clock.timeScale;
       return {
         saveProfile: profile,
@@ -448,7 +448,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   setTimeScale: (scale) =>
     set((s) => {
-      // real 档位禁止改速：始终锁定 1 倍。
+      // real 档位禁止改速：始终锁定 1 倍。sandbox 全解锁档不限速。
       if (s.saveProfile.slotType === 'real') {
         return { clock: { ...s.clock, timeScale: 1 } };
       }
@@ -1025,6 +1025,38 @@ export function createDefaultPersistedState(): PersistedGameState {
     unlockedTasks: initialTaskState.unlockedTasks,
     completedTasks: [],
     compendium: {},
+    selection: { selectedPlotId: null, selectedPlotIds: [], batchPanelOpen: false, panelMode: 'none' },
+  };
+}
+
+/** 全解锁实验沙箱档初始层态：10万金币、全部植物/地块已解锁、图鉴全满。 */
+export function createSandboxPersistedState(): PersistedGameState {
+  const allPlantIds = ALL_PLANTS.map((p) => p.id);
+  const allRegionIds = REGION_CONFIGS.map((r) => r.id);
+  const allTaskIds = TASK_BOARD_TASKS.map((t) => t.id);
+  const taskState = createInitialTaskBoardState(allPlantIds);
+  // 图鉴全满：所有植物都标记为已收获
+  const fullCompendium: Record<string, boolean> = Object.fromEntries(allPlantIds.map((id) => [id, true]));
+
+  return {
+    clock: {
+      totalMinutes: MINUTES_PER_MONTH * 3,
+      month: 4,
+      season: 'summer',
+      timeScale: 1440,
+      running: true,
+    },
+    plots: buildInitialPlots(),
+    economy: { gold: 100000, cumulativeEarned: 999999 },
+    inventory: {},
+    taskBoard: taskState.taskBoard,
+    seeds: {},
+    miscInventory: Object.fromEntries(FERTILIZER_CONFIGS.map((fertilizer) => [fertilizer.id, 0])),
+    unlockedPlants: allPlantIds,
+    unlockedRegions: allRegionIds,
+    unlockedTasks: [...new Set([...taskState.unlockedTasks, ...allTaskIds])],
+    completedTasks: [],
+    compendium: fullCompendium,
     selection: { selectedPlotId: null, selectedPlotIds: [], batchPanelOpen: false, panelMode: 'none' },
   };
 }
