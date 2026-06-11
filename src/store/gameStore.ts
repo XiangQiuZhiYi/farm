@@ -16,6 +16,7 @@ import type {
 import type { PlotState, RegionId, LandTypeId } from '../types/land';
 import type { ActiveTaskState, TaskBoardState, TaskDefinition, TaskOffer } from '../types/task';
 import type { FertilizerId } from '../types/fertilizer';
+import type { PersistedGameState, SaveProfile } from '../types/save';
 import { REGION_CONFIGS } from '../config/regions';
 import { getLandTypeById } from '../config/lands';
 import { FERTILIZER_CONFIGS, getFertilizerById } from '../config/fertilizers';
@@ -30,10 +31,19 @@ import { calcYield, getGrowthTargetMinutes, isPlantableMonth } from '../systems/
 interface GameStore {
   // ── 时钟 ────────────────────────────────────────────────────
   clock: ClockState;
+  /** 当前存档信息：用于 real/test 行为切换 */
+  saveProfile: SaveProfile;
+  setSaveProfile: (profile: SaveProfile) => void;
   setTimeScale: (scale: TimeScale) => void;
   togglePause: () => void;
   /** 每帧由游戏循环调用：推进 deltaMinutes 分钟 */
   tickMinutes: (deltaMinutes: number) => void;
+  /** 离线推进：不受暂停状态影响，按分钟补算 */
+  applyOfflineMinutes: (deltaMinutes: number) => void;
+  /** 导出当前完整游戏快照用于存档 */
+  getPersistedState: () => PersistedGameState;
+  /** 将存档快照完整恢复到运行时 */
+  hydrateFromSnapshot: (snapshot: PersistedGameState) => void;
 
   // ── 地块 ────────────────────────────────────────────────────
   plots: PlotState[];
@@ -85,7 +95,17 @@ interface GameStore {
   // ── 选中状态 ─────────────────────────────────────────────────
   selection: SelectionState;
   selectPlot: (plotId: string | null) => void;
+  /** 切换地块多选状态，已在集合中则移除，否则添加 */
+  togglePlotSelection: (plotId: string) => void;
+  /** 手动打开批量面板 */
+  openBatchPanel: () => void;
+  /** 清空多选 */
+  clearSelection: () => void;
   setPanelMode: (mode: SelectionState['panelMode']) => void;
+  /** 对多选地块批量种植 */
+  batchPlantSeed: (plotIds: string[], plantId: string) => void;
+  /** 对多选地块批量施肥 */
+  batchApplyFertilizer: (plotIds: string[], fertilizerId: FertilizerId) => void;
 
   /** 内部方法：解锁检查（不暴露给 UI） */
   _checkUnlocks: () => void;
@@ -404,8 +424,36 @@ export const useGameStore = create<GameStore>((set, get) => ({
     running: true,
   },
 
+  // 默认按 test 档行为运行，等存档系统初始化后会覆盖。
+  saveProfile: {
+    slotId: null,
+    slotName: '未命名档位',
+    slotType: 'test',
+    createdAt: null,
+    lastSavedAt: null,
+  },
+
+  setSaveProfile: (profile) =>
+    set((state) => {
+      // real 档位禁止调速，切换到 real 时强制倍率回到 1。
+      const nextTimeScale = profile.slotType === 'real' ? 1 : state.clock.timeScale;
+      return {
+        saveProfile: profile,
+        clock: {
+          ...state.clock,
+          timeScale: nextTimeScale,
+        },
+      };
+    }),
+
   setTimeScale: (scale) =>
-    set((s) => ({ clock: { ...s.clock, timeScale: scale } })),
+    set((s) => {
+      // real 档位禁止改速：始终锁定 1 倍。
+      if (s.saveProfile.slotType === 'real') {
+        return { clock: { ...s.clock, timeScale: 1 } };
+      }
+      return { clock: { ...s.clock, timeScale: scale } };
+    }),
 
   togglePause: () =>
     set((s) => ({ clock: { ...s.clock, running: !s.clock.running } })),
@@ -447,6 +495,62 @@ export const useGameStore = create<GameStore>((set, get) => ({
       plots: updatedPlots,
       taskBoard: nextTaskState.taskBoard,
       unlockedTasks: nextTaskState.unlockedTasks,
+    });
+  },
+
+  applyOfflineMinutes: (deltaMinutes) => {
+    if (deltaMinutes <= 0) return;
+    const { clock, tickMinutes } = get();
+    if (clock.running) {
+      tickMinutes(deltaMinutes);
+      return;
+    }
+
+    // 离线补算必须推进时间，即使玩家存档时处于暂停状态。
+    set((state) => ({
+      clock: { ...state.clock, running: true },
+    }));
+    tickMinutes(deltaMinutes);
+    set((state) => ({
+      clock: { ...state.clock, running: false },
+    }));
+  },
+
+  getPersistedState: () => {
+    const state = get();
+    return {
+      clock: state.clock,
+      plots: state.plots,
+      economy: state.economy,
+      inventory: state.inventory,
+      taskBoard: state.taskBoard,
+      seeds: state.seeds,
+      miscInventory: state.miscInventory,
+      unlockedPlants: state.unlockedPlants,
+      unlockedRegions: state.unlockedRegions,
+      unlockedTasks: state.unlockedTasks,
+      completedTasks: state.completedTasks,
+      compendium: state.compendium,
+      selection: state.selection,
+    };
+  },
+
+  hydrateFromSnapshot: (snapshot) => {
+    // 恢复完整存档时，需要一次性覆盖所有游戏态字段，避免跨档串数据。
+    set({
+      clock: snapshot.clock,
+      plots: snapshot.plots,
+      economy: snapshot.economy,
+      inventory: snapshot.inventory,
+      taskBoard: snapshot.taskBoard,
+      seeds: snapshot.seeds,
+      miscInventory: snapshot.miscInventory,
+      unlockedPlants: snapshot.unlockedPlants,
+      unlockedRegions: snapshot.unlockedRegions,
+      unlockedTasks: snapshot.unlockedTasks,
+      completedTasks: snapshot.completedTasks,
+      compendium: snapshot.compendium,
+    selection: snapshot.selection ?? { selectedPlotId: null, selectedPlotIds: [], batchPanelOpen: false, panelMode: 'none' },
     });
   },
 
@@ -846,17 +950,81 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   // ── 选中状态 ─────────────────────────────────────────────────
-  selection: { selectedPlotId: null, panelMode: 'none' },
+  selection: { selectedPlotId: null, selectedPlotIds: [], batchPanelOpen: false, panelMode: 'none' },
 
   selectPlot: (plotId) =>
     set((s) => ({
       selection: {
         ...s.selection,
         selectedPlotId: plotId,
+        selectedPlotIds: [],
+        batchPanelOpen: false,
         panelMode: plotId ? 'action' : 'none',
       },
     })),
 
+  togglePlotSelection: (plotId) =>
+    set((s) => {
+      const prev = s.selection.selectedPlotIds;
+      const next = prev.includes(plotId)
+        ? prev.filter((id) => id !== plotId)
+        : [...prev, plotId];
+      return {
+        selection: {
+          ...s.selection,
+          selectedPlotId: null,
+          selectedPlotIds: next,
+          panelMode: next.length > 0 ? 'action' : 'none',
+        },
+      };
+    }),
+
+  openBatchPanel: () =>
+    set((s) => ({
+      selection: { ...s.selection, batchPanelOpen: true },
+    })),
+
+  clearSelection: () =>
+    set((s) => ({
+      selection: { ...s.selection, selectedPlotId: null, selectedPlotIds: [], batchPanelOpen: false, panelMode: 'none' },
+    })),
+
   setPanelMode: (mode) =>
     set((s) => ({ selection: { ...s.selection, panelMode: mode } })),
+
+  batchPlantSeed: (plotIds, plantId) => {
+    // 逐个地块尝试播种，失败的地块不影响其他
+    plotIds.forEach((id) => get().plantSeed(id, plantId));
+  },
+
+  batchApplyFertilizer: (plotIds, fertilizerId) => {
+    plotIds.forEach((id) => get().applyFertilizer(id, fertilizerId));
+  },
 }));
+
+export function createDefaultPersistedState(): PersistedGameState {
+  // 新档必须是全新状态，不能继承当前运行中的任何进度。
+  const initialTaskState = createInitialTaskBoardState(['rice']);
+
+  return {
+    clock: {
+      totalMinutes: MINUTES_PER_MONTH * 3,
+      month: 4,
+      season: 'summer',
+      timeScale: 1,
+      running: true,
+    },
+    plots: buildInitialPlots(),
+    economy: { gold: 300, cumulativeEarned: 0 },
+    inventory: {},
+    taskBoard: initialTaskState.taskBoard,
+    seeds: {},
+    miscInventory: Object.fromEntries(FERTILIZER_CONFIGS.map((fertilizer) => [fertilizer.id, 0])),
+    unlockedPlants: ['rice'],
+    unlockedRegions: ['region_paddy'],
+    unlockedTasks: initialTaskState.unlockedTasks,
+    completedTasks: [],
+    compendium: {},
+    selection: { selectedPlotId: null, selectedPlotIds: [], batchPanelOpen: false, panelMode: 'none' },
+  };
+}

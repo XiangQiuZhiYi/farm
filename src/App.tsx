@@ -1,5 +1,5 @@
 import './App.css';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { HUD } from './components/HUD';
 import { GameCanvas } from './components/GameCanvas';
 import { PlotPanel } from './components/PlotPanel';
@@ -8,7 +8,18 @@ import { Warehouse } from './components/Warehouse';
 import { Compendium } from './components/Compendium';
 import { getTaskById } from './config/tasks';
 import { getPlantById } from './config/plants';
-import { useGameStore } from './store/gameStore';
+import { createDefaultPersistedState, useGameStore } from './store/gameStore';
+import type { SaveSlotSummary, SaveSlotType } from './types/save';
+import {
+  createSaveSlot,
+  deleteSaveSlot,
+  isElectronRuntime,
+  listSaveSlots,
+  loadSaveSlot,
+  renameSaveSlot,
+  setActiveSaveSlot,
+  updateSaveSlot,
+} from './services/saveClient';
 import { REGION_CONFIGS } from './config/regions';
 import { LAND_TYPE_CONFIGS } from './config/lands';
 
@@ -27,6 +38,44 @@ function formatGameYearMonthByAbsoluteMonth(absoluteMonth: number) {
 function formatRemainingMonths(expiresOnMonth: number | null, currentMonthIndex: number) {
   if (expiresOnMonth === null) return '不限时';
   return `剩余 ${Math.max(0, expiresOnMonth - currentMonthIndex + 1)} 个月`;
+}
+
+function formatTimestamp(ts: number | null) {
+  if (!ts) return '未保存';
+  return new Date(ts).toLocaleString();
+}
+
+function makeSlotId(type: SaveSlotType) {
+  return `${type}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+/** 返回今天 00:00:00 的本地 UTC 时间戳（毫秒），用作建档基准 */
+function todayStartMs() {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d.getTime();
+}
+
+async function persistSlotFromStore(slot: SaveSlotSummary) {
+  const store = useGameStore.getState();
+  const now = Date.now();
+
+  await updateSaveSlot({
+    id: slot.id,
+    name: slot.name,
+    type: slot.type,
+    createdAt: slot.createdAt,
+    lastSavedAt: now,
+    gameState: store.getPersistedState(),
+  });
+
+  useGameStore.getState().setSaveProfile({
+    slotId: slot.id,
+    slotName: slot.name,
+    slotType: slot.type,
+    createdAt: slot.createdAt,
+    lastSavedAt: now,
+  });
 }
 
 function TaskBoardModal({ onClose }: { onClose: () => void }) {
@@ -242,9 +291,182 @@ function ExpandModal({ onClose }: { onClose: () => void }) {
   );
 }
 
+function SaveManagerModal(props: {
+  open: boolean;
+  loading: boolean;
+  slots: SaveSlotSummary[];
+  activeSlotId: string | null;
+  onClose: () => void;
+  onCreate: (type: SaveSlotType) => void;
+  onSwitch: (slotId: string) => void;
+  onDelete: (slotId: string) => void;
+  onRename: (slotId: string, name: string) => void;
+}) {
+  const { open, loading, slots, activeSlotId, onClose, onCreate, onSwitch, onDelete, onRename } = props;
+  // 每个档位的重命名输入状态： slotId -> { editing, value }
+  const [renameState, setRenameState] = useState<Record<string, { editing: boolean; value: string }>>({});
+
+  if (!open) return null;
+
+  function startRename(slot: SaveSlotSummary) {
+    setRenameState((prev) => ({
+      ...prev,
+      [slot.id]: { editing: true, value: slot.name },
+    }));
+  }
+
+  function commitRename(slotId: string) {
+    const entry = renameState[slotId];
+    if (!entry) return;
+    const trimmed = entry.value.trim();
+    if (trimmed) {
+      onRename(slotId, trimmed);
+    }
+    setRenameState((prev) => {
+      const next = { ...prev };
+      delete next[slotId];
+      return next;
+    });
+  }
+
+  function cancelRename(slotId: string) {
+    setRenameState((prev) => {
+      const next = { ...prev };
+      delete next[slotId];
+      return next;
+    });
+  }
+
+  return (
+    <div className="modalBackdrop" role="presentation" onClick={onClose}>
+      <div className="modalBox saveModal" role="dialog" aria-label="存档管理" onClick={(event) => event.stopPropagation()}>
+        <div className="modalHeader">
+          <h2>存档管理</h2>
+          <button type="button" className="modalClose" onClick={onClose}>×</button>
+        </div>
+
+        <div className="saveModalBody">
+          {/* 新建存档区域 */}
+          <div>
+            <p className="saveSectionLabel">新建档位</p>
+            <div className="saveCreateGroup">
+              <button type="button" className="saveCreateCard" onClick={() => onCreate('real')}>
+                <span className="saveCreateCardTitle">
+                  <span style={{ color: '#8ce0a1' }}>●</span> 真实档
+                </span>
+                <span className="saveCreateCardDesc">时间 1:1 流逝，无法加速。适合正式体验。</span>
+              </button>
+              <button type="button" className="saveCreateCard" onClick={() => onCreate('test')}>
+                <span className="saveCreateCardTitle">
+                  <span style={{ color: '#f1b96d' }}>●</span> 测试档
+                </span>
+                <span className="saveCreateCardDesc">可自由调节时间倍率，适合快速测试。</span>
+              </button>
+            </div>
+          </div>
+
+          {/* 已有存档列表 */}
+          <div>
+            <p className="saveSectionLabel">已有档位</p>
+            {loading ? (
+              <p className="saveLoading">读取存档中...</p>
+            ) : slots.length === 0 ? (
+              <p className="saveEmpty">暂无存档，请先创建一个档位。</p>
+            ) : (
+              <ul className="saveList">
+                {slots.map((slot) => {
+                  const rs = renameState[slot.id];
+                  const isActive = slot.id === activeSlotId;
+                  return (
+                    <li key={slot.id} className={isActive ? 'saveItem saveItemActive' : 'saveItem'}>
+                      {/* 档位类型指示 */}
+                      <div className="saveItemBadge">
+                        <span className={`saveTypeDot ${slot.type}`} />
+                        <span className="saveTypeLabel">{slot.type === 'real' ? '真实' : '测试'}</span>
+                      </div>
+
+                      {/* 档位信息 */}
+                      <div className="saveItemInfo">
+                        <div className="saveItemNameRow">
+                          {rs?.editing ? (
+                            <input
+                              className="saveRenameInput"
+                              autoFocus
+                              value={rs.value}
+                              maxLength={40}
+                              onChange={(e) =>
+                                setRenameState((prev) => ({
+                                  ...prev,
+                                  [slot.id]: { ...prev[slot.id], value: e.target.value },
+                                }))
+                              }
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') commitRename(slot.id);
+                                if (e.key === 'Escape') cancelRename(slot.id);
+                              }}
+                            />
+                          ) : (
+                            <>
+                              <p className="saveName">{slot.name}</p>
+                              {isActive && <span className="saveActiveBadge">当前</span>}
+                            </>
+                          )}
+                        </div>
+                        <p className="saveMeta">
+                          建档 {formatTimestamp(slot.createdAt)} &nbsp;·&nbsp; 保存 {formatTimestamp(slot.lastSavedAt)}
+                        </p>
+                      </div>
+
+                      {/* 操作按钮 */}
+                      <div className="saveButtons">
+                        {rs?.editing ? (
+                          <>
+                            <button type="button" className="toolbarBtn toolbarBtnPrimary" onClick={() => commitRename(slot.id)}>确定</button>
+                            <button type="button" className="toolbarBtn" onClick={() => cancelRename(slot.id)}>取消</button>
+                          </>
+                        ) : (
+                          <>
+                            <button type="button" className="toolbarBtn" onClick={() => onSwitch(slot.id)} disabled={isActive}>
+                              {isActive ? '游戏中' : '切换'}
+                            </button>
+                            <button type="button" className="toolbarBtn" onClick={() => startRename(slot)}>重命名</button>
+                            <button type="button" className="toolbarBtn" onClick={() => onDelete(slot.id)} disabled={isActive}>删除</button>
+                          </>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** 多选计数提示条：悬浮在农场画布上方，选 1 块时就显示 */
+function MultiSelectHint() {
+  const selection = useGameStore((s) => s.selection);
+  const clearSelection = useGameStore((s) => s.clearSelection);
+  const openBatchPanel = useGameStore((s) => s.openBatchPanel);
+  const count = (selection.selectedPlotIds ?? []).length;
+  if (count === 0) return null;
+  return (
+    <div className="multiSelectHint">
+      <span>已选 {count} 块地，继续 Shift+点击可多选</span>
+      <div className="multiSelectActions">
+        <button type="button" className="multiSelectOperate" onClick={openBatchPanel}>✔ 批量操作</button>
+        <button type="button" className="multiSelectClear" onClick={clearSelection}>✕ 取消</button>
+      </div>
+    </div>
+  );
+}
+
 function App() {
   const [screen, setScreen] = useState<'game' | 'compendium'>('game');
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [shopOpen, setShopOpen] = useState(false);
   const [warehouseOpen, setWarehouseOpen] = useState(false);
   const [expandOpen, setExpandOpen] = useState(false);
@@ -254,6 +476,19 @@ function App() {
 
   const unlockedRegions = useGameStore((s) => s.unlockedRegions);
   const plots = useGameStore((s) => s.plots);
+  const saveProfile = useGameStore((s) => s.saveProfile);
+  const setSaveProfile = useGameStore((s) => s.setSaveProfile);
+  const hydrateFromSnapshot = useGameStore((s) => s.hydrateFromSnapshot);
+  const applyOfflineMinutes = useGameStore((s) => s.applyOfflineMinutes);
+
+  const [saveModalOpen, setSaveModalOpen] = useState(false);
+  const [saveLoading, setSaveLoading] = useState(true);
+  const electronRuntime = isElectronRuntime();
+  const pendingSaveRef = useRef<number | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saveSlots, setSaveSlots] = useState<SaveSlotSummary[]>([]);
+  const [activeSlotId, setActiveSlotId] = useState<string | null>(null);
+  const saveBusyRef = useRef(false);
 
   // 区域标签配置
   const REGION_TABS = [
@@ -262,14 +497,243 @@ function App() {
     { id: 'region_black',       label: '黑土区',        icon: '🌱' },
   ];
 
+  async function refreshSaveIndex() {
+    const index = await listSaveSlots();
+    setSaveSlots(index.slots);
+    setActiveSlotId(index.activeSlotId);
+  }
+
+  async function loadSlotIntoRuntime(slotId: string) {
+    const slot = await loadSaveSlot(slotId);
+
+    // 先恢复快照，再注入档位信息，确保切档时不残留旧状态。
+    hydrateFromSnapshot(slot.gameState);
+    setSaveProfile({
+      slotId: slot.id,
+      slotName: slot.name,
+      slotType: slot.type,
+      createdAt: slot.createdAt,
+      lastSavedAt: slot.lastSavedAt,
+    });
+
+    // 读档时根据真实离线时长补算；真实档固定 1x，测试档沿用档内倍率。
+    const now = Date.now();
+    const offlineMinutes = Math.max(0, Math.floor((now - slot.lastSavedAt) / 60000));
+    const multiplier = slot.type === 'real' ? 1 : slot.gameState.clock.timeScale;
+    const appliedOfflineMinutes = offlineMinutes * multiplier;
+
+    if (appliedOfflineMinutes > 0) {
+      applyOfflineMinutes(appliedOfflineMinutes);
+    }
+
+    await updateSaveSlot({
+      id: slot.id,
+      name: slot.name,
+      type: slot.type,
+      createdAt: slot.createdAt,
+      lastSavedAt: now,
+      gameState: useGameStore.getState().getPersistedState(),
+    });
+
+    setSaveProfile({
+      slotId: slot.id,
+      slotName: slot.name,
+      slotType: slot.type,
+      createdAt: slot.createdAt,
+      lastSavedAt: now,
+    });
+  }
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function initializeSaves() {
+      if (!electronRuntime) {
+        setSaveError('当前为 Web 运行环境，存档管理仅在 Electron 本地版可用。');
+        setSaveLoading(false);
+        return;
+      }
+
+      try {
+        const index = await listSaveSlots();
+        if (cancelled) return;
+
+        setSaveSlots(index.slots);
+        setActiveSlotId(index.activeSlotId);
+
+        if (!index.activeSlotId) {
+          setSaveModalOpen(true);
+          return;
+        }
+
+        await loadSlotIntoRuntime(index.activeSlotId);
+        if (cancelled) return;
+
+        await refreshSaveIndex();
+      } catch (error) {
+        if (cancelled) return;
+        setSaveError(error instanceof Error ? error.message : '存档初始化失败');
+      } finally {
+        if (!cancelled) {
+          setSaveLoading(false);
+        }
+      }
+    }
+
+    initializeSaves();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [applyOfflineMinutes, hydrateFromSnapshot, setSaveProfile]);
+
+  useEffect(() => {
+    if (!electronRuntime || !activeSlotId || saveLoading) return;
+
+    const timer = window.setInterval(async () => {
+      if (saveBusyRef.current) return;
+      const slot = saveSlots.find((item) => item.id === activeSlotId);
+      if (!slot) return;
+
+      try {
+        saveBusyRef.current = true;
+        await persistSlotFromStore(slot);
+        await refreshSaveIndex();
+      } finally {
+        saveBusyRef.current = false;
+      }
+    }, 8000);
+
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, [activeSlotId, saveLoading, saveSlots]);
+
+  useEffect(() => {
+    if (!electronRuntime) return;
+
+    const onBeforeUnload = () => {
+      const current = saveSlots.find((item) => item.id === activeSlotId);
+      if (!current) return;
+      persistSlotFromStore(current).catch(() => {
+        // 页面关闭时不阻塞 unload；失败会在下次启动时通过离线补算兜底。
+      });
+    };
+
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', onBeforeUnload);
+    };
+  }, [activeSlotId, saveSlots]);
+
+  // 关键动作后触发 debounce 存档：监听金币和累计收益变化（涵盖 harvest/sell/buy/task）。
+  // 2 秒无新变化后写盘，减少频繁 IO 同时保证关键数据及时持久化。
+  useEffect(() => {
+    if (!electronRuntime || !activeSlotId || saveLoading) return;
+
+    const unsubscribe = useGameStore.subscribe((state, prevState) => {
+      const changed =
+        state.economy.gold !== prevState.economy.gold ||
+        state.economy.cumulativeEarned !== prevState.economy.cumulativeEarned;
+      if (!changed) return;
+
+      if (pendingSaveRef.current) window.clearTimeout(pendingSaveRef.current);
+      pendingSaveRef.current = window.setTimeout(() => {
+        pendingSaveRef.current = null;
+        const slot = saveSlots.find((item) => item.id === activeSlotId);
+        if (!slot || saveBusyRef.current) return;
+        persistSlotFromStore(slot).catch(() => {});
+      }, 2000);
+    });
+
+    return () => {
+      unsubscribe();
+      if (pendingSaveRef.current) {
+        window.clearTimeout(pendingSaveRef.current);
+        pendingSaveRef.current = null;
+      }
+    };
+  }, [activeSlotId, electronRuntime, saveLoading, saveSlots]);
+
+  async function handleCreateSlot(type: SaveSlotType) {
+    try {
+      setSaveError(null);
+      const now = Date.now();
+      const baseState = createDefaultPersistedState();
+      if (type === 'real') {
+        baseState.clock.timeScale = 1;
+      }
+
+      // 建档时以当日 00:00 作为基准时间戳，便于后续离线时长计算对齐自然日边界。
+      const createdAt = todayStartMs();
+      const slot = {
+        id: makeSlotId(type),
+        name: `${type === 'real' ? '真实档' : '测试档'}-${new Date(createdAt).toLocaleDateString()}`,
+        type,
+        createdAt,
+        lastSavedAt: now,
+        gameState: baseState,
+      };
+
+      await createSaveSlot(slot);
+      await setActiveSaveSlot(slot.id);
+      await loadSlotIntoRuntime(slot.id);
+      await refreshSaveIndex();
+      setSaveModalOpen(false);
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : '创建存档失败');
+    }
+  }
+
+  async function handleSwitchSlot(slotId: string) {
+    try {
+      setSaveError(null);
+      const current = saveSlots.find((item) => item.id === activeSlotId);
+      if (current) {
+        await persistSlotFromStore(current);
+      }
+
+      await setActiveSaveSlot(slotId);
+      await loadSlotIntoRuntime(slotId);
+      await refreshSaveIndex();
+      setSaveModalOpen(false);
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : '切换存档失败');
+    }
+  }
+
+  async function handleDeleteSlot(slotId: string) {
+    if (!window.confirm('确定删除该存档吗？该操作不可恢复。')) return;
+    try {
+      setSaveError(null);
+      await deleteSaveSlot(slotId);
+      await refreshSaveIndex();
+      if (slotId === activeSlotId) {
+        setSaveModalOpen(true);
+      }
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : '删除存档失败');
+    }
+  }
+
+  async function handleRenameSlot(slotId: string, name: string) {
+    try {
+      setSaveError(null);
+      await renameSaveSlot(slotId, name);
+      await refreshSaveIndex();
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : '重命名失败');
+    }
+  }
+
   return (
     <div className={sidebarCollapsed ? 'shell shellCollapsed' : 'shell'}>
       <aside className={sidebarCollapsed ? 'sidebar sidebarCollapsed' : 'sidebar'}>
         <div className="brand">
           <div className="brandRow">
             <div className="brandText">
-              <span className="brandTitle">XIAOBAO</span>
-              {!sidebarCollapsed ? <span className="brandSub">FIELD AGENT</span> : null}
+              <span className="brandTitle">WILDERNESS</span>
+              {!sidebarCollapsed ? <span className="brandSub">FARM</span> : null}
             </div>
             <button
               type="button"
@@ -312,8 +776,9 @@ function App() {
             <h1>{screen === 'game' ? '农场控制台' : '图鉴总览'}</h1>
           </div>
           <div className="topStatus">
-            <span>MODE</span>
-            <strong>{screen === 'game' ? 'FIELD' : 'ARCHIVE'}</strong>
+            <span>{screen === 'game' ? 'FIELD' : 'ARCHIVE'}</span>
+            <strong>{saveProfile.slotName || '未选择档位'}</strong>
+            <span>{saveProfile.slotType === 'real' ? '真实档' : '测试档'}</span>
           </div>
         </header>
 
@@ -350,7 +815,17 @@ function App() {
               >
                 📋 任务板
               </button>
+              <button
+                type="button"
+                className="toolbarBtn"
+                onClick={() => setSaveModalOpen(true)}
+                disabled={saveLoading || !electronRuntime}
+              >
+                💾 存档
+              </button>
             </div>
+
+            {saveError ? <p className="saveErrorBanner">存档错误：{saveError}</p> : null}
 
             {/* 区域 Tab 切换 */}
             <div className="regionTabs" role="tablist" aria-label="选择农田区域">
@@ -382,6 +857,8 @@ function App() {
             </div>
 
             <main className="main">
+              {/* 多选计数提示：选 1+ 块时显示，≥2 块时面板弹出 */}
+              <MultiSelectHint />
               {/* 只渲染当前激活区域的地块 */}
               <GameCanvas regionId={activeRegion} />
             </main>
@@ -421,6 +898,18 @@ function App() {
             {taskBoardOpen && (
               <TaskBoardModal onClose={() => setTaskBoardOpen(false)} />
             )}
+
+            <SaveManagerModal
+              open={saveModalOpen}
+              loading={saveLoading}
+              slots={saveSlots}
+              activeSlotId={activeSlotId}
+              onClose={() => setSaveModalOpen(false)}
+              onCreate={handleCreateSlot}
+              onSwitch={handleSwitchSlot}
+              onDelete={handleDeleteSlot}
+              onRename={handleRenameSlot}
+            />
           </>
         ) : (
           <main className="compendiumMain">

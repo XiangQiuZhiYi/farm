@@ -20,8 +20,8 @@ export const REGION_CONFIGS: RegionConfig[] = [
     unlockGold: 1600,
     unlockCompendiumCount: 10,
     prerequisiteRegionId: 'region_paddy', // 需要水稻土区 10 种图鉴
-    initialPlotCount: 5,
-    maxPlotCount: 15,
+    initialPlotCount: 2,
+    maxPlotCount: 18,
   },
   {
     id: 'region_black',
@@ -29,8 +29,8 @@ export const REGION_CONFIGS: RegionConfig[] = [
     unlockGold: 4200,
     unlockCompendiumCount: 10,
     prerequisiteRegionId: 'region_brown_tidal', // 需要褐土/潮土组 10 种图鉴
-    initialPlotCount: 4,
-    maxPlotCount: 12,
+    initialPlotCount: 2,
+    maxPlotCount: 18,
   },
 ];
 

@@ -60,19 +60,28 @@
 }
 
 .sidebarToggle {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   border: 1px solid rgba(187, 139, 62, 0.38);
   background: rgba(8, 31, 29, 0.92);
   color: #c9a96a;
   cursor: pointer;
   font: inherit;
   flex-shrink: 0;
+  /* 确保点击区域足够大 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  line-height: 1;
+  z-index: 1;
+  position: relative;
 }
 
 .sidebarToggle:hover {
   border-color: rgba(235, 151, 61, 0.78);
   color: #fff1c7;
+  background: rgba(201, 139, 58, 0.12);
 }
 
 .sideNav {
@@ -201,6 +210,7 @@
   align-items: flex-start;
   padding: 0;
   background: #1a1108;
+  flex-wrap: wrap;
 }
 
 /* Canvas：微细描边区分画布边界 */
@@ -662,6 +672,264 @@
   color: #8ca198;
   font-size: 13px;
   background: rgba(6, 24, 22, 0.4);
+}
+
+.saveErrorBanner {
+  margin: 0;
+  padding: 8px 18px;
+  color: #ffd5cf;
+  background: rgba(132, 32, 18, 0.55);
+  border-top: 1px solid rgba(227, 106, 85, 0.45);
+  border-bottom: 1px solid rgba(227, 106, 85, 0.45);
+}
+
+/* ── 存档管理弹框 ───────────────────────────────────────── */
+
+.saveModal {
+  width: min(860px, 100%);
+}
+
+.saveModalBody {
+  padding: 16px 18px 20px;
+  display: grid;
+  gap: 16px;
+}
+
+.saveCreateGroup {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.saveCreateCard {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 16px;
+  border: 1px solid rgba(187, 139, 62, 0.28);
+  background: rgba(6, 24, 22, 0.5);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  text-align: left;
+  color: inherit;
+  font: inherit;
+}
+
+.saveCreateCard:hover {
+  border-color: rgba(229, 159, 74, 0.7);
+  background: rgba(16, 50, 40, 0.6);
+}
+
+.saveCreateCardTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #f1b96d;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.saveCreateCardDesc {
+  color: #8ca198;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.saveSectionLabel {
+  margin: 0 0 6px;
+  color: #c88b39;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.saveLoading,
+.saveEmpty {
+  margin: 0;
+  padding: 14px;
+  color: #9db1a7;
+  font-size: 13px;
+  border: 1px dashed rgba(187, 139, 62, 0.22);
+  text-align: center;
+}
+
+.saveList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.saveItem {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  border: 1px solid rgba(187, 139, 62, 0.24);
+  background: rgba(6, 24, 22, 0.5);
+  transition: border-color 0.15s;
+}
+
+.saveItem:hover {
+  border-color: rgba(187, 139, 62, 0.5);
+}
+
+.saveItemActive {
+  border-color: rgba(229, 159, 74, 0.72) !important;
+  background: rgba(22, 58, 40, 0.45);
+}
+
+.saveItemBadge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 48px;
+  flex-shrink: 0;
+}
+
+.saveTypeDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #8ca198;
+}
+
+.saveTypeDot.real {
+  background: #8ce0a1;
+  box-shadow: 0 0 6px rgba(140, 224, 161, 0.5);
+}
+
+.saveTypeDot.test {
+  background: #f1b96d;
+  box-shadow: 0 0 6px rgba(241, 185, 109, 0.4);
+}
+
+.saveTypeLabel {
+  font-size: 10px;
+  color: #8ca198;
+  letter-spacing: 0.06em;
+}
+
+.saveItemInfo {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.saveItemNameRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.saveName {
+  margin: 0;
+  color: #fff2d3;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.saveActiveBadge {
+  padding: 1px 6px;
+  border: 1px solid rgba(140, 224, 161, 0.5);
+  color: #8ce0a1;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+.saveMeta {
+  margin: 0;
+  color: #7a9490;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.saveRenameInput {
+  width: 100%;
+  padding: 4px 8px;
+  background: rgba(8, 31, 29, 0.92);
+  border: 1px solid rgba(229, 159, 74, 0.72);
+  color: #fff2d3;
+  font: inherit;
+  font-size: 14px;
+  outline: none;
+}
+
+.saveRenameInput:focus {
+  border-color: #f1b96d;
+}
+
+.saveButtons {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.saveButtons .toolbarBtn {
+  font-size: 12px;
+  padding: 5px 12px;
+  white-space: nowrap;
+}
+
+.multiSelectHint {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 14px;
+  background: rgba(100, 180, 255, 0.12);
+  border-bottom: 1px solid rgba(100, 180, 255, 0.3);
+  color: #a8d4f5;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  width: 100%;
+}
+
+.multiSelectActions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.multiSelectOperate {
+  padding: 3px 12px;
+  border: 1px solid rgba(140, 224, 161, 0.55);
+  background: rgba(140, 224, 161, 0.1);
+  color: #8ce0a1;
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.multiSelectOperate:hover {
+  background: rgba(140, 224, 161, 0.2);
+  color: #b8f0ca;
+}
+
+.multiSelectClear {
+  padding: 3px 10px;
+  border: 1px solid rgba(100, 180, 255, 0.38);
+  background: transparent;
+  color: #a8d4f5;
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.multiSelectClear:hover {
+  background: rgba(100, 180, 255, 0.15);
+  color: #d0eaff;
 }
 
 button {

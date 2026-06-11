@@ -18,6 +18,8 @@ export function GameCanvas({ regionId }: GameCanvasProps) {
   const allPlots   = useGameStore((s) => s.plots);
   const selection  = useGameStore((s) => s.selection);
   const selectPlot = useGameStore((s) => s.selectPlot);
+  const togglePlotSelection = useGameStore((s) => s.togglePlotSelection);
+  const clearSelection = useGameStore((s) => s.clearSelection);
 
   // 只渲染当前区域的地块
   const plots = allPlots.filter((p) => p.regionId === regionId);
@@ -32,10 +34,10 @@ export function GameCanvas({ regionId }: GameCanvasProps) {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    renderGame(canvas, plots, selection.selectedPlotId);
+    renderGame(canvas, plots, selection.selectedPlotId, selection.selectedPlotIds ?? []);
   });
 
-  // 点击地块：处理 CSS 缩放，找到命中的地块
+  // 点击地块：Shift+点击多选，普通点击单选
   function handleClick(e: React.MouseEvent<HTMLCanvasElement>) {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -51,11 +53,18 @@ export function GameCanvas({ regionId }: GameCanvasProps) {
       const x = col * (TILE_SIZE + TILE_GAP);
       const y = row * (TILE_SIZE + TILE_GAP);
       if (mx >= x && mx <= x + TILE_SIZE && my >= y && my <= y + TILE_SIZE) {
-        selectPlot(plots[idx].id);
+        if (e.shiftKey) {
+          // Shift+点击：切换多选
+          togglePlotSelection(plots[idx].id);
+        } else {
+          // 普通点击：单选
+          selectPlot(plots[idx].id);
+        }
         return;
       }
     }
-    selectPlot(null);
+    // 点击空白处清除所有选中
+    clearSelection();
   }
 
   // Canvas 尺寸：刚好容纳所有地块（无额外边距）

@@ -84,6 +84,7 @@ export function renderGame(
   canvas: HTMLCanvasElement,
   plots: PlotState[],
   selectedId: string | null,
+  multiSelectedIds?: string[],
 ) {
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
@@ -163,10 +164,19 @@ export function renderGame(
 
     // ── 3. 选中高亮 ──────────────────────────────────────────
     if (selectedId === plot.id) {
+      // 单选：黄色
       ctx.strokeStyle = 'rgba(255, 224, 102, 0.35)';
       ctx.lineWidth = 6;
       ctx.strokeRect(x + 2, y + 2, TILE_SIZE - 4, TILE_SIZE - 4);
       ctx.strokeStyle = '#ffe066';
+      ctx.lineWidth = 2.5;
+      ctx.strokeRect(x + 3, y + 3, TILE_SIZE - 6, TILE_SIZE - 6);
+    } else if (multiSelectedIds?.includes(plot.id)) {
+      // 多选：蓝色
+      ctx.strokeStyle = 'rgba(100, 180, 255, 0.35)';
+      ctx.lineWidth = 6;
+      ctx.strokeRect(x + 2, y + 2, TILE_SIZE - 4, TILE_SIZE - 4);
+      ctx.strokeStyle = '#64b4ff';
       ctx.lineWidth = 2.5;
       ctx.strokeRect(x + 3, y + 3, TILE_SIZE - 6, TILE_SIZE - 6);
     }

@@ -54,8 +54,12 @@ export interface EconomyState {
 
 /** 当前选中的操作面板目标 */
 export interface SelectionState {
-  /** 选中的地块 id，null 表示未选中 */
+  /** 当前单选的地块 id，null 表示未选中 */
   selectedPlotId: string | null;
+  /** 批量多选的地块 id 集合 */
+  selectedPlotIds: string[];
+  /** 是否已手动打开批量操作面板 */
+  batchPanelOpen: boolean;
   /** 选中的面板模式 */
   panelMode: 'none' | 'plant' | 'action';
 }

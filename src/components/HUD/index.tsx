@@ -29,8 +29,10 @@ function formatGameDate(totalMinutes: number, month: number) {
 export function HUD() {
   const clock = useGameStore((s) => s.clock);
   const economy = useGameStore((s) => s.economy);
+  const saveProfile = useGameStore((s) => s.saveProfile);
   const setTimeScale = useGameStore((s) => s.setTimeScale);
   const togglePause = useGameStore((s) => s.togglePause);
+  const showTimeScaleButtons = saveProfile.slotType === 'test';
 
   return (
     <div className={styles.hud}>
@@ -55,15 +57,19 @@ export function HUD() {
         <button onClick={togglePause} className={styles.pauseBtn}>
           {clock.running ? '⏸ 暂停' : '▶ 继续'}
         </button>
-        {TIME_SCALES.map((s) => (
-          <button
-            key={s}
-            onClick={() => setTimeScale(s)}
-            className={`${styles.scaleBtn} ${clock.timeScale === s ? styles.active : ''}`}
-          >
-            ×{s}
-          </button>
-        ))}
+        {showTimeScaleButtons ? (
+          TIME_SCALES.map((s) => (
+            <button
+              key={s}
+              onClick={() => setTimeScale(s)}
+              className={`${styles.scaleBtn} ${clock.timeScale === s ? styles.active : ''}`}
+            >
+              ×{s}
+            </button>
+          ))
+        ) : (
+          <span className={styles.realModeTag}>真实档：固定 1x</span>
+        )}
       </div>
     </div>
   );

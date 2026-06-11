@@ -10,6 +10,8 @@ import {
   TASK_COMPENDIUM_ENTRIES,
   type TaskCompendiumEntry,
 } from '../../config/compendium/tasks';
+import { REGION_CONFIGS } from '../../config/regions';
+import { ALL_PLANTS } from '../../config/plants';
 import type { LandTypeId } from '../../types/land';
 import styles from './Compendium.module.css';
 
@@ -97,13 +99,24 @@ const PLANT_STAGE_LABELS: Record<string, string> = {
 function LandAchievementCard({
   entry,
   unlocked,
+  progressCurrent,
+  progressTotal,
   onOpen,
 }: {
   entry: LandCompendiumEntry;
   unlocked: boolean;
+  /** 当前前置区域已收获种数 */
+  progressCurrent: number;
+  /** 解锁所需前置区域图鉴数 */
+  progressTotal: number;
   onOpen: (id: LandTypeId) => void;
 }) {
-  const progress = unlocked ? 100 : 42;
+  const progress = unlocked ? 100 : progressTotal <= 0 ? 100 : Math.min((progressCurrent / progressTotal) * 100, 100);
+  const progressLabel = unlocked
+    ? `${progressTotal} / ${progressTotal}`
+    : progressTotal <= 0
+      ? '初始解锁'
+      : `${progressCurrent} / ${progressTotal}`;
   const target = entry.details.find((item) => item.label === '扩张价格')?.value ?? '';
 
   return (
@@ -138,7 +151,7 @@ function LandAchievementCard({
           <div className={styles.progressTrack}>
             <span style={{ width: `${progress}%` }} />
           </div>
-          <span>{unlocked ? '100 / 100' : '42 / 100'}</span>
+          <span>{progressLabel}</span>
         </div>
       </div>
     </button>
@@ -291,6 +304,7 @@ export function Compendium() {
   const unlockedRegions = useGameStore((s) => s.unlockedRegions);
   const unlockedPlants = useGameStore((s) => s.unlockedPlants);
   const cumulativeEarned = useGameStore((s) => s.economy.cumulativeEarned);
+  const compendium = useGameStore((s) => s.compendium);
   const unlockedTasks = useGameStore((s) => s.unlockedTasks);
   const completedTasks = useGameStore((s) => s.completedTasks);
   const [activeTab, setActiveTab] = useState<'land' | 'plant' | 'task'>('land');
@@ -415,7 +429,6 @@ export function Compendium() {
 
   return (
     <section className={styles.page}>
-      <div className={styles.scanline} />
       {/* 主 Tab 切换 */}
       <div className={styles.mainTabs}>
         <button
@@ -490,6 +503,19 @@ export function Compendium() {
                 key={entry.id}
                 entry={entry}
                 unlocked={unlockedRegions.includes(entry.regionId)}
+                progressCurrent={(() => {
+                  // 计算该土地对应区域的唤醒条件：前置区域图鉴数
+                  const regionCfg = REGION_CONFIGS.find((r) => r.id === entry.regionId);
+                  const prereqId = regionCfg?.prerequisiteRegionId;
+                  if (!prereqId) return 0; // 初始开放区域，无需前置
+                  // 统计前置区域中已收获的植物种数
+                  return ALL_PLANTS.filter((p) => p.regionId === prereqId && compendium[p.id]).length;
+                })()}
+                progressTotal={(() => {
+                  const regionCfg = REGION_CONFIGS.find((r) => r.id === entry.regionId);
+                  if (!regionCfg?.prerequisiteRegionId) return 0;
+                  return regionCfg.unlockCompendiumCount;
+                })()}
                 onOpen={setModalId}
               />
             ))}

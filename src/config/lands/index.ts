@@ -12,7 +12,7 @@ export const LAND_TYPE_CONFIGS: LandTypeConfig[] = [
     baseFertility: 1,
     defaultWaterState: 'flooded',
     regionId: 'region_paddy',
-    expandPrice: 90,
+    expandPrice: 117,   // 原 90 × 1.3
     bgColor: '#4a7c5e',
   },
   {
@@ -22,7 +22,7 @@ export const LAND_TYPE_CONFIGS: LandTypeConfig[] = [
     baseFertility: 1,
     defaultWaterState: 'dry',
     regionId: 'region_paddy',
-    expandPrice: 90,
+    expandPrice: 117,   // 原 90 × 1.3
     bgColor: '#8b6914',
   },
   {
@@ -32,7 +32,7 @@ export const LAND_TYPE_CONFIGS: LandTypeConfig[] = [
     baseFertility: 2,
     defaultWaterState: 'moist',
     regionId: 'region_brown_tidal',
-    expandPrice: 180,
+    expandPrice: 234,   // 原 180 × 1.3
     bgColor: '#7a5c3a',
   },
   {
@@ -42,7 +42,7 @@ export const LAND_TYPE_CONFIGS: LandTypeConfig[] = [
     baseFertility: 2,
     defaultWaterState: 'moist',
     regionId: 'region_brown_tidal',
-    expandPrice: 180,
+    expandPrice: 234,   // 原 180 × 1.3
     bgColor: '#9a7a4a',
   },
   {
@@ -52,7 +52,7 @@ export const LAND_TYPE_CONFIGS: LandTypeConfig[] = [
     baseFertility: 3,
     defaultWaterState: 'moist',
     regionId: 'region_black',
-    expandPrice: 320,
+    expandPrice: 416,   // 原 320 × 1.3
     bgColor: '#2a2a1a',
   },
 ];

@@ -9,7 +9,111 @@ import { getPlantById } from '../../config/plants';
 import { calcPlotGrowthStage, getGrowthTargetMinutes, isPlantableMonth } from '../../systems/growthSystem';
 import styles from './PlotPanel.module.css';
 
+// ── 批量操作面板 ────────────────────────────────────────────
+function BatchPanel() {
+  const plots = useGameStore((s) => s.plots);
+  const selection = useGameStore((s) => s.selection);
+  const seeds = useGameStore((s) => s.seeds);
+  const miscInventory = useGameStore((s) => s.miscInventory);
+  const unlockedPlants = useGameStore((s) => s.unlockedPlants);
+  const clock = useGameStore((s) => s.clock);
+  const clearSelection = useGameStore((s) => s.clearSelection);
+  const batchPlantSeed = useGameStore((s) => s.batchPlantSeed);
+  const batchApplyFertilizer = useGameStore((s) => s.batchApplyFertilizer);
+
+  const selectedIds = selection.selectedPlotIds ?? [];
+  const selectedPlots = plots.filter((p) => selectedIds.includes(p.id));
+
+  // 空地和枯萎地块可播种，有植物的非枯萎地块可施肥
+  const plantableIds = selectedPlots
+    .filter((p) => !p.plantedPlantId || p.isWilted)
+    .map((p) => p.id);
+  const fertilizableIds = selectedPlots
+    .filter((p) => p.plantedPlantId && !p.isWilted && p.appliedFertilizerId === null)
+    .map((p) => p.id);
+
+  const plantableList = unlockedPlants
+    .map(getPlantById)
+    .filter((p): p is NonNullable<typeof p> => p !== null && (seeds[p.id] ?? 0) > 0);
+
+  return (
+    <div className={styles.overlay} role="presentation" onClick={clearSelection}>
+      <div className={styles.panel} role="dialog" aria-label="批量操作" onClick={(e) => e.stopPropagation()}>
+        <button type="button" className={styles.closeBtn} aria-label="关闭" onClick={clearSelection}>×</button>
+
+        <div className={styles.titleRow}>
+          <div>
+            <span className={styles.plotId}>批量操作</span>
+            <span className={styles.landType}>已选 {selectedIds.length} 块地</span>
+          </div>
+        </div>
+
+        <div className={styles.plantSection}>
+          {plantableIds.length > 0 && (
+            <div>
+              <p className={styles.emptyHint}>
+                批量种植（空地/枯萎：{plantableIds.length} 块）
+              </p>
+              <div className={styles.plantList}>
+                {plantableList.length === 0 ? (
+                  <span className={styles.empty}>背包无种子，请购买</span>
+                ) : (
+                  plantableList.map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      className={styles.plantBtn}
+                      disabled={!isPlantableMonth(p, clock.month)}
+                      onClick={() => {
+                        batchPlantSeed(plantableIds, p.id);
+                        clearSelection();
+                      }}
+                    >
+                      {p.name} ×{seeds[p.id] ?? 0}
+                      {!isPlantableMonth(p, clock.month) ? ' (非播种期)' : ''}
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+
+          {fertilizableIds.length > 0 && (
+            <div className={styles.fertilizerSection}>
+              <p className={styles.fertilizerTitle}>批量施肥（可施：{fertilizableIds.length} 块）</p>
+              <div className={styles.plantList}>
+                {FERTILIZER_CONFIGS.map((item) => {
+                  const qty = miscInventory[item.id] ?? 0;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className={styles.plantBtn}
+                      disabled={qty <= 0}
+                      onClick={() => {
+                        batchApplyFertilizer(fertilizableIds, item.id);
+                        clearSelection();
+                      }}
+                    >
+                      {item.name} ×{qty}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {plantableIds.length === 0 && fertilizableIds.length === 0 && (
+            <p className={styles.empty}>选中的地块当前无可执行的批量操作。</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function PlotPanel() {
+  // ── 所有 hooks 必须在任何条件返回之前调用（Rules of Hooks）──
   const plots = useGameStore((s) => s.plots);
   const selection = useGameStore((s) => s.selection);
   const clock = useGameStore((s) => s.clock);
@@ -20,6 +124,12 @@ export function PlotPanel() {
   const applyFertilizer = useGameStore((s) => s.applyFertilizer);
   const plantSeed = useGameStore((s) => s.plantSeed);
   const selectPlot = useGameStore((s) => s.selectPlot);
+
+  // 批量面板由用户点击「操作」按鈕手动打开，不再自动弹出。
+  // 旧存档兼容：batchPanelOpen 可能为 undefined
+  if (selection.batchPanelOpen) {
+    return <BatchPanel />;
+  }
 
   const plot = plots.find((p) => p.id === selection.selectedPlotId);
   // 无选中地块时不渲染
