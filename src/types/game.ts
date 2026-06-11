@@ -3,7 +3,7 @@
 // ============================================================
 
 /** 时间加速倍率（开发调试用） */
-export type TimeScale = 1 | 10 | 60 | 1440;
+export type TimeScale = 1 | 1440 | 2880 | 4320;
 
 /** 季节枚举 */
 export type Season = 'spring' | 'summer' | 'autumn' | 'winter';
@@ -27,6 +27,9 @@ export type Inventory = Record<string, number>;
 
 /** 种子库：植物 id → 持有种子数量（购买后等待播种） */
 export type Seeds = Record<string, number>;
+
+/** 杂物库存：道具 id → 持有数量（目前用于肥料） */
+export type MiscInventory = Record<string, number>;
 
 /** 图鉴：植物 id → 是否已收获过（解锁图鉴） */
 export type Compendium = Record<string, boolean>;

@@ -502,6 +502,11 @@
   width: min(980px, 100%);
 }
 
+.warehouseModal {
+  width: min(900px, 100%);
+  max-height: min(88vh, 760px);
+}
+
 .taskBoardTabs {
   display: flex;
   gap: 4px;

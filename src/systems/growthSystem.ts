@@ -6,6 +6,7 @@ import type { PlotState } from '../types/land';
 import type { PlantConfig } from '../types/plant';
 import type { LandTypeConfig } from '../types/land';
 import type { GrowthStage } from '../types/plant';
+import { getFertilizerById } from '../config/fertilizers';
 
 function getEffectiveHarvestType(plant: PlantConfig) {
   return plant.harvestType ?? 'annual';
@@ -50,13 +51,24 @@ export function calcGrowthStage(
 }
 
 /**
- * 计算收获产量（0-5）
- * 公式：base + soilBonus + seasonBonus + harvestBonus + random
- *   - base = 2（任意情况下的基础产出）
- *   - soilBonus: best=+1, compatible=-1（轻微减产）, 不适配=-4（重度减产）
- *   - seasonBonus: bestMonths=+1, okMonths=0, 其他=-2
- *   - harvestBonus: 时机恰好（mature 阶段收）+1，提前/延误 0
- *   - random: [-1, +1] 随机扰动
+ * 计算收获产量
+ *
+ * 核心变更：
+ * - 基础产量锚定到 plant.expectedBestYield（而非硬编码 2），使高产量作物真正能达到配置值。
+ * - baseFertility 参与结算：肥沃土地（黑土 fertility=3）给 +1 额外分并放宽上限，
+ *   旱地/水田（fertility=1）不加分，褐土/潮土（fertility=2）不加分但处于中间梯队。
+ * - landFactor 暂作注释记录，等未来引入连续产量系数时接入。
+ *
+ * 公式：
+ *   score = (expectedBestYield - 1)
+ *         + soilBonus    [best=+1, compatible=-1, 不适配=-3]
+ *         + fertilityBonus [floor((baseFertility-1)/2) → 0/0/1]
+ *         + seasonBonus  [bestMonths=+1, okMonths=0, 其他=-1]
+ *         + harvestBonus [isReadyToHarvest=+1]
+ *         + random       [-1, +1]
+ *
+ *   cap = expectedBestYield + fertilityBonus（肥沃土地允许超额产出）
+ *   baseYield = clamp(score, 0, cap)
  */
 export function calcYield(
   plot: PlotState,
@@ -64,27 +76,42 @@ export function calcYield(
   landCfg: LandTypeConfig | null,
   currentMonth: number,
 ): number {
-  let score = 2;
+  // 以设计产量减一为起点，避免平庸条件下也能轻松达到满产
+  let score = plant.expectedBestYield - 1;
 
-  // soil bonus：适宜土地加分，兼容轻减，不适配重罚
+  // baseFertility 加成：fertility 1→+0，2→+0，3→+1
+  const fertilityBonus = landCfg ? Math.floor((landCfg.baseFertility - 1) / 2) : 0;
+
   if (landCfg) {
+    // 土地适配：最适宜 +1，兼容轻减，不适配重罚
     if (plant.soilMatch.best.includes(plot.landTypeId)) score += 1;
     else if (plant.soilMatch.compatible.includes(plot.landTypeId)) score -= 1;
-    else score -= 4;
+    else score -= 3;
+
+    // 土地基础肥力加成
+    score += fertilityBonus;
   }
 
-  // season bonus
+  // 季节加成
   if (plant.season.bestMonths.includes(currentMonth)) score += 1;
-  else if (!plant.season.okMonths.includes(currentMonth)) score -= 2;
+  else if (!plant.season.okMonths.includes(currentMonth)) score -= 1;
 
-  // harvest timing bonus（isReadyToHarvest === true 说明刚好成熟）
+  // 成熟时机加成
   if (plot.isReadyToHarvest) score += 1;
 
-  // random [-1, +1]
+  // 随机扰动 [-1, +1]
   score += Math.round(Math.random() * 2 - 1);
 
-  // 限制在 [0, 5]
-  return Math.max(0, Math.min(5, score));
+  // 上限由设计产量决定；肥沃土地允许小幅超额产出
+  const cap = plant.expectedBestYield + fertilityBonus;
+  const baseYield = Math.max(0, Math.min(cap, score));
+
+  const fertilizer = plot.appliedFertilizerId ? getFertilizerById(plot.appliedFertilizerId) : null;
+  if (fertilizer?.effectType === 'yield') {
+    return Math.max(0, Math.round(baseYield * fertilizer.multiplier));
+  }
+
+  return baseYield;
 }
 
 /**

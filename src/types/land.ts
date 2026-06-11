@@ -2,6 +2,8 @@
 // 土地相关类型定义
 // ============================================================
 
+import type { FertilizerId } from './fertilizer';
+
 /** 土地基础类型标识 */
 export type LandTypeId =
   | 'paddy_field'   // 水田
@@ -70,4 +72,6 @@ export interface PlotState {
   isReadyToHarvest: boolean;
   /** 是否已枯萎，枯萎后需要重新播种 */
   isWilted: boolean;
+  /** 当前作物挂载的肥料；同一时间只允许存在一个 */
+  appliedFertilizerId: FertilizerId | null;
 }

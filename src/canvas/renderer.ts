@@ -3,6 +3,7 @@
 // 每块地无间隙紧密排列，像素画 96×96（16字符 × 6px）
 // ============================================================
 
+import { getFertilizerById } from '../config/fertilizers';
 import { getPlantById } from '../config/plants';
 import { calcPlotGrowthStage } from '../systems/growthSystem';
 import { getLandCompendiumEntry } from '../config/compendium/lands';
@@ -34,6 +35,24 @@ export const COLS       = 6;
 export const PADDING    = 0;
 /** 像素画每字符对应像素数 */
 const PIXEL_SIZE = 6; // 96 / 16
+
+function drawPlotStatusBadge(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  text: string,
+  color: string,
+) {
+  ctx.fillStyle = 'rgba(2, 10, 10, 0.78)';
+  ctx.fillRect(x + 4, y + 4, 42, 16);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1;
+  ctx.strokeRect(x + 4.5, y + 4.5, 41, 15);
+  ctx.fillStyle = color;
+  ctx.font = '10px serif';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, x + 8, y + 12);
+}
 
 /**
  * 将像素字符串数组按调色板绘制到 Canvas
@@ -104,6 +123,7 @@ export function renderGame(
         let stage: keyof typeof plantEntry.stages = calcPlotGrowthStage(plot, plant);
         if (plot.isReadyToHarvest) stage = 'mature';
         const plantPixels = plantEntry.stages[stage];
+        const fertilizer = plot.appliedFertilizerId ? getFertilizerById(plot.appliedFertilizerId) : null;
 
         // 耕土暗叠层：统一压暗土地纹理，提升植物像素的可读性
         ctx.fillStyle = 'rgba(0, 0, 0, 0.30)';
@@ -130,6 +150,14 @@ export function renderGame(
           ctx.lineWidth = 2;
           ctx.strokeRect(x + 3, y + 3, TILE_SIZE - 6, TILE_SIZE - 6);
         }
+
+        drawPlotStatusBadge(
+          ctx,
+          x,
+          y,
+          fertilizer?.shortLabel ?? '无肥',
+          fertilizer ? '#8ce0a1' : '#8ca198',
+        );
       }
     }
 

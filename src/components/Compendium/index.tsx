@@ -148,13 +148,23 @@ function LandAchievementCard({
 function PlantCard({
   entry,
   unlocked,
+  cumulativeEarned,
   onOpen,
 }: {
   entry: PlantCompendiumEntry;
   unlocked: boolean;
+  cumulativeEarned: number;
   onOpen: (id: string) => void;
 }) {
   const stages = (['seed', 'sprout', 'grow', 'mature'] as const);
+  const unlockTarget = entry.unlockCumulativeGold;
+  const currentProgress = unlockTarget <= 0 ? unlockTarget : Math.min(cumulativeEarned, unlockTarget);
+  const progressPercent = unlockTarget <= 0 || unlocked
+    ? 100
+    : Math.min((currentProgress / unlockTarget) * 100, 100);
+  const progressLabel = unlockTarget <= 0
+    ? '初始解锁'
+    : `${Math.round(currentProgress)} / ${unlockTarget}`;
 
   return (
     <button
@@ -192,6 +202,15 @@ function PlantCard({
           </div>
         </div>
         {unlocked ? <p className={styles.cardText}>{entry.summary}</p> : null}
+        <div className={styles.plantProgressBlock}>
+          <div className={styles.plantProgressHead}>
+            <span>解锁进度</span>
+            <span>{progressLabel}</span>
+          </div>
+          <div className={styles.progressTrack}>
+            <span style={{ width: `${progressPercent}%` }} />
+          </div>
+        </div>
       </div>
     </button>
   );
@@ -271,6 +290,7 @@ function TaskCard({
 export function Compendium() {
   const unlockedRegions = useGameStore((s) => s.unlockedRegions);
   const unlockedPlants = useGameStore((s) => s.unlockedPlants);
+  const cumulativeEarned = useGameStore((s) => s.economy.cumulativeEarned);
   const unlockedTasks = useGameStore((s) => s.unlockedTasks);
   const completedTasks = useGameStore((s) => s.completedTasks);
   const [activeTab, setActiveTab] = useState<'land' | 'plant' | 'task'>('land');
@@ -501,6 +521,7 @@ export function Compendium() {
                 key={entry.id}
                 entry={entry}
                 unlocked={unlockedPlants.includes(entry.id)}
+                cumulativeEarned={cumulativeEarned}
                 onOpen={setPlantModalId}
               />
             ))}

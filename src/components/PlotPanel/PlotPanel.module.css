@@ -224,6 +224,26 @@
   font-size: 13px;
 }
 
+.fertilizerSection {
+  display: grid;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.fertilizerTitle {
+  margin: 0;
+  color: #fff1c7;
+  font-size: 13px;
+  letter-spacing: 0.06em;
+}
+
+.fertilizerHint {
+  margin: 0;
+  color: #7f968d;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .plantList {
   display: flex;
   flex-wrap: wrap;

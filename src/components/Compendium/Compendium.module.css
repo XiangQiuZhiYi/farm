@@ -551,6 +551,19 @@
   align-content: start;
 }
 
+.plantProgressBlock {
+  display: grid;
+  gap: 6px;
+}
+
+.plantProgressHead {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: #8ca198;
+  font-size: 12px;
+}
+
 .plantCardHead {
   display: flex;
   justify-content: space-between;

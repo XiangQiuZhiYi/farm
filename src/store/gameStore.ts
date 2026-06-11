@@ -8,14 +8,17 @@ import type {
   ClockState,
   EconomyState,
   Inventory,
+  MiscInventory,
   Seeds,
   SelectionState,
   TimeScale,
 } from '../types/game';
 import type { PlotState, RegionId, LandTypeId } from '../types/land';
 import type { ActiveTaskState, TaskBoardState, TaskDefinition, TaskOffer } from '../types/task';
+import type { FertilizerId } from '../types/fertilizer';
 import { REGION_CONFIGS } from '../config/regions';
 import { getLandTypeById } from '../config/lands';
+import { FERTILIZER_CONFIGS, getFertilizerById } from '../config/fertilizers';
 import { getPlantById, ALL_PLANTS } from '../config/plants';
 import { TASK_BOARD_RULES, TASK_BOARD_TASKS, getTaskById } from '../config/tasks';
 import { calcYield, getGrowthTargetMinutes, isPlantableMonth } from '../systems/growthSystem';
@@ -45,12 +48,20 @@ interface GameStore {
   economy: EconomyState;
   /** 购买植物种子（从商店购入放入背包） */
   buySeeds: (plantId: string, quantity: number) => boolean;
+  /** 购买肥料（从商店购入放入杂物库存） */
+  buyFertilizer: (fertilizerId: FertilizerId, quantity: number) => boolean;
+  /** 出售种子库存 */
+  sellSeeds: (plantId: string, quantity: number) => boolean;
+  /** 出售肥料库存 */
+  sellFertilizer: (fertilizerId: FertilizerId, quantity: number) => boolean;
   /** 出售背包中的农产品 */
   sellHarvest: (plantId: string, quantity: number) => boolean;
   /** 接取当前任务板上的某个任务 */
   acceptTask: (taskId: string) => boolean;
   /** 一次性提交当前已接取任务 */
   submitActiveTask: () => boolean;
+  /** 对当前种植作物施肥 */
+  applyFertilizer: (plotId: string, fertilizerId: FertilizerId) => boolean;
 
   // ── 背包（收获果实） ─────────────────────────────────────────
   inventory: Inventory;
@@ -60,6 +71,9 @@ interface GameStore {
 
   // ── 种子库（购买的种子，播种后消耗） ──────────────────────────
   seeds: Seeds;
+
+  // ── 杂物库（当前用于肥料） ───────────────────────────────────
+  miscInventory: MiscInventory;
 
   // ── 解锁 ────────────────────────────────────────────────────
   unlockedPlants: string[];
@@ -107,6 +121,7 @@ function createBlankPlotState(base: Pick<PlotState, 'id' | 'regionId' | 'landTyp
     harvestCount: 0,
     isReadyToHarvest: false,
     isWilted: false,
+    appliedFertilizerId: null,
   };
 }
 
@@ -324,6 +339,8 @@ function advancePlotLifecycle(
 
   const inSeason = isPlantableMonth(plant, currentMonth);
   const targetMinutes = getGrowthTargetMinutes(plot, plant);
+  const fertilizer = plot.appliedFertilizerId ? getFertilizerById(plot.appliedFertilizerId) : null;
+  const growthMultiplier = fertilizer?.effectType === 'growth' ? fertilizer.multiplier : 1;
 
   if (!inSeason) {
     if (wiltOutOfSeason && plot.growthMinutesAccumulated < targetMinutes) {
@@ -343,13 +360,16 @@ function advancePlotLifecycle(
 
   const lastGrowthTickAt = plot.lastGrowthTickAt ?? plot.plantedAt;
   const delta = Math.max(0, newTotal - lastGrowthTickAt);
-  const growthMinutesAccumulated = Math.min(plot.growthMinutesAccumulated + delta, targetMinutes);
+  const growthMinutesAccumulated = Math.min(plot.growthMinutesAccumulated + delta * growthMultiplier, targetMinutes);
+  const reachedMature = growthMinutesAccumulated >= targetMinutes;
 
   return {
     ...plot,
     growthMinutesAccumulated,
     lastGrowthTickAt: newTotal,
-    isReadyToHarvest: growthMinutesAccumulated >= targetMinutes,
+    isReadyToHarvest: reachedMature,
+    // 生长类肥料只作用到“下一次成熟”为止，成熟后立刻清空槽位。
+    appliedFertilizerId: fertilizer?.effectType === 'growth' && reachedMature ? null : plot.appliedFertilizerId,
   };
 }
 
@@ -461,6 +481,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       harvestCount: 0,
       isReadyToHarvest: false,
       isWilted: false,
+      appliedFertilizerId: null,
     };
 
     set((s) => ({
@@ -497,6 +518,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       harvestCount: 0,
       isReadyToHarvest: false,
       isWilted: false,
+      appliedFertilizerId: null,
     };
 
     set((s) => ({
@@ -535,6 +557,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
           lastGrowthTickAt: clock.totalMinutes,
           harvestCount: plot.harvestCount + 1,
           isReadyToHarvest: false,
+          // 增产类肥料只作用到“下一次收获”为止，收获后立刻清空。
+          appliedFertilizerId: null,
         }
       : {
           ...plot,
@@ -545,6 +569,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
           harvestCount: 0,
           isReadyToHarvest: false,
           isWilted: false,
+          appliedFertilizerId: null,
         };
 
     set((s) => ({
@@ -558,7 +583,26 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   // ── 经济 ─────────────────────────────────────────────────────
-  economy: { gold: 100, cumulativeEarned: 0 },
+  economy: { gold: 300, cumulativeEarned: 0 },
+
+  buyFertilizer: (fertilizerId, quantity) => {
+    const fertilizer = getFertilizerById(fertilizerId);
+    if (!fertilizer) return false;
+
+    const total = fertilizer.purchasePrice * quantity;
+    const { economy } = get();
+    if (economy.gold < total) return false;
+
+    set((state) => ({
+      economy: { ...state.economy, gold: state.economy.gold - total },
+      miscInventory: {
+        ...state.miscInventory,
+        [fertilizerId]: (state.miscInventory[fertilizerId] ?? 0) + quantity,
+      },
+    }));
+
+    return true;
+  },
 
   acceptTask: (taskId) => {
     const { taskBoard, clock } = get();
@@ -637,6 +681,59 @@ export const useGameStore = create<GameStore>((set, get) => ({
     return true;
   },
 
+  sellFertilizer: (fertilizerId, quantity) => {
+    const fertilizer = getFertilizerById(fertilizerId);
+    if (!fertilizer) return false;
+
+    const qty = get().miscInventory[fertilizerId] ?? 0;
+    if (qty < quantity) return false;
+
+    const sellPricePerFertilizer = Math.ceil(fertilizer.purchasePrice / 10);
+    const income = sellPricePerFertilizer * quantity;
+
+    set((state) => ({
+      miscInventory: {
+        ...state.miscInventory,
+        [fertilizerId]: qty - quantity,
+      },
+      economy: {
+        gold: state.economy.gold + income,
+        cumulativeEarned: state.economy.cumulativeEarned + income,
+      },
+    }));
+
+    get()._checkUnlocks();
+    return true;
+  },
+
+  sellSeeds: (plantId, quantity) => {
+    const { seeds } = get();
+    const qty = seeds[plantId] ?? 0;
+    if (qty < quantity) return false;
+
+    const plant = getPlantById(plantId);
+    if (!plant) return false;
+
+    // 种子回收价固定为采购价的十分之一，存在小数时直接向上取整。
+    const sellPricePerSeed = Math.ceil(plant.purchasePrice / 10);
+    const income = sellPricePerSeed * quantity;
+
+    set((s) => ({
+      seeds: {
+        ...s.seeds,
+        [plantId]: qty - quantity,
+      },
+      economy: {
+        gold: s.economy.gold + income,
+        cumulativeEarned: s.economy.cumulativeEarned + income,
+      },
+    }));
+
+    // 种子出售同样属于赚取金币，需要驱动后续植物与区域解锁判断。
+    get()._checkUnlocks();
+    return true;
+  },
+
   sellHarvest: (plantId, quantity) => {
     // 只允许出售果实背包中的内容，种子不可出售
     const { inventory } = get();
@@ -663,6 +760,41 @@ export const useGameStore = create<GameStore>((set, get) => ({
     return true;
   },
 
+  applyFertilizer: (plotId, fertilizerId) => {
+    const fertilizer = getFertilizerById(fertilizerId);
+    if (!fertilizer) return false;
+
+    const { plots, miscInventory } = get();
+    const plotIdx = plots.findIndex((plot) => plot.id === plotId);
+    if (plotIdx < 0) return false;
+
+    const plot = plots[plotIdx];
+    if (!plot.plantedPlantId || plot.plantedAt === null || plot.isWilted) return false;
+    if (plot.appliedFertilizerId !== null) return false;
+
+    // 生长肥只允许施加在尚未成熟的当前作物上；增产肥可以在收获前任意时点施加。
+    if (fertilizer.effectType === 'growth' && plot.isReadyToHarvest) return false;
+
+    const qty = miscInventory[fertilizerId] ?? 0;
+    if (qty <= 0) return false;
+
+    const nextPlots = [...plots];
+    nextPlots[plotIdx] = {
+      ...plot,
+      appliedFertilizerId: fertilizerId,
+    };
+
+    set((state) => ({
+      plots: nextPlots,
+      miscInventory: {
+        ...state.miscInventory,
+        [fertilizerId]: qty - 1,
+      },
+    }));
+
+    return true;
+  },
+
   // ── 果实背包（收获后存入） ────────────────────────────────────
   inventory: {},
 
@@ -671,6 +803,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   // ── 种子库（购买后播种前持有） ───────────────────────────────
   seeds: {},
+
+  // ── 杂物库（当前用于肥料） ─────────────────────────────────
+  miscInventory: Object.fromEntries(FERTILIZER_CONFIGS.map((fertilizer) => [fertilizer.id, 0])),
 
   // ── 解锁状态 ─────────────────────────────────────────────────
   unlockedPlants: ['rice'],          // 初始解锁水稻

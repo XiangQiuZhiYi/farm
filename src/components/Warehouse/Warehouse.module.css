@@ -1,4 +1,4 @@
-.shop {
+.warehouse {
   color: #c9d8cc;
   background:
     linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
@@ -70,11 +70,26 @@
   background: rgba(201, 139, 58, 0.12);
 }
 
-.sectionTitle {
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
   margin: 0;
-  color: #fff1c7;
-  font-size: 13px;
-  letter-spacing: 0.08em;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(187, 139, 62, 0.14);
+}
+
+.item:last-child {
+  border-bottom: none;
 }
 
 .tagGrid {
@@ -99,24 +114,18 @@
   background: rgba(201, 139, 58, 0.08);
 }
 
+.mainInfo {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
 .name {
-  font-size: 13px;
   color: #d7dfcf;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
+  font-size: 13px;
 }
 
-/* 种子库存量徽章 */
-.seedBadge {
-  border: 1px solid rgba(95, 168, 120, 0.5);
-  color: #5fa870;
-  padding: 1px 6px;
-  font-size: 11px;
-}
-
-.price {
+.meta {
   color: #c88b39;
   font-size: 12px;
 }
@@ -130,6 +139,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-shrink: 0;
   width: 100%;
   justify-content: center;
 }
@@ -143,10 +153,7 @@
   font: inherit;
 }
 
-.actions button,
-.secondaryBtn,
-.primaryBtn,
-.closeBtn {
+.actions button {
   color: #c9a96a;
   cursor: pointer;
   background: rgba(9, 39, 36, 0.72);
@@ -156,26 +163,13 @@
   font-size: 12px;
 }
 
-.actions button:hover,
-.secondaryBtn:hover,
-.primaryBtn:hover,
-.closeBtn:hover {
+.actions button:hover {
   border-color: rgba(235, 151, 61, 0.7);
   color: #fff1c7;
   background: rgba(201, 139, 58, 0.12);
 }
 
-.primaryBtn {
-  border-color: rgba(229, 159, 74, 0.62);
-  color: #f1b96d;
-}
-
-.primaryBtn:disabled {
-  opacity: 0.38;
-  cursor: not-allowed;
-}
-
-.purchaseBackdrop {
+.saleBackdrop {
   position: fixed;
   inset: 0;
   display: grid;
@@ -185,7 +179,7 @@
   z-index: 70;
 }
 
-.purchaseModal {
+.saleModal {
   width: min(520px, calc(100vw - 48px));
   border: 1px solid rgba(229, 159, 74, 0.58);
   background:
@@ -196,7 +190,7 @@
   box-shadow: 0 22px 70px rgba(0, 0, 0, 0.56);
 }
 
-.purchaseHeader {
+.saleHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -205,22 +199,55 @@
   border-bottom: 1px solid rgba(187, 139, 62, 0.32);
 }
 
-.purchaseHeader h3 {
+.saleHeader h3 {
   margin: 0;
   color: #fff1c7;
   font-size: 16px;
 }
 
-.purchaseBody {
+.closeBtn {
+  width: 32px;
+  height: 32px;
+  border: 1px solid rgba(229, 159, 74, 0.5);
+  background: rgba(8, 31, 29, 0.9);
+  color: #f1b96d;
+  cursor: pointer;
+  font-size: 18px;
+}
+
+.saleBody {
   padding: 16px 18px 18px;
   display: grid;
   gap: 12px;
 }
 
-.purchaseFooter {
+.saleFooter {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
+}
+
+.secondaryBtn,
+.primaryBtn {
+  color: #c9a96a;
+  cursor: pointer;
+  background: rgba(9, 39, 36, 0.72);
+  border: 1px solid rgba(190, 135, 57, 0.38);
+  padding: 6px 12px;
+  font-family: inherit;
+  font-size: 12px;
+}
+
+.primaryBtn {
+  border-color: rgba(229, 159, 74, 0.62);
+  color: #f1b96d;
+}
+
+.secondaryBtn:hover,
+.primaryBtn:hover {
+  border-color: rgba(235, 151, 61, 0.7);
+  color: #fff1c7;
+  background: rgba(201, 139, 58, 0.12);
 }
 
 .empty {

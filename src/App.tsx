@@ -4,6 +4,7 @@ import { HUD } from './components/HUD';
 import { GameCanvas } from './components/GameCanvas';
 import { PlotPanel } from './components/PlotPanel';
 import { Shop } from './components/Shop';
+import { Warehouse } from './components/Warehouse';
 import { Compendium } from './components/Compendium';
 import { getTaskById } from './config/tasks';
 import { getPlantById } from './config/plants';
@@ -245,6 +246,7 @@ function App() {
   const [screen, setScreen] = useState<'game' | 'compendium'>('game');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [shopOpen, setShopOpen] = useState(false);
+  const [warehouseOpen, setWarehouseOpen] = useState(false);
   const [expandOpen, setExpandOpen] = useState(false);
   const [taskBoardOpen, setTaskBoardOpen] = useState(false);
   // 当前展示的农田区域
@@ -332,7 +334,14 @@ function App() {
                 className="toolbarBtn toolbarBtnPrimary"
                 onClick={() => setShopOpen(true)}
               >
-                🛒 购买种子
+                🛒 商店
+              </button>
+              <button
+                type="button"
+                className="toolbarBtn"
+                onClick={() => setWarehouseOpen(true)}
+              >
+                📦 仓库
               </button>
               <button
                 type="button"
@@ -382,12 +391,24 @@ function App() {
             {/* 购买种子弹框 */}
             {shopOpen && (
               <div className="modalBackdrop" role="presentation" onClick={() => setShopOpen(false)}>
-                <div className="modalBox" role="dialog" aria-label="购买种子" onClick={(e) => e.stopPropagation()}>
+                <div className="modalBox" role="dialog" aria-label="商店" onClick={(e) => e.stopPropagation()}>
                   <div className="modalHeader">
-                    <h2>种子商店</h2>
+                    <h2>商店</h2>
                     <button type="button" className="modalClose" onClick={() => setShopOpen(false)}>×</button>
                   </div>
                   <Shop />
+                </div>
+              </div>
+            )}
+
+            {warehouseOpen && (
+              <div className="modalBackdrop" role="presentation" onClick={() => setWarehouseOpen(false)}>
+                <div className="modalBox warehouseModal" role="dialog" aria-label="仓库" onClick={(e) => e.stopPropagation()}>
+                  <div className="modalHeader">
+                    <h2>仓库</h2>
+                    <button type="button" className="modalClose" onClick={() => setWarehouseOpen(false)}>×</button>
+                  </div>
+                  <Warehouse />
                 </div>
               </div>
             )}

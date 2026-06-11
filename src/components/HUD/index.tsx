@@ -6,7 +6,7 @@ import { useGameStore } from '../../store/gameStore';
 import type { TimeScale } from '../../types/game';
 import styles from './HUD.module.css';
 
-const TIME_SCALES: TimeScale[] = [1, 10, 60, 1440];
+const TIME_SCALES: TimeScale[] = [1, 1440, 2880, 4320];
 const SEASON_LABELS = {
   spring: '🌸 春',
   summer: '☀️ 夏',

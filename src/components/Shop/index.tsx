@@ -1,102 +1,216 @@
 // ============================================================
-// Shop 组件：购买种子 + 出售背包农产品
+// Shop 组件：仅负责购买种子
 // ============================================================
 
 import { useState } from 'react';
 import { useGameStore } from '../../store/gameStore';
+import { FERTILIZER_CONFIGS, getFertilizerById } from '../../config/fertilizers';
 import { getPlantById } from '../../config/plants';
 import styles from './Shop.module.css';
 
-type Tab = 'buy' | 'sell';
+type Tab = 'seeds' | 'misc';
+type ShopItemKind = 'seed' | 'fertilizer';
+
+type ActivePurchaseItem = {
+  kind: ShopItemKind;
+  itemId: string;
+};
+
+function normalizeQuantity(input: string) {
+  const digitsOnly = input.replace(/\D/g, '');
+  const parsed = Number.parseInt(digitsOnly, 10);
+  if (Number.isNaN(parsed) || parsed < 1) return 1;
+  return parsed;
+}
+
+function bestSoilLabel(bestSoils: string[]) {
+  if (bestSoils.includes('paddy_field')) return '水田';
+  if (bestSoils.includes('dry_land')) return '旱地';
+  if (bestSoils.includes('brown_soil')) return '褐土';
+  if (bestSoils.includes('tidal_soil')) return '潮土';
+  if (bestSoils.includes('black_soil')) return '黑土';
+  return '其他';
+}
 
 export function Shop() {
-  const [tab, setTab] = useState<Tab>('buy');
+  const [tab, setTab] = useState<Tab>('seeds');
+  const [purchaseQuantity, setPurchaseQuantity] = useState('1');
+  const [activeItem, setActiveItem] = useState<ActivePurchaseItem | null>(null);
+  const [seedFilter, setSeedFilter] = useState('全部');
   const economy = useGameStore((s) => s.economy);
-  const inventory = useGameStore((s) => s.inventory);
   const seeds = useGameStore((s) => s.seeds);
+  const miscInventory = useGameStore((s) => s.miscInventory);
   const unlockedPlants = useGameStore((s) => s.unlockedPlants);
   const buySeeds = useGameStore((s) => s.buySeeds);
-  const sellHarvest = useGameStore((s) => s.sellHarvest);
+  const buyFertilizer = useGameStore((s) => s.buyFertilizer);
 
   const unlockedConfigs = unlockedPlants
     .map(getPlantById)
     .filter((p): p is NonNullable<typeof p> => p !== null);
 
+  const seedFilterOptions = ['全部', ...new Set(unlockedConfigs.map((plant) => bestSoilLabel(plant.soilMatch.best)))];
+  const filteredSeeds = seedFilter === '全部'
+    ? unlockedConfigs
+    : unlockedConfigs.filter((plant) => bestSoilLabel(plant.soilMatch.best) === seedFilter);
+
+  const quantity = normalizeQuantity(purchaseQuantity);
+  const activePlant = activeItem?.kind === 'seed' ? getPlantById(activeItem.itemId) : null;
+  const activeFertilizer = activeItem?.kind === 'fertilizer' ? getFertilizerById(activeItem.itemId) : null;
+  const activeUnitPrice = activeItem
+    ? activeItem.kind === 'seed'
+      ? activePlant?.purchasePrice ?? 0
+      : activeFertilizer?.purchasePrice ?? 0
+    : 0;
+  const previewCost = activeUnitPrice * quantity;
+
+  const openPurchaseModal = (kind: ShopItemKind, itemId: string) => {
+    setPurchaseQuantity('1');
+    setActiveItem({ kind, itemId });
+  };
+
+  const confirmPurchase = () => {
+    if (!activeItem) return;
+
+    if (activeItem.kind === 'seed') {
+      const ok = buySeeds(activeItem.itemId, quantity);
+      if (ok) setActiveItem(null);
+      return;
+    }
+
+    const ok = buyFertilizer(activeItem.itemId as Parameters<typeof buyFertilizer>[0], quantity);
+    if (ok) setActiveItem(null);
+  };
+
   return (
     <div className={styles.shop}>
       <div className={styles.tabs}>
         <button
-          className={tab === 'buy' ? styles.activeTab : ''}
-          onClick={() => setTab('buy')}
+          type="button"
+          className={tab === 'seeds' ? styles.activeTab : ''}
+          onClick={() => setTab('seeds')}
         >
-          🛒 购买种子
+          种子
         </button>
         <button
-          className={tab === 'sell' ? styles.activeTab : ''}
-          onClick={() => setTab('sell')}
+          type="button"
+          className={tab === 'misc' ? styles.activeTab : ''}
+          onClick={() => setTab('misc')}
         >
-          💰 出售农产品
+          杂物
         </button>
       </div>
 
       <div className={styles.content}>
-        {tab === 'buy' ? (
-          <ul className={styles.list}>
-            {unlockedConfigs.map((p) => p && (
-              <li key={p.id} className={styles.item}>
-                <span className={styles.name}>
-                  {p.name} {p.harvestType === 'perennial' ? '（多年生）' : '（一次性）'}
-                  {/* 显示当前种子库存量 */}
-                  {(seeds[p.id] ?? 0) > 0 && (
-                    <span className={styles.seedBadge}>库存 ×{seeds[p.id]}</span>
-                  )}
-                </span>
-                <span className={styles.price}>
-                  采购 {p.purchasePrice} 金/份
-                  {p.harvestType === 'perennial' && p.reharvestMinutes
-                    ? ` · 再采 ${Math.round(p.reharvestMinutes / 1440)} 个月 · 越季暂停`
-                    : ' · 越季枯萎'}
-                </span>
+        {tab === 'seeds' ? (
+          <>
+            <div className={styles.filters}>
+              {seedFilterOptions.map((option) => (
                 <button
-                  onClick={() => buySeeds(p.id, 1)}
-                  disabled={economy.gold < p.purchasePrice}
+                  key={option}
+                  type="button"
+                  className={seedFilter === option ? styles.activeFilter : styles.filterBtn}
+                  onClick={() => setSeedFilter(option)}
                 >
-                  购买 ×1
+                  {option}
                 </button>
-                <button
-                  onClick={() => buySeeds(p.id, 5)}
-                  disabled={economy.gold < p.purchasePrice * 5}
-                >
-                  购买 ×5
-                </button>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          // 出售页只显示果实背包（inventory），不包含种子
-          <ul className={styles.list}>
-            {Object.entries(inventory)
-              .filter(([, qty]) => qty > 0)
-              .map(([plantId, qty]) => {
-                const p = getPlantById(plantId);
-                if (!p) return null;
-                return (
-                  <li key={plantId} className={styles.item}>
+              ))}
+            </div>
+            {filteredSeeds.length > 0 ? (
+              <div className={styles.tagGrid}>
+                {filteredSeeds.map((plant) => (
+                  <button
+                    key={plant.id}
+                    type="button"
+                    className={styles.tagCard}
+                    onClick={() => openPurchaseModal('seed', plant.id)}
+                  >
                     <span className={styles.name}>
-                      {p.name} ×{qty}（收获果实）
+                      {plant.name} {plant.harvestType === 'perennial' ? '（多年生）' : '（一次性）'}
                     </span>
-                    <span className={styles.price}>售价 {p.sellPricePerUnit} 金/份</span>
-                    <button onClick={() => sellHarvest(plantId, 1)}>出售 ×1</button>
-                    <button onClick={() => sellHarvest(plantId, qty)}>全部出售</button>
-                  </li>
-                );
-              })}
-            {Object.values(inventory).every((q) => q === 0) && (
-              <li className={styles.empty}>暂无收获果实</li>
+                    <span className={styles.price}>采购 {plant.purchasePrice} 金/份</span>
+                    {(seeds[plant.id] ?? 0) > 0 ? (
+                      <span className={styles.seedBadge}>库存 ×{seeds[plant.id]}</span>
+                    ) : null}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p className={styles.empty}>当前筛选下暂无可购买种子</p>
             )}
-          </ul>
+          </>
+        ) : (
+          <div className={styles.tagGrid}>
+            {FERTILIZER_CONFIGS.map((fertilizer) => (
+              <button
+                key={fertilizer.id}
+                type="button"
+                className={styles.tagCard}
+                onClick={() => openPurchaseModal('fertilizer', fertilizer.id)}
+              >
+                <span className={styles.name}>{fertilizer.name}</span>
+                <span className={styles.price}>采购 {fertilizer.purchasePrice} 金/份</span>
+                <span className={styles.preview}>
+                  {fertilizer.effectType === 'growth'
+                    ? `下次成熟速度 ×${fertilizer.multiplier}`
+                    : `下次收获产量 ×${fertilizer.multiplier}`}
+                </span>
+                {(miscInventory[fertilizer.id] ?? 0) > 0 ? (
+                  <span className={styles.seedBadge}>库存 ×{miscInventory[fertilizer.id]}</span>
+                ) : null}
+              </button>
+            ))}
+          </div>
         )}
       </div>
+
+      {activeItem ? (
+        <div className={styles.purchaseBackdrop} role="presentation" onClick={() => setActiveItem(null)}>
+          <div className={styles.purchaseModal} role="dialog" aria-modal="true" aria-label="购买" onClick={(event) => event.stopPropagation()}>
+            <div className={styles.purchaseHeader}>
+              <h3>
+                {activeItem.kind === 'seed'
+                  ? activePlant?.name ?? activeItem.itemId
+                  : activeFertilizer?.name ?? activeItem.itemId}
+              </h3>
+              <button type="button" className={styles.closeBtn} onClick={() => setActiveItem(null)}>×</button>
+            </div>
+            <div className={styles.purchaseBody}>
+              <p className={styles.price}>单价 {activeUnitPrice} 金</p>
+              {activeItem.kind === 'fertilizer' && activeFertilizer ? (
+                <p className={styles.preview}>
+                  {activeFertilizer.effectType === 'growth'
+                    ? `作用：下次成熟速度 ×${activeFertilizer.multiplier}`
+                    : `作用：下次收获产量 ×${activeFertilizer.multiplier}`}
+                </p>
+              ) : null}
+              <p className={styles.preview}>本次购买需花费 {previewCost} 金</p>
+              <div className={styles.actions}>
+                <button type="button" onClick={() => setPurchaseQuantity(String(Math.max(1, quantity - 1)))}>-</button>
+                <input
+                  type="number"
+                  min={1}
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={purchaseQuantity}
+                  onChange={(event) => setPurchaseQuantity(String(normalizeQuantity(event.target.value)))}
+                />
+                <button type="button" onClick={() => setPurchaseQuantity(String(quantity + 1))}>+</button>
+              </div>
+              <div className={styles.purchaseFooter}>
+                <button type="button" className={styles.secondaryBtn} onClick={() => setActiveItem(null)}>关闭</button>
+                <button
+                  type="button"
+                  className={styles.primaryBtn}
+                  disabled={economy.gold < previewCost}
+                  onClick={confirmPurchase}
+                >
+                  确认购买
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

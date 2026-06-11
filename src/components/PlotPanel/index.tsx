@@ -4,6 +4,7 @@
 // ============================================================
 
 import { useGameStore } from '../../store/gameStore';
+import { FERTILIZER_CONFIGS, getFertilizerById } from '../../config/fertilizers';
 import { getPlantById } from '../../config/plants';
 import { calcPlotGrowthStage, getGrowthTargetMinutes, isPlantableMonth } from '../../systems/growthSystem';
 import styles from './PlotPanel.module.css';
@@ -12,9 +13,11 @@ export function PlotPanel() {
   const plots = useGameStore((s) => s.plots);
   const selection = useGameStore((s) => s.selection);
   const clock = useGameStore((s) => s.clock);
+  const miscInventory = useGameStore((s) => s.miscInventory);
   const seeds = useGameStore((s) => s.seeds);
   const unlockedPlants = useGameStore((s) => s.unlockedPlants);
   const harvest = useGameStore((s) => s.harvest);
+  const applyFertilizer = useGameStore((s) => s.applyFertilizer);
   const plantSeed = useGameStore((s) => s.plantSeed);
   const selectPlot = useGameStore((s) => s.selectPlot);
 
@@ -23,6 +26,7 @@ export function PlotPanel() {
   if (!plot) return null;
 
   const plant = plot.plantedPlantId ? getPlantById(plot.plantedPlantId) : null;
+  const fertilizer = plot.appliedFertilizerId ? getFertilizerById(plot.appliedFertilizerId) : null;
   const targetMinutes = plant ? getGrowthTargetMinutes(plot, plant) : 0;
   const stage = plant && !plot.isWilted ? calcPlotGrowthStage(plot, plant) : null;
   const progress = plant && !plot.isWilted
@@ -44,6 +48,8 @@ export function PlotPanel() {
           ? '↺ 再生中'
           : `◎ ${STAGE_LABELS[stage ?? 'seed'] ?? '生长中'}`
     : '';
+
+  const fertilizerStatusLabel = fertilizer?.plotStatusLabel ?? '未施肥';
 
   // 种子库中有存货的已解锁植物列表
   const plantableList = unlockedPlants
@@ -99,6 +105,7 @@ export function PlotPanel() {
 
             <div className={styles.meta}>
               <span>{plant.harvestType === 'perennial' ? '多年生' : '一年生'}</span>
+              <span>{fertilizerStatusLabel}</span>
               {plant.harvestType === 'perennial' && plot.harvestCount > 0 && (
                 <span>已收 {plot.harvestCount} 次</span>
               )}
@@ -130,17 +137,46 @@ export function PlotPanel() {
               </>
             ) : (
               // 正常状态：收获
-              <div className={styles.actions}>
-                {plot.isReadyToHarvest && (
-                  <button
-                    type="button"
-                    className={`${styles.actionBtn} ${styles.harvestBtn}`}
-                    onClick={() => harvest(plot.id)}
-                  >
-                    🌾 收获
-                  </button>
-                )}
-              </div>
+              <>
+                <div className={styles.actions}>
+                  {plot.isReadyToHarvest && (
+                    <button
+                      type="button"
+                      className={`${styles.actionBtn} ${styles.harvestBtn}`}
+                      onClick={() => harvest(plot.id)}
+                    >
+                      🌾 收获
+                    </button>
+                  )}
+                </div>
+
+                <div className={styles.fertilizerSection}>
+                  <p className={styles.fertilizerTitle}>施肥</p>
+                  <div className={styles.plantList}>
+                    {FERTILIZER_CONFIGS.map((item) => {
+                      const qty = miscInventory[item.id] ?? 0;
+                      const disabled = qty <= 0 || plot.appliedFertilizerId !== null || (item.effectType === 'growth' && plot.isReadyToHarvest);
+
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          className={styles.plantBtn}
+                          disabled={disabled}
+                          onClick={() => applyFertilizer(plot.id, item.id)}
+                        >
+                          {item.name} ×{qty}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className={styles.fertilizerHint}>
+                    {plot.appliedFertilizerId !== null
+                      ? '当前作物已有肥料效果，需等本次效果结算后才能再次施肥。'
+                      : '同一时间只能存在一种肥料效果。生长肥仅限未成熟作物施加。'}
+                  </p>
+                </div>
+              </>
             )}
           </div>
         ) : (
@@ -149,7 +185,7 @@ export function PlotPanel() {
             <p className={styles.emptyHint}>空地 — 选择种植</p>
             <div className={styles.plantList}>
               {plantableList.length === 0 ? (
-                <span className={styles.empty}>背包无种子，请点击「购买种子」</span>
+                <span className={styles.empty}>背包无种子，请点击「商店」</span>
               ) : (
                 plantableList.map((p) => (
                   <button
