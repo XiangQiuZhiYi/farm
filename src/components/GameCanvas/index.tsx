@@ -77,11 +77,6 @@ export function GameCanvas({ regionId }: GameCanvasProps) {
       ref={canvasRef}
       width={width}
       height={height}
-      style={{
-        display: 'block',
-        imageRendering: 'pixelated',
-        cursor: 'pointer',
-      }}
       onClick={handleClick}
     />
   );

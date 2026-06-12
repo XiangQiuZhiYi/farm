@@ -337,14 +337,13 @@ function advancePlotLifecycle(
   plantId: string,
   plant: NonNullable<ReturnType<typeof getPlantById>>,
   newTotal: number,
-  currentMonth: number,
+  _currentMonth: number,
 ): PlotState {
   if (plot.plantedPlantId !== plantId || plot.plantedAt === null) return plot;
   if (plot.isWilted) {
     return { ...plot, lastGrowthTickAt: newTotal, isReadyToHarvest: false };
   }
 
-  const wiltOutOfSeason = plant.wiltOutOfSeason ?? true;
   const lifespanMinutes = plant.maxLifespanYears
     ? plant.maxLifespanYears * MINUTES_PER_YEAR
     : null;
@@ -357,27 +356,13 @@ function advancePlotLifecycle(
     };
   }
 
-  const inSeason = isPlantableMonth(plant, currentMonth);
   const targetMinutes = getGrowthTargetMinutes(plot, plant);
   const fertilizer = plot.appliedFertilizerId ? getFertilizerById(plot.appliedFertilizerId) : null;
   const growthMultiplier = fertilizer?.effectType === 'growth' ? fertilizer.multiplier : 1;
 
-  if (!inSeason) {
-    if (wiltOutOfSeason && plot.growthMinutesAccumulated < targetMinutes) {
-      return {
-        ...plot,
-        isReadyToHarvest: false,
-        isWilted: true,
-        lastGrowthTickAt: newTotal,
-      };
-    }
-
-    return {
-      ...plot,
-      lastGrowthTickAt: newTotal,
-    };
-  }
-
+  // 已播种后全年正常生长，不因季节暂停或枯萎；
+  // 季节限制只在播种入口发生不再居中判断。
+  // 以下 for 弹性字段保留（多年生逆用 + wiltOutOfSeason 字段兼容）
   const lastGrowthTickAt = plot.lastGrowthTickAt ?? plot.plantedAt;
   const delta = Math.max(0, newTotal - lastGrowthTickAt);
   const growthMinutesAccumulated = Math.min(plot.growthMinutesAccumulated + delta * growthMultiplier, targetMinutes);

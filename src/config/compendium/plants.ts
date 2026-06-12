@@ -3,6 +3,7 @@
 // ============================================================
 
 import { ALL_PLANTS } from '../plants';
+import { LAND_TYPE_CONFIGS } from '../lands';
 import type { PlantConfig } from '../../types/plant';
 
 export type PlantStage = 'seed' | 'sprout' | 'grow' | 'mature';
@@ -4341,16 +4342,9 @@ function buildEntry(plant: PlantConfig): PlantCompendiumEntry {
   const regionName = REGION_NAME_MAP[plant.regionId] ?? plant.regionId;
   const stageArt = PLANT_ARTS[plant.id];
 
-  // 有效播种月份：与 growthSystem.isPlantableMonth 保持一致的回退逻辑
-  // plantableMonths 未定义时，回退到 bestMonths + okMonths 的并集（而非"全年"）
-  const effectivePlantableMonths: number[] = plant.plantableMonths?.length
-    ? plant.plantableMonths
-    : [...new Set([...plant.season.bestMonths, ...plant.season.okMonths])];
-  const plantingMonths = `${[...effectivePlantableMonths].sort((a, b) => a - b).join('、')} 月`;
-
-  // 最适收割月份：season.bestMonths 决定最高产量的月份
-  const harvestMonths = plant.season.bestMonths.length
-    ? `${plant.season.bestMonths.join('、')} 月`
+  // 播种月份：直接读取 plantableMonths，全年可种则显示"全年"
+  const plantingMonths = plant.plantableMonths?.length
+    ? `${[...plant.plantableMonths].sort((a, b) => a - b).join('、')} 月`
     : '全年';
 
   return {
@@ -4359,7 +4353,6 @@ function buildEntry(plant: PlantConfig): PlantCompendiumEntry {
     regionId: plant.regionId,
     regionName,
     unlockCumulativeGold: plant.unlockCumulativeGold,
-    // 最适宜土地徽标：取 soilMatch.best 中文名，多个时用"/"分隔
     bestSoilLabel: plant.soilMatch.best.map((id) => LAND_NAME_MAP[id] ?? id).join(' / '),
     summary: summarize(plant.id),
     highlights: highlightsFor(plant.id),
@@ -4372,11 +4365,19 @@ function buildEntry(plant: PlantConfig): PlantCompendiumEntry {
       { label: '兼容土地', value: plant.soilMatch.compatible.length
           ? plant.soilMatch.compatible.map((id) => LAND_NAME_MAP[id] ?? id).join('、')
           : '—' },
-      // 最适种植月份（可实际种植并积累成长时间的月份）
-      { label: '最适种植月份', value: plantingMonths },
-      // 最适收割月份（此时收获产量加成最高）
-      { label: '最适收割月份', value: harvestMonths },
-      // 可收割次数（一年生=1次，多年生按寿命和再生周期推算）
+      // 播种月份（严格 3 个月窗口，仅此期间可播种，种下后全年生长）
+      { label: '播种月份', value: plantingMonths },
+      // 适宜土地收获量范围
+      { label: '适宜土地收获量', value: (() => {
+        const bestFertilityBonus = plant.soilMatch.best.reduce((max, landId) => {
+          const cfg = LAND_TYPE_CONFIGS.find((c) => c.id === landId);
+          const bonus = cfg ? Math.floor((cfg.baseFertility - 1) / 2) : 0;
+          return Math.max(max, bonus);
+        }, 0);
+        const cap = plant.expectedBestYield + bestFertilityBonus;
+        const minYield = Math.max(0, plant.expectedBestYield - 2 + bestFertilityBonus);
+        return minYield === cap ? `${cap} 个` : `${minYield} ~ ${cap} 个`;
+      })() },
       { label: '可收割次数', value: harvestCountLabel(plant) },
       ...(plant.harvestType === 'perennial' && plant.reharvestMinutes
         ? [{ label: '再生周期', value: `${Math.round(plant.reharvestMinutes / 1440)} 个月` }]

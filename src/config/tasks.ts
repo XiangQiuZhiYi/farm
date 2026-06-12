@@ -82,56 +82,56 @@ const TASK_SEEDS: TaskSeed[] = [
     title: '谷仓补货',
     difficulty: 'easy',
     isTimed: false,
-    requirements: [{ plantId: 'rice', quantity: 12 }],
+    requirements: [{ plantId: 'rice', quantity: 72 }],
   },
   {
     id: 'task_easy_02',
     title: '冬粮征集',
     difficulty: 'easy',
     isTimed: false,
-    requirements: [{ plantId: 'wheat', quantity: 10 }],
+    requirements: [{ plantId: 'wheat', quantity: 60 }],
   },
   {
     id: 'task_easy_03',
     title: '集市鲜玉米',
     difficulty: 'easy',
     isTimed: false,
-    requirements: [{ plantId: 'corn', quantity: 9 }],
+    requirements: [{ plantId: 'corn', quantity: 54 }],
   },
   {
     id: 'task_easy_04',
     title: '豆坊备货',
     difficulty: 'easy',
     isTimed: false,
-    requirements: [{ plantId: 'soybean', quantity: 8 }],
+    requirements: [{ plantId: 'soybean', quantity: 48 }],
   },
   {
     id: 'task_easy_05',
     title: '地窖土豆单',
     difficulty: 'easy',
     isTimed: false,
-    requirements: [{ plantId: 'potato', quantity: 7 }],
+    requirements: [{ plantId: 'potato', quantity: 42 }],
   },
   {
     id: 'task_easy_06',
     title: '油坊花生单',
     difficulty: 'easy',
     isTimed: false,
-    requirements: [{ plantId: 'peanut', quantity: 6 }],
+    requirements: [{ plantId: 'peanut', quantity: 36 }],
   },
   {
     id: 'task_easy_07',
     title: '甜食铺进货',
     difficulty: 'easy',
     isTimed: false,
-    requirements: [{ plantId: 'sweet_potato', quantity: 6 }],
+    requirements: [{ plantId: 'sweet_potato', quantity: 36 }],
   },
   {
     id: 'task_easy_08',
     title: '荷塘鲜藕',
     difficulty: 'easy',
     isTimed: false,
-    requirements: [{ plantId: 'lotus_root', quantity: 5 }],
+    requirements: [{ plantId: 'lotus_root', quantity: 30 }],
   },
   {
     id: 'task_easy_09',
@@ -139,21 +139,21 @@ const TASK_SEEDS: TaskSeed[] = [
     difficulty: 'easy',
     isTimed: true,
     timeLimitMonths: 2,
-    requirements: [{ plantId: 'water_spinach', quantity: 8 }],
+    requirements: [{ plantId: 'water_spinach', quantity: 48 }],
   },
   {
     id: 'task_easy_10',
     title: '水乡茭白单',
     difficulty: 'easy',
     isTimed: false,
-    requirements: [{ plantId: 'water_chestnut', quantity: 4 }],
+    requirements: [{ plantId: 'water_chestnut', quantity: 24 }],
   },
   {
     id: 'task_easy_11',
     title: '菜铺白菜单',
     difficulty: 'easy',
     isTimed: false,
-    requirements: [{ plantId: 'cabbage', quantity: 7 }],
+    requirements: [{ plantId: 'cabbage', quantity: 42 }],
   },
   {
     id: 'task_easy_12',
@@ -161,21 +161,21 @@ const TASK_SEEDS: TaskSeed[] = [
     difficulty: 'easy',
     isTimed: true,
     timeLimitMonths: 2,
-    requirements: [{ plantId: 'radish', quantity: 7 }],
+    requirements: [{ plantId: 'radish', quantity: 42 }],
   },
   {
     id: 'task_easy_13',
     title: '蒜铺备货',
     difficulty: 'easy',
     isTimed: false,
-    requirements: [{ plantId: 'garlic', quantity: 6 }],
+    requirements: [{ plantId: 'garlic', quantity: 36 }],
   },
   {
     id: 'task_easy_14',
     title: '洋葱小订单',
     difficulty: 'easy',
     isTimed: false,
-    requirements: [{ plantId: 'onion', quantity: 6 }],
+    requirements: [{ plantId: 'onion', quantity: 36 }],
   },
   {
     id: 'task_medium_01',
@@ -183,8 +183,8 @@ const TASK_SEEDS: TaskSeed[] = [
     difficulty: 'medium',
     isTimed: false,
     requirements: [
-      { plantId: 'cotton', quantity: 4 },
-      { plantId: 'sesame', quantity: 4 },
+      { plantId: 'cotton', quantity: 24 },
+      { plantId: 'sesame', quantity: 24 },
     ],
   },
   {
@@ -193,8 +193,8 @@ const TASK_SEEDS: TaskSeed[] = [
     difficulty: 'medium',
     isTimed: false,
     requirements: [
-      { plantId: 'sunflower', quantity: 4 },
-      { plantId: 'rapeseed', quantity: 4 },
+      { plantId: 'sunflower', quantity: 24 },
+      { plantId: 'rapeseed', quantity: 24 },
     ],
   },
   {
@@ -204,8 +204,8 @@ const TASK_SEEDS: TaskSeed[] = [
     isTimed: true,
     timeLimitMonths: 3,
     requirements: [
-      { plantId: 'tobacco', quantity: 3 },
-      { plantId: 'pepper', quantity: 4 },
+      { plantId: 'tobacco', quantity: 18 },
+      { plantId: 'pepper', quantity: 24 },
     ],
   },
   {
@@ -214,9 +214,9 @@ const TASK_SEEDS: TaskSeed[] = [
     difficulty: 'medium',
     isTimed: false,
     requirements: [
-      { plantId: 'cabbage', quantity: 5 },
-      { plantId: 'radish', quantity: 5 },
-      { plantId: 'onion', quantity: 4 },
+      { plantId: 'cabbage', quantity: 30 },
+      { plantId: 'radish', quantity: 30 },
+      { plantId: 'onion', quantity: 24 },
     ],
   },
   {
@@ -226,8 +226,8 @@ const TASK_SEEDS: TaskSeed[] = [
     isTimed: true,
     timeLimitMonths: 3,
     requirements: [
-      { plantId: 'rice', quantity: 8 },
-      { plantId: 'lotus_root', quantity: 4 },
+      { plantId: 'rice', quantity: 48 },
+      { plantId: 'lotus_root', quantity: 24 },
     ],
   },
   {
@@ -236,9 +236,9 @@ const TASK_SEEDS: TaskSeed[] = [
     difficulty: 'medium',
     isTimed: false,
     requirements: [
-      { plantId: 'corn', quantity: 6 },
-      { plantId: 'soybean', quantity: 6 },
-      { plantId: 'peanut', quantity: 4 },
+      { plantId: 'corn', quantity: 36 },
+      { plantId: 'soybean', quantity: 36 },
+      { plantId: 'peanut', quantity: 24 },
     ],
   },
   {
@@ -247,8 +247,8 @@ const TASK_SEEDS: TaskSeed[] = [
     difficulty: 'medium',
     isTimed: false,
     requirements: [
-      { plantId: 'flax', quantity: 4 },
-      { plantId: 'sugar_beet', quantity: 4 },
+      { plantId: 'flax', quantity: 24 },
+      { plantId: 'sugar_beet', quantity: 24 },
     ],
   },
   {
@@ -257,8 +257,8 @@ const TASK_SEEDS: TaskSeed[] = [
     difficulty: 'medium',
     isTimed: false,
     requirements: [
-      { plantId: 'buckwheat', quantity: 5 },
-      { plantId: 'highland_barley', quantity: 4 },
+      { plantId: 'buckwheat', quantity: 30 },
+      { plantId: 'highland_barley', quantity: 24 },
     ],
   },
   {
@@ -267,8 +267,8 @@ const TASK_SEEDS: TaskSeed[] = [
     difficulty: 'medium',
     isTimed: false,
     requirements: [
-      { plantId: 'sorghum', quantity: 5 },
-      { plantId: 'mung_bean', quantity: 5 },
+      { plantId: 'sorghum', quantity: 30 },
+      { plantId: 'mung_bean', quantity: 30 },
     ],
   },
   {
@@ -277,9 +277,9 @@ const TASK_SEEDS: TaskSeed[] = [
     difficulty: 'medium',
     isTimed: false,
     requirements: [
-      { plantId: 'velvet_bean', quantity: 4 },
-      { plantId: 'flax', quantity: 3 },
-      { plantId: 'hemp', quantity: 2 },
+      { plantId: 'velvet_bean', quantity: 24 },
+      { plantId: 'flax', quantity: 18 },
+      { plantId: 'hemp', quantity: 12 },
     ],
   },
   {
@@ -289,8 +289,8 @@ const TASK_SEEDS: TaskSeed[] = [
     isTimed: true,
     timeLimitMonths: 3,
     requirements: [
-      { plantId: 'wolfberry', quantity: 3 },
-      { plantId: 'ginseng', quantity: 2 },
+      { plantId: 'wolfberry', quantity: 18 },
+      { plantId: 'ginseng', quantity: 12 },
     ],
   },
   {
@@ -299,9 +299,9 @@ const TASK_SEEDS: TaskSeed[] = [
     difficulty: 'hard',
     isTimed: false,
     requirements: [
-      { plantId: 'rice', quantity: 8 },
-      { plantId: 'water_spinach', quantity: 6 },
-      { plantId: 'lotus_root', quantity: 4 },
+      { plantId: 'rice', quantity: 48 },
+      { plantId: 'water_spinach', quantity: 36 },
+      { plantId: 'lotus_root', quantity: 24 },
     ],
   },
   {
@@ -310,9 +310,9 @@ const TASK_SEEDS: TaskSeed[] = [
     difficulty: 'hard',
     isTimed: false,
     requirements: [
-      { plantId: 'wheat', quantity: 8 },
-      { plantId: 'corn', quantity: 8 },
-      { plantId: 'soybean', quantity: 6 },
+      { plantId: 'wheat', quantity: 48 },
+      { plantId: 'corn', quantity: 48 },
+      { plantId: 'soybean', quantity: 36 },
     ],
   },
   {
@@ -322,10 +322,10 @@ const TASK_SEEDS: TaskSeed[] = [
     isTimed: true,
     timeLimitMonths: 4,
     requirements: [
-      { plantId: 'cotton', quantity: 5 },
-      { plantId: 'sesame', quantity: 4 },
-      { plantId: 'sunflower', quantity: 4 },
-      { plantId: 'rapeseed', quantity: 4 },
+      { plantId: 'cotton', quantity: 30 },
+      { plantId: 'sesame', quantity: 24 },
+      { plantId: 'sunflower', quantity: 24 },
+      { plantId: 'rapeseed', quantity: 24 },
     ],
   },
   {
@@ -334,10 +334,10 @@ const TASK_SEEDS: TaskSeed[] = [
     difficulty: 'hard',
     isTimed: false,
     requirements: [
-      { plantId: 'tobacco', quantity: 4 },
-      { plantId: 'garlic', quantity: 5 },
-      { plantId: 'onion', quantity: 5 },
-      { plantId: 'pepper', quantity: 4 },
+      { plantId: 'tobacco', quantity: 24 },
+      { plantId: 'garlic', quantity: 30 },
+      { plantId: 'onion', quantity: 30 },
+      { plantId: 'pepper', quantity: 24 },
     ],
   },
   {
@@ -346,10 +346,10 @@ const TASK_SEEDS: TaskSeed[] = [
     difficulty: 'hard',
     isTimed: false,
     requirements: [
-      { plantId: 'potato', quantity: 6 },
-      { plantId: 'sweet_potato', quantity: 5 },
-      { plantId: 'peanut', quantity: 5 },
-      { plantId: 'cabbage', quantity: 5 },
+      { plantId: 'potato', quantity: 36 },
+      { plantId: 'sweet_potato', quantity: 30 },
+      { plantId: 'peanut', quantity: 30 },
+      { plantId: 'cabbage', quantity: 30 },
     ],
   },
   {
@@ -359,10 +359,10 @@ const TASK_SEEDS: TaskSeed[] = [
     isTimed: true,
     timeLimitMonths: 4,
     requirements: [
-      { plantId: 'flax', quantity: 4 },
-      { plantId: 'buckwheat', quantity: 5 },
-      { plantId: 'highland_barley', quantity: 4 },
-      { plantId: 'sorghum', quantity: 4 },
+      { plantId: 'flax', quantity: 24 },
+      { plantId: 'buckwheat', quantity: 30 },
+      { plantId: 'highland_barley', quantity: 24 },
+      { plantId: 'sorghum', quantity: 24 },
     ],
   },
   {
@@ -371,9 +371,9 @@ const TASK_SEEDS: TaskSeed[] = [
     difficulty: 'hard',
     isTimed: false,
     requirements: [
-      { plantId: 'sugar_beet', quantity: 4 },
-      { plantId: 'velvet_bean', quantity: 4 },
-      { plantId: 'mung_bean', quantity: 5 },
+      { plantId: 'sugar_beet', quantity: 24 },
+      { plantId: 'velvet_bean', quantity: 24 },
+      { plantId: 'mung_bean', quantity: 30 },
     ],
   },
   {
@@ -382,9 +382,9 @@ const TASK_SEEDS: TaskSeed[] = [
     difficulty: 'hard',
     isTimed: false,
     requirements: [
-      { plantId: 'hemp', quantity: 3 },
-      { plantId: 'wolfberry', quantity: 4 },
-      { plantId: 'ginseng', quantity: 2 },
+      { plantId: 'hemp', quantity: 18 },
+      { plantId: 'wolfberry', quantity: 24 },
+      { plantId: 'ginseng', quantity: 12 },
     ],
   },
   {
@@ -394,10 +394,10 @@ const TASK_SEEDS: TaskSeed[] = [
     isTimed: true,
     timeLimitMonths: 4,
     requirements: [
-      { plantId: 'water_chestnut', quantity: 4 },
-      { plantId: 'lotus_root', quantity: 4 },
-      { plantId: 'rice', quantity: 10 },
-      { plantId: 'water_spinach', quantity: 6 },
+      { plantId: 'water_chestnut', quantity: 24 },
+      { plantId: 'lotus_root', quantity: 24 },
+      { plantId: 'rice', quantity: 60 },
+      { plantId: 'water_spinach', quantity: 36 },
     ],
   },
   {
@@ -406,10 +406,10 @@ const TASK_SEEDS: TaskSeed[] = [
     difficulty: 'hard',
     isTimed: false,
     requirements: [
-      { plantId: 'pepper', quantity: 5 },
-      { plantId: 'cotton', quantity: 4 },
-      { plantId: 'cabbage', quantity: 5 },
-      { plantId: 'radish', quantity: 5 },
+      { plantId: 'pepper', quantity: 30 },
+      { plantId: 'cotton', quantity: 24 },
+      { plantId: 'cabbage', quantity: 30 },
+      { plantId: 'radish', quantity: 30 },
     ],
   },
   {
@@ -418,11 +418,11 @@ const TASK_SEEDS: TaskSeed[] = [
     difficulty: 'hell',
     isTimed: false,
     requirements: [
-      { plantId: 'rice', quantity: 12 },
-      { plantId: 'wheat', quantity: 10 },
-      { plantId: 'corn', quantity: 10 },
-      { plantId: 'soybean', quantity: 8 },
-      { plantId: 'potato', quantity: 8 },
+      { plantId: 'rice', quantity: 72 },
+      { plantId: 'wheat', quantity: 60 },
+      { plantId: 'corn', quantity: 60 },
+      { plantId: 'soybean', quantity: 48 },
+      { plantId: 'potato', quantity: 48 },
     ],
   },
   {
@@ -432,11 +432,11 @@ const TASK_SEEDS: TaskSeed[] = [
     isTimed: true,
     timeLimitMonths: 5,
     requirements: [
-      { plantId: 'cotton', quantity: 6 },
-      { plantId: 'sesame', quantity: 6 },
-      { plantId: 'sunflower', quantity: 6 },
-      { plantId: 'tobacco', quantity: 5 },
-      { plantId: 'pepper', quantity: 6 },
+      { plantId: 'cotton', quantity: 36 },
+      { plantId: 'sesame', quantity: 36 },
+      { plantId: 'sunflower', quantity: 36 },
+      { plantId: 'tobacco', quantity: 30 },
+      { plantId: 'pepper', quantity: 36 },
     ],
   },
   {
@@ -445,11 +445,11 @@ const TASK_SEEDS: TaskSeed[] = [
     difficulty: 'hell',
     isTimed: false,
     requirements: [
-      { plantId: 'flax', quantity: 5 },
-      { plantId: 'sugar_beet', quantity: 5 },
-      { plantId: 'buckwheat', quantity: 6 },
-      { plantId: 'highland_barley', quantity: 5 },
-      { plantId: 'sorghum', quantity: 6 },
+      { plantId: 'flax', quantity: 30 },
+      { plantId: 'sugar_beet', quantity: 30 },
+      { plantId: 'buckwheat', quantity: 36 },
+      { plantId: 'highland_barley', quantity: 30 },
+      { plantId: 'sorghum', quantity: 36 },
     ],
   },
   {
@@ -458,11 +458,11 @@ const TASK_SEEDS: TaskSeed[] = [
     difficulty: 'hell',
     isTimed: false,
     requirements: [
-      { plantId: 'ginseng', quantity: 3 },
-      { plantId: 'wolfberry', quantity: 5 },
-      { plantId: 'hemp', quantity: 4 },
-      { plantId: 'velvet_bean', quantity: 5 },
-      { plantId: 'mung_bean', quantity: 6 },
+      { plantId: 'ginseng', quantity: 18 },
+      { plantId: 'wolfberry', quantity: 30 },
+      { plantId: 'hemp', quantity: 24 },
+      { plantId: 'velvet_bean', quantity: 30 },
+      { plantId: 'mung_bean', quantity: 36 },
     ],
   },
   {
@@ -471,11 +471,11 @@ const TASK_SEEDS: TaskSeed[] = [
     difficulty: 'hell',
     isTimed: false,
     requirements: [
-      { plantId: 'lotus_root', quantity: 5 },
-      { plantId: 'water_chestnut', quantity: 5 },
-      { plantId: 'garlic', quantity: 6 },
-      { plantId: 'onion', quantity: 6 },
-      { plantId: 'rapeseed', quantity: 6 },
+      { plantId: 'lotus_root', quantity: 30 },
+      { plantId: 'water_chestnut', quantity: 30 },
+      { plantId: 'garlic', quantity: 36 },
+      { plantId: 'onion', quantity: 36 },
+      { plantId: 'rapeseed', quantity: 36 },
     ],
   },
 ];

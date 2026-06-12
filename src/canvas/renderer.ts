@@ -48,13 +48,13 @@ const LAND_FRONT_COLORS: Record<string, string> = {
   black_soil:  '#080604',  // 极深黑土
 };
 
-/** 有植物时的土地叠层颜色（加深拉开与植物的对比） */
+/** 有植物时底部土壤浅叠层（仅底部根部区域，不影响植物主体） */
 const LAND_OVERLAY_COLORS: Record<string, string> = {
-  paddy_field: 'rgba(8, 22, 40, 0.62)',
-  dry_land:    'rgba(0, 0, 0, 0.58)',
-  brown_soil:  'rgba(0, 0, 0, 0.58)',
-  tidal_soil:  'rgba(0, 0, 0, 0.58)',
-  black_soil:  'rgba(0, 0, 0, 0.55)',
+  paddy_field: 'rgba(8, 22, 40, 0.30)',
+  dry_land:    'rgba(0, 0, 0, 0.25)',
+  brown_soil:  'rgba(0, 0, 0, 0.25)',
+  tidal_soil:  'rgba(0, 0, 0, 0.25)',
+  black_soil:  'rgba(0, 0, 0, 0.22)',
 };
 
 function drawPlotStatusBadge(
@@ -180,11 +180,10 @@ export function renderGame(
         const plantPixels = plantEntry.stages[stage];
         const fertilizer = plot.appliedFertilizerId ? getFertilizerById(plot.appliedFertilizerId) : null;
 
-        // 叠层覆盖整个土地区域（y 到 GROUND_PX），
-        // 加深后让土色远退到背景，植物和土地颜色对比更分明
-        const overlayCover = LAND_OVERLAY_COLORS[plot.landTypeId] ?? 'rgba(0,0,0,0.58)';
+        // 仅在靠近 GND 的底部 8px 加轻微暗叠，让根部自然融入土壤，不影响植物主体
+        const overlayCover = LAND_OVERLAY_COLORS[plot.landTypeId] ?? 'rgba(0,0,0,0.25)';
         ctx.fillStyle = overlayCover;
-        ctx.fillRect(x, y, TILE_SIZE, GROUND_PX);
+        ctx.fillRect(x, y + GROUND_PX - 8, TILE_SIZE, 8);
 
         // 土壤表面边缘高光（生长区与土壤的分界更清晰）
         ctx.fillStyle = 'rgba(200, 180, 140, 0.20)';

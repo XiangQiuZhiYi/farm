@@ -12,14 +12,14 @@ function getEffectiveHarvestType(plant: PlantConfig) {
   return plant.harvestType ?? 'annual';
 }
 
-function getEffectivePlantableMonths(plant: PlantConfig): number[] {
-  if (plant.plantableMonths && plant.plantableMonths.length > 0) return plant.plantableMonths;
-  return [...new Set([...plant.season.bestMonths, ...plant.season.okMonths])];
-}
+// 播种月份判断现在只读 isPlantableMonth，getEffectivePlantableMonths 已不需要。
 
-/** 判断当前月份是否属于该植物的有效生长月 */
+/** 判断当前月份是否属于该植物的有效播种月（只限制播种入口，不影响已播种后的生长） */
 export function isPlantableMonth(plant: PlantConfig, currentMonth: number): boolean {
-  return getEffectivePlantableMonths(plant).includes(currentMonth);
+  const months = plant.plantableMonths;
+  // plantableMonths 为空或未设置时，任意月份均可播种
+  if (!months || months.length === 0) return true;
+  return months.includes(currentMonth);
 }
 
 /** 计算当前生长周期的目标分钟数 */
@@ -74,7 +74,7 @@ export function calcYield(
   plot: PlotState,
   plant: PlantConfig,
   landCfg: LandTypeConfig | null,
-  currentMonth: number,
+  _currentMonth: number,
 ): number {
   // 以设计产量减一为起点，避免平庸条件下也能轻松达到满产
   let score = plant.expectedBestYield - 1;
@@ -91,10 +91,6 @@ export function calcYield(
     // 土地基础肥力加成
     score += fertilityBonus;
   }
-
-  // 季节加成
-  if (plant.season.bestMonths.includes(currentMonth)) score += 1;
-  else if (!plant.season.okMonths.includes(currentMonth)) score -= 1;
 
   // 成熟时机加成
   if (plot.isReadyToHarvest) score += 1;

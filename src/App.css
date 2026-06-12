@@ -208,15 +208,19 @@
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  padding: 0;
+  padding: 16px;
   background: #1a1108;
   flex-wrap: wrap;
 }
 
-/* Canvas：微细描边区分画布边界 */
+/* Canvas：宝度 100% 随容器缩放，保持像素画锐利渲染 */
 .main canvas {
   display: block;
   image-rendering: pixelated;
+  width: 100%;
+  max-width: 768px; /* 6 列 × 128px 原始分辨率，超过此宽不放大以免模糊 */
+  height: auto;
+  cursor: pointer;
 }
 
 
