@@ -6,6 +6,8 @@ import { PlotPanel } from './components/PlotPanel';
 import { Shop } from './components/Shop';
 import { Warehouse } from './components/Warehouse';
 import { Compendium } from './components/Compendium';
+import { AchievementModal } from './components/AchievementModal';
+import { AchievementToast } from './components/AchievementToast';
 import { getTaskById } from './config/tasks';
 import { getPlantById } from './config/plants';
 import { createDefaultPersistedState, createSandboxPersistedState, useGameStore } from './store/gameStore';
@@ -87,7 +89,7 @@ function TaskBoardModal({ onClose }: { onClose: () => void }) {
   const submitActiveTask = useGameStore((s) => s.submitActiveTask);
   const currentAbsoluteMonth = getAbsoluteMonthIndex(clock.totalMinutes);
 
-  const activeTaskDefinitions = taskBoard.activeTasks.map((activeTask) => ({
+  const activeTaskDefinitions = (taskBoard.activeTasks ?? []).map((activeTask) => ({
     state: activeTask,
     definition: getTaskById(activeTask.taskId),
   })).filter((item) => item.definition !== null);
@@ -476,6 +478,30 @@ function MultiSelectHint() {
   );
 }
 
+/** Buff 显示卡片：显示已激活的永久增益 */
+function BuffCard() {
+  const buffs = useGameStore((s) => s.achievements.activeBuffs);
+  const hasBuffs = Object.keys(buffs).length > 0;
+  if (!hasBuffs) return null;
+
+  const LABELS: Record<string, string> = {
+    growthSpeed: '生长速度',
+    sellPrice: '售价加成',
+    fertilizerPower: '肥料效果',
+    extraYield: '额外收获',
+  };
+
+  return (
+    <div className="buffCard">
+      {Object.entries(buffs).map(([key, value]) => (
+        <span key={key} className="buffItem" title={`${LABELS[key] ?? key} +${value}%`}>
+          {LABELS[key] ?? key} +{value}%
+        </span>
+      ))}
+    </div>
+  );
+}
+
 function App() {
   const [screen, setScreen] = useState<'game' | 'compendium'>('game');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
@@ -483,6 +509,7 @@ function App() {
   const [warehouseOpen, setWarehouseOpen] = useState(false);
   const [expandOpen, setExpandOpen] = useState(false);
   const [taskBoardOpen, setTaskBoardOpen] = useState(false);
+  const [achievementOpen, setAchievementOpen] = useState(false);
   // 当前展示的农田区域
   const [activeRegion, setActiveRegion] = useState('region_paddy');
 
@@ -794,6 +821,7 @@ function App() {
             <strong>{saveProfile.slotName || '未选择档位'}</strong>
             <span>{saveProfile.slotType === 'real' ? '真实档' : '测试档'}</span>
           </div>
+          {screen === 'game' && <BuffCard />}
         </header>
 
         {screen === 'game' ? (
@@ -828,6 +856,13 @@ function App() {
                 onClick={() => setTaskBoardOpen(true)}
               >
                 📋 任务板
+              </button>
+              <button
+                type="button"
+                className="toolbarBtn"
+                onClick={() => setAchievementOpen(true)}
+              >
+                🏆 成就
               </button>
               <button
                 type="button"
@@ -892,6 +927,9 @@ function App() {
             {/* 点击地块后弹出的操作面板（覆盖层） */}
             <PlotPanel />
 
+            {/* 成就完成提示 */}
+            <AchievementToast />
+
             {/* 购买种子弹框 */}
             {shopOpen && (
               <div className="modalBackdrop" role="presentation" onClick={() => setShopOpen(false)}>
@@ -924,6 +962,10 @@ function App() {
 
             {taskBoardOpen && (
               <TaskBoardModal onClose={() => setTaskBoardOpen(false)} />
+            )}
+
+            {achievementOpen && (
+              <AchievementModal onClose={() => setAchievementOpen(false)} />
             )}
 
             <SaveManagerModal

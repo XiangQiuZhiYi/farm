@@ -18,11 +18,13 @@ import type { PlotState, RegionId, LandTypeId } from '../types/land';
 import type { ActiveTaskState, TaskBoardState, TaskDefinition, TaskOffer } from '../types/task';
 import type { FertilizerId } from '../types/fertilizer';
 import type { PersistedGameState, SaveProfile } from '../types/save';
+import type { AchievementState, AchievementBuffType, AchievementProgress } from '../types/achievement';
 import { REGION_CONFIGS } from '../config/regions';
 import { getLandTypeById } from '../config/lands';
 import { FERTILIZER_CONFIGS, getFertilizerById } from '../config/fertilizers';
 import { getPlantById, ALL_PLANTS } from '../config/plants';
 import { TASK_BOARD_RULES, TASK_BOARD_TASKS, getTaskById } from '../config/tasks';
+import { ACHIEVEMENT_CONFIGS } from '../config/achievements';
 import { calcYield, getGrowthTargetMinutes } from '../systems/growthSystem';
 
 // ─────────────────────────────────────────────────────────────
@@ -96,6 +98,11 @@ interface GameStore {
   unlockedTasks: string[];
   completedTasks: string[];
   compendium: Record<string, boolean>;
+
+  // ── 成就 ────────────────────────────────────────────────────
+  achievements: AchievementState;
+  /** 内部方法：成就检查与奖励发放（不暴露给 UI） */
+  _checkAchievements: () => void;
 
   // ── 选中状态 ─────────────────────────────────────────────────
   selection: SelectionState;
@@ -339,6 +346,8 @@ function advancePlotLifecycle(
   plantId: string,
   plant: NonNullable<ReturnType<typeof getPlantById>>,
   newTotal: number,
+  growthSpeedBuff = 0,
+  fertilizerPowerBuff = 0,
 ): PlotState {
   if (plot.plantedPlantId !== plantId || plot.plantedAt === null) return plot;
   if (plot.isWilted) {
@@ -347,11 +356,17 @@ function advancePlotLifecycle(
 
   const targetMinutes = getGrowthTargetMinutes(plot, plant);
   const fertilizer = plot.appliedFertilizerId ? getFertilizerById(plot.appliedFertilizerId) : null;
-  const growthMultiplier = fertilizer?.effectType === 'growth' ? fertilizer.multiplier : 1;
+  const baseFertilizerMultiplier = fertilizer?.effectType === 'growth' ? fertilizer.multiplier : 1;
+  const fertilizerPowerMultiplier = 1 + fertilizerPowerBuff / 100;
+  const fertilizerMultiplier = baseFertilizerMultiplier * fertilizerPowerMultiplier;
+  const growthSpeedMultiplier = 1 + growthSpeedBuff / 100;
 
   const lastGrowthTickAt = plot.lastGrowthTickAt ?? plot.plantedAt;
   const delta = Math.max(0, newTotal - lastGrowthTickAt);
-  const growthMinutesAccumulated = Math.min(plot.growthMinutesAccumulated + delta * growthMultiplier, targetMinutes);
+  const growthMinutesAccumulated = Math.min(
+    plot.growthMinutesAccumulated + delta * fertilizerMultiplier * growthSpeedMultiplier,
+    targetMinutes,
+  );
   const reachedMature = growthMinutesAccumulated >= targetMinutes;
 
   return {
@@ -359,7 +374,7 @@ function advancePlotLifecycle(
     growthMinutesAccumulated,
     lastGrowthTickAt: newTotal,
     isReadyToHarvest: reachedMature,
-    // 生长类肥料只作用到“下一次成熟”为止，成熟后立刻清空槽位。
+    // 生长类肥料只作用到"下一次成熟"为止，成熟后立刻清空槽位。
     appliedFertilizerId: fertilizer?.effectType === 'growth' && reachedMature ? null : plot.appliedFertilizerId,
   };
 }
@@ -429,7 +444,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     set((s) => ({ clock: { ...s.clock, running: !s.clock.running } })),
 
   tickMinutes: (deltaMinutes) => {
-    const { clock, plots, taskBoard, unlockedPlants, unlockedTasks, completedTasks } = get();
+    const { clock, plots, taskBoard, unlockedPlants, unlockedTasks, completedTasks, achievements } = get();
     if (!clock.running) return;
 
     const previousAbsoluteMonth = getAbsoluteMonthIndex(clock.totalMinutes);
@@ -442,7 +457,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
       if (!plot.plantedPlantId || plot.plantedAt === null) return plot;
       const plant = getPlantById(plot.plantedPlantId);
       if (!plant) return plot;
-      return advancePlotLifecycle(plot, plot.plantedPlantId, plant, newTotal);
+      const growthSpeedBuff = achievements.activeBuffs.growthSpeed ?? 0;
+      const fertilizerPowerBuff = achievements.activeBuffs.fertilizerPower ?? 0;
+      return advancePlotLifecycle(plot, plot.plantedPlantId, plant, newTotal, growthSpeedBuff, fertilizerPowerBuff);
     });
 
     let nextTaskState = { taskBoard, unlockedTasks };
@@ -465,7 +482,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
       plots: updatedPlots,
       taskBoard: nextTaskState.taskBoard,
       unlockedTasks: nextTaskState.unlockedTasks,
+      achievements: nextAbsoluteMonth > previousAbsoluteMonth
+        ? { ...get().achievements, progress: { ...get().achievements.progress, monthlyHarvest: 0 } }
+        : get().achievements,
     });
+
+    // 月份切换时检查成就
+    if (nextAbsoluteMonth > previousAbsoluteMonth) {
+      get()._checkAchievements();
+    }
   },
 
   applyOfflineMinutes: (deltaMinutes) => {
@@ -502,6 +527,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       completedTasks: state.completedTasks,
       compendium: state.compendium,
       selection: state.selection,
+      achievements: state.achievements,
     };
   },
 
@@ -521,6 +547,23 @@ export const useGameStore = create<GameStore>((set, get) => ({
       completedTasks: snapshot.completedTasks,
       compendium: snapshot.compendium,
     selection: snapshot.selection ?? { selectedPlotId: null, selectedPlotIds: [], batchPanelOpen: false, panelMode: 'none' },
+      achievements: snapshot.achievements ?? {
+        completed: [],
+        progress: {
+          totalHarvest: 0, totalSell: 0, totalEarned: 0, totalFertilizer: 0,
+          uniqueCropsHarvested: 0, tasksCompleted: 0, totalPlots: 6,
+          perennialHarvest: 0, monthlyHarvest: 0, regionsUnlocked: 1,
+          hellTasksCompleted: 0, compendiumComplete: false,
+        },
+        activeBuffs: {},
+        toast: null,
+      },
+      // 兼容旧存档：activeTask → activeTasks
+      taskBoard: {
+        ...snapshot.taskBoard,
+        activeTasks: snapshot.taskBoard.activeTasks
+          ?? (snapshot.taskBoard.activeTask ? [{ ...snapshot.taskBoard.activeTask, acceptedMonth: snapshot.taskBoard.offeredMonth ?? 0 }] : []),
+      },
     });
   },
 
@@ -565,6 +608,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
         gold: s.economy.gold - landCfg.expandPrice,
       },
     }));
+
+    get()._checkAchievements();
     return true;
   },
 
@@ -609,6 +654,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
         gold: economy.gold + refund,
       },
     });
+
+    get()._checkAchievements();
     return true;
   },
 
@@ -652,7 +699,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   harvest: (plotId) => {
-    const { plots, clock } = get();
+    const { plots, clock, achievements } = get();
     const plotIdx = plots.findIndex((p) => p.id === plotId);
     if (plotIdx < 0) return;
 
@@ -663,7 +710,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const plant = getPlantById(plot.plantedPlantId);
     if (!plant) return;
 
-    const yieldAmt = calcYield(plot, plant);
+    const baseYield = calcYield(plot, plant);
+    // 应用额外收获 buff
+    const extraYieldBuff = achievements.activeBuffs.extraYield ?? 0;
+    const yieldAmt = Math.max(1, Math.round(baseYield * (1 + extraYieldBuff / 100)));
 
     // 更新背包，年生作物收完即清场，多年生达到 maxHarvests 上限后也清场
     const updated = [...plots];
@@ -698,6 +748,16 @@ export const useGameStore = create<GameStore>((set, get) => ({
         [plant.id]: (s.inventory[plant.id] ?? 0) + yieldAmt,
       },
       compendium: { ...s.compendium, [plant.id]: true },
+      achievements: {
+        ...s.achievements,
+        progress: {
+          ...s.achievements.progress,
+          totalHarvest: s.achievements.progress.totalHarvest + 1,
+          perennialHarvest: isPerennial ? s.achievements.progress.perennialHarvest + 1 : s.achievements.progress.perennialHarvest,
+          monthlyHarvest: s.achievements.progress.monthlyHarvest + 1,
+          uniqueCropsHarvested: [...new Set([...Object.entries(s.compendium).filter(([, v]) => v).map(([k]) => k), plant.id])].length,
+        },
+      },
     }));
   },
 
@@ -781,6 +841,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     });
 
     get()._checkUnlocks();
+    get()._checkAchievements();
     return true;
   },
 
@@ -849,21 +910,33 @@ export const useGameStore = create<GameStore>((set, get) => ({
         gold: s.economy.gold + income,
         cumulativeEarned: s.economy.cumulativeEarned + income,
       },
+      achievements: {
+        ...s.achievements,
+        progress: {
+          ...s.achievements.progress,
+          totalSell: s.achievements.progress.totalSell + 1,
+          totalEarned: s.achievements.progress.totalEarned + income,
+        },
+      },
     }));
 
     // 种子出售同样属于赚取金币，需要驱动后续植物与区域解锁判断。
     get()._checkUnlocks();
+    get()._checkAchievements();
     return true;
   },
 
   sellHarvest: (plantId, quantity) => {
     // 只允许出售果实背包中的内容，种子不可出售
-    const { inventory } = get();
+    const { inventory, achievements } = get();
     const qty = inventory[plantId] ?? 0;
     if (qty < quantity) return false;
     const plant = getPlantById(plantId);
     if (!plant) return false;
-    const income = plant.sellPricePerUnit * quantity;
+
+    // 应用售价 buff
+    const sellPriceBuff = 1 + (achievements.activeBuffs.sellPrice ?? 0) / 100;
+    const income = Math.round(plant.sellPricePerUnit * quantity * sellPriceBuff);
 
     set((s) => ({
       inventory: {
@@ -875,10 +948,19 @@ export const useGameStore = create<GameStore>((set, get) => ({
         // 累计收入只增不减，用于解锁判断
         cumulativeEarned: s.economy.cumulativeEarned + income,
       },
+      achievements: {
+        ...s.achievements,
+        progress: {
+          ...s.achievements.progress,
+          totalSell: s.achievements.progress.totalSell + 1,
+          totalEarned: s.achievements.progress.totalEarned + income,
+        },
+      },
     }));
 
     // 解锁检查：累计收入达到门槛的植物自动解锁
     get()._checkUnlocks();
+    get()._checkAchievements();
     return true;
   },
 
@@ -912,6 +994,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
         ...state.miscInventory,
         [fertilizerId]: qty - 1,
       },
+      achievements: {
+        ...state.achievements,
+        progress: {
+          ...state.achievements.progress,
+          totalFertilizer: state.achievements.progress.totalFertilizer + 1,
+        },
+      },
     }));
 
     return true;
@@ -935,6 +1024,27 @@ export const useGameStore = create<GameStore>((set, get) => ({
   unlockedTasks: createInitialTaskBoardState(['water_spinach', 'soybean']).unlockedTasks,
   completedTasks: [],
   compendium: {},
+
+  // ── 成就初始状态 ──────────────────────────────────────────────
+  achievements: {
+    completed: [],
+    progress: {
+      totalHarvest: 0,
+      totalSell: 0,
+      totalEarned: 0,
+      totalFertilizer: 0,
+      uniqueCropsHarvested: 0,
+      tasksCompleted: 0,
+      totalPlots: 6, // 初始 6 块地
+      perennialHarvest: 0,
+      monthlyHarvest: 0,
+      regionsUnlocked: 1,
+      hellTasksCompleted: 0,
+      compendiumComplete: false,
+    },
+    activeBuffs: {},
+    toast: null,
+  },
 
   /** 内部：检查并解锁满足条件的植物和区域（sellHarvest 后调用） */
   _checkUnlocks: () => {
@@ -965,6 +1075,93 @@ export const useGameStore = create<GameStore>((set, get) => ({
         unlockedRegions: [...s.unlockedRegions, ...newRegions],
       }));
     }
+  },
+
+  /** 内部：检查成就进度并发放奖励 */
+  _checkAchievements: () => {
+    const { achievements, inventory, seeds, economy, completedTasks, compendium } = get();
+    if (achievements.completed.length >= ACHIEVEMENT_CONFIGS.length) return;
+
+    const progress = { ...achievements.progress };
+    const newCompleted = [...achievements.completed];
+    const newBuffs = { ...achievements.activeBuffs };
+    let goldReward = 0;
+    let seedReward: Record<string, number> = {};
+    let harvestReward: Record<string, number> = {};
+
+    // 更新追踪器
+    progress.totalPlots = get().plots.length;
+    progress.regionsUnlocked = get().unlockedRegions.length;
+    progress.tasksCompleted = completedTasks.length;
+    progress.compendiumComplete = ALL_PLANTS.every((p) => compendium[p.id]);
+
+    // 检查地狱任务
+    progress.hellTasksCompleted = completedTasks.filter((id) => {
+      const task = getTaskById(id);
+      return task?.difficulty === 'hell';
+    }).length;
+
+    for (const ach of ACHIEVEMENT_CONFIGS) {
+      if (newCompleted.includes(ach.id)) continue;
+      if (ach.id === 'ach_complete_game') continue; // 特殊处理
+
+      let currentValue = progress[ach.tracker as keyof typeof progress] ?? 0;
+      if (currentValue >= ach.target) {
+        newCompleted.push(ach.id);
+        if (ach.reward.type === 'gold') {
+          goldReward += ach.reward.value;
+        } else if (ach.reward.type === 'seeds') {
+          const key = ach.reward.plantId!;
+          seedReward[key] = (seedReward[key] ?? 0) + ach.reward.value;
+        } else if (ach.reward.type === 'harvest') {
+          const key = ach.reward.plantId!;
+          harvestReward[key] = (harvestReward[key] ?? 0) + ach.reward.value;
+        } else if (ach.reward.type === 'buff') {
+          const bType = ach.reward.buffType!;
+          newBuffs[bType] = (newBuffs[bType] ?? 0) + ach.reward.value;
+        }
+      }
+    }
+
+    // 特殊处理：完美农场（完成所有其他成就）
+    const otherCount = ACHIEVEMENT_CONFIGS.filter((a) => a.id !== 'ach_complete_game').length;
+    if (!newCompleted.includes('ach_complete_game') && newCompleted.length >= otherCount) {
+      newCompleted.push('ach_complete_game');
+      newBuffs.sellPrice = (newBuffs.sellPrice ?? 0) + 5;
+      newBuffs.fertilizerPower = (newBuffs.fertilizerPower ?? 0) + 5;
+    }
+
+    if (newCompleted.length === achievements.completed.length) return; // 无变化
+
+    // 取最新完成的成就作为弹窗提示
+    const latestId = newCompleted[newCompleted.length - 1];
+
+    set((s) => ({
+      achievements: {
+        ...s.achievements,
+        completed: newCompleted,
+        progress,
+        activeBuffs: newBuffs,
+        toast: { achievementId: latestId, timestamp: Date.now() },
+      },
+      economy: {
+        ...s.economy,
+        gold: s.economy.gold + goldReward,
+        cumulativeEarned: s.economy.cumulativeEarned + goldReward,
+      },
+      seeds: {
+        ...s.seeds,
+        ...Object.fromEntries(
+          Object.entries(seedReward).map(([k, v]) => [k, (s.seeds[k] ?? 0) + v])
+        ),
+      },
+      inventory: {
+        ...s.inventory,
+        ...Object.fromEntries(
+          Object.entries(harvestReward).map(([k, v]) => [k, (s.inventory[k] ?? 0) + v])
+        ),
+      },
+    }));
   },
 
   // ── 选中状态 ─────────────────────────────────────────────────

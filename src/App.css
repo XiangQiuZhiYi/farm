@@ -197,6 +197,24 @@
   font-size: 14px;
 }
 
+/* ── Buff 显示卡片 ────────────────────────────── */
+.buffCard {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-left: 12px;
+}
+
+.buffItem {
+  font-size: 11px;
+  padding: 3px 8px;
+  border: 1px solid rgba(200, 150, 255, 0.4);
+  color: #c9f;
+  background: rgba(200, 150, 255, 0.08);
+  border-radius: 3px;
+}
+
 .main,
 .compendiumMain {
   flex: 1;

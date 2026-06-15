@@ -1,6 +1,7 @@
 import type { ClockState, Compendium, EconomyState, Inventory, MiscInventory, Seeds, SelectionState } from './game';
 import type { PlotState } from './land';
 import type { TaskBoardState } from './task';
+import type { AchievementState } from './achievement';
 
 export type SaveSlotType = 'real' | 'test' | 'sandbox';
 
@@ -18,6 +19,7 @@ export interface PersistedGameState {
   completedTasks: string[];
   compendium: Compendium;
   selection: SelectionState;
+  achievements: AchievementState;
 }
 
 export interface SaveSlotSummary {
