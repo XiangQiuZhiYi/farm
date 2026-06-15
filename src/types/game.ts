@@ -5,17 +5,12 @@
 /** 时间加速倍率（开发调试用） */
 export type TimeScale = 1 | 1440 | 2880 | 4320;
 
-/** 季节枚举 */
-export type Season = 'spring' | 'summer' | 'autumn' | 'winter';
-
 /** 游戏时钟状态 */
 export interface ClockState {
   /** 游戏总运行分钟数（累计，不重置） */
   totalMinutes: number;
   /** 当前游戏月份（1-12） */
   month: number;
-  /** 当前季节 */
-  season: Season;
   /** 时间加速倍率 */
   timeScale: TimeScale;
   /** 是否正在运行（暂停时为 false） */

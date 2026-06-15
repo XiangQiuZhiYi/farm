@@ -22,10 +22,6 @@ export type RegionId = 'region_paddy' | 'region_brown_tidal' | 'region_black';
 export interface LandTypeConfig {
   id: LandTypeId;
   name: string;
-  /** 土地获取难度系数，用于参与售价公式 */
-  landFactor: number;
-  /** 基础肥力加成（影响产量 bonus） */
-  baseFertility: number;
   /** 默认初始含水状态（仅用于展示，不参与逻辑计算） */
   defaultWaterState: WaterState;
   /** 支持的区域 */

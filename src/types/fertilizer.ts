@@ -2,15 +2,13 @@
 // 肥料相关类型定义
 // ============================================================
 
-/** 肥料效果类型 */
-export type FertilizerEffectType = 'growth' | 'yield';
+/** 肥料效果类型（仅保留生长加速类） */
+export type FertilizerEffectType = 'growth';
 
 /** 肥料唯一标识 */
 export type FertilizerId =
   | 'growth_hormone'
-  | 'advanced_growth_hormone'
-  | 'yield_hormone'
-  | 'advanced_yield_hormone';
+  | 'advanced_growth_hormone';
 
 /** 肥料静态配置 */
 export interface FertilizerConfig {

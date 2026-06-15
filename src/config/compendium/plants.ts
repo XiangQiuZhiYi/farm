@@ -3,7 +3,6 @@
 // ============================================================
 
 import { ALL_PLANTS } from '../plants';
-import { LAND_TYPE_CONFIGS } from '../lands';
 import type { PlantConfig } from '../../types/plant';
 import PLANT_ARTS from './plants-pain';
 
@@ -59,71 +58,67 @@ export const PLANT_PIXEL_PALETTE: Record<string, string | null> = {
 function summarize(plantId: string): string {
   const map: Record<string, string> = {
     rice: '水田中成片的金色谷穗，是水稻土区最重要的主粮作物。',
-    wheat: '麦芒挺立，金色麦穗随风摇曳，旱地良田的经典作物。',
-    corn: '高大茁壮，玉米棒金黄饱满，是重要的粮食与饲料来源。',
+    lotus_root: '宽大圆叶浮于水面，粉色莲花亭亭玉立，藕节清香可口。',
+    water_bamboo: '水边丛生的茭白，洁白嫩茎是夏秋时节的美味蔬菜。',
+    water_chestnut: '生长于水田的荸荠，地下球茎甘甜清脆，营养丰富。',
     soybean: '豆荚累累，大豆是重要的蛋白质与油脂来源。',
-    potato: '地上开白花，地下结硕果，土豆是高产耐旱的淀粉宝库。',
-    peanut: '花生把果实藏在土里，黄花点缀低矮茎叶间。',
-    sweet_potato: '蔓藤铺展，喇叭状粉花盛开，地下的红薯甘甜多淀粉。',
-    lotus_root: '宽大圆叶浮于水面，粉色莲花亭亭玉立，藕节含香。',
-    water_spinach: '箭叶丰茂，茎中空心，空心菜生长迅速、耐水湿。',
-    water_chestnut: '茭白茎基粗壮洁白，细叶如剑，是湿地优良食蔬。',
+    water_spinach: '箭叶丰茂，茎中空心，空心菜生长迅速耐水湿。',
+    water_celery: '挺立于水边的水芹，嫩茎清香，多次收获的旱地速生菜。',
+    rapeseed: '油菜花期灿烂，满株黄花四瓣，是重要的食用油料。',
+    broad_bean: '豆荚肥厚，蚕豆是春季旱地的重要蛋白质来源。',
+    wheat: '麦芒挺立，金色麦穗随风摇曳，旱地良田的经典作物。',
+    potato: '地上开白花，地下结硕果，马铃薯是高产多汁的淀粉宝库。',
+    corn: '高大茁壮，玉米棒金黄饱满，是重要的粮食与饲料来源。',
+    cucumber: '藤蔓伸展，黄瓜鲜嫩翠绿，可多次采摘的夏季蔬菜。',
+    cowpea: '细长豆荚挂满枝头，菜豆可多次采收，营养丰富。',
+    carrot: '地下红橙色根茎探出头，胡萝卜清脆甘甜，富含营养。',
+    cabbage: '叶片层层包裹，结成紧实圆润的甘蓝，是常见蔬菜。',
+    garlic: '地上管叶笔直，地下白色蒜头分瓣整齐，辛香浓郁。',
+    sunflower: '葵盘硕大，金黄花瓣包围棕色花盘，总朝向阳光生长。',
+    sorghum: '顶部红褐色大穗垂沉，茎秆粗壮，是北方旱地的粮食作物。',
+    peanut: '花生把果实藏在土里，黄花点缀低矮茎叶间，油脂丰富。',
     cotton: '棉铃裂开，白色绒絮蓬松饱满，是重要的天然纤维作物。',
     sesame: '直立茎上荚果排列密集，是珍贵的油料与调味作物。',
-    sunflower: '葵盘硕大，金黄花瓣包围棕色花盘，总朝向阳光生长。',
-    tobacco: '叶片宽大，顶部粉花簇生，烟草是重要的经济作物。',
-    garlic: '地上管叶笔直，地下白色蒜头分瓣整齐，辛香浓郁。',
-    onion: '圆形大球茎饱满，中空管叶挺立，洋葱气味独特。',
-    cabbage: '叶片层层包裹，结成紧实圆润的菜头，是常见蔬菜。',
-    radish: '地下红白萝卜探出头，羽状绿叶鲜嫩，清脆可口。',
-    rapeseed: '油菜花期灿烂，满株黄花四瓣，是重要的食用油料。',
-    pepper: '红椒下垂，色泽鲜艳，辣椒是广泛使用的调味蔬菜。',
-    ginseng: '掌状复叶舒展，红色浆果成簇，人参是珍贵的药用植物。',
-    flax: '茎细而挺，蓝色五瓣小花轻盈，亚麻是优质纤维和油料作物。',
-    sugar_beet: '叶片宽大，地下白色肥厚根茎富含蔗糖。',
-    buckwheat: '茎略带红色，细密白花如雪，荞麦耐寒速生。',
-    highland_barley: '麦芒极长，粒列整齐，青稞是高原黑土地的重要粮食。',
-    sorghum: '顶部红褐色大穗垂沉，茎秆粗壮，是北方旱地的粮食作物。',
-    velvet_bean: '叶色深绿，黑色豆荚沉甸甸，黑豆是黑土区的特色作物。',
-    mung_bean: '细长豆荚挺立，绿豆清热解毒，是常见的杂粮作物。',
-    hemp: '掌状裂叶特征鲜明，工业大麻纤维优良，用途广泛。',
-    wolfberry: '枝条弓弯，串串红色浆果点缀其上，枸杞是著名的药食两用植物。',
+    sweet_potato: '蔓藤铺展，红薯甘甜多淀粉，是黑土区的高产挂机作物。',
+    apple: '苹果树结出饱满果实，12小时一个周期，是终极挂机目标。',
+    watermelon: '圆滚滚的西瓜高价出售，是黑土区的珍贵水果。',
+    millet: '金色谷穗垂沉，谷子是黑土区重要的粮食作物，三粒高产。',
+    oat: '燕麦穗轻盈弯垂，是黑土区的优质饲料粮食，三粒高产。',
+    pea: '豌豆荚饱满鲜绿，可多次采摘，是黑土区重要的豆类。',
   };
   return map[plantId] ?? `${plantId} 的详细描述尚未收录。`;
 }
 
 function highlightsFor(plantId: string): string[] {
   const map: Record<string, string[]> = {
-    rice: ['主粮作物', '喜水田', '夏季作物', '重要经济价值'],
-    wheat: ['粮食作物', '适旱地', '秋冬作物', '高产稳定'],
-    corn: ['粮食饲料', '高大茁壮', '适应性强', '多用途'],
-    soybean: ['蛋白质来源', '固氮植物', '豆荚累累', '多用途'],
-    potato: ['高产根茎', '耐旱耐寒', '块茎作物', '淀粉丰富'],
-    peanut: ['地下结果', '油料作物', '蛋白质高', '耐干旱'],
-    sweet_potato: ['蔓性生长', '块根甘甜', '高产耐贫', '喇叭花形'],
-    lotus_root: ['水生植物', '莲花观赏', '藕节食用', '全株可用'],
-    water_spinach: ['水生蔬菜', '生长迅速', '箭叶特征', '空心茎节'],
-    water_chestnut: ['湿地植物', '白茎粗壮', '细叶如剑', '鲜嫩食用'],
-    cotton: ['天然纤维', '白色球状', '重要纺织', '经济作物'],
-    sesame: ['珍贵油料', '荚果密集', '直立茎干', '调味珍品'],
-    sunflower: ['向日特性', '花盘硕大', '油料食用', '观赏价值'],
-    tobacco: ['宽叶特征', '粉花顶生', '重要经济', '烟草工业'],
-    garlic: ['辛香调味', '白色蒜头', '管叶挺立', '药食两用'],
-    onion: ['球茎鲜明', '中空管叶', '辛辣特征', '多用途蔬菜'],
-    cabbage: ['叶片包裹', '球形紧实', '耐寒蔬菜', '营养丰富'],
-    radish: ['根茎外露', '红白配色', '羽状叶片', '清脆口感'],
-    rapeseed: ['黄花灿烂', '四瓣花形', '重要油料', '春季美景'],
-    pepper: ['红椒下垂', '辣味鲜明', '调味蔬菜', '色泽鲜艳'],
-    ginseng: ['珍贵药材', '红色浆果', '掌状复叶', '多年生长'],
-    flax: ['细茎挺立', '蓝花五瓣', '纤维优质', '油料价值'],
-    sugar_beet: ['白色根茎', '蔗糖丰富', '制糖原料', '耐寒生长'],
-    buckwheat: ['速生耐寒', '红茎白花', '杂粮作物', '高原适应'],
-    highland_barley: ['长芒特征', '粒列整齐', '高原作物', '抗逆性强'],
-    sorghum: ['大穗顶生', '红褐谷粒', '高茎粗壮', '耐旱耐贫'],
-    velvet_bean: ['黑色豆荚', '深绿叶片', '抗逆作物', '高营养价值'],
-    mung_bean: ['细长豆荚', '清热功效', '速生杂粮', '绿色营养'],
-    hemp: ['掌状裂叶', '工业纤维', '用途广泛', '独特叶形'],
-    wolfberry: ['弓形枝条', '红色浆果', '药食两用', '滋补价值'],
+    rice: ['主粮作物', '水田专属', '高利润', '核心经济作物'],
+    lotus_root: ['水生植物', '莲花观赏', '藕节食用', '水田专属'],
+    water_bamboo: ['水田蔬菜', '多次收获', '3次收割', '湿地特产'],
+    water_chestnut: ['水田球茎', '双产出', '清脆甘甜', '水田专属'],
+    soybean: ['初始作物', '旱地速生', '多次收获', '蛋白质来源'],
+    water_spinach: ['初始作物', '旱地速生', '5次收获', '空心茎节'],
+    water_celery: ['旱地蔬菜', '多次收获', '5次收割', '清香风味'],
+    rapeseed: ['油料作物', '旱地单收', '高单价', '春季美景'],
+    broad_bean: ['旱地豆类', '双产出', '蛋白质高', '春季作物'],
+    wheat: ['主粮作物', '双产出', '旱地良田', '高产稳定'],
+    potato: ['高产根茎', '三产出', '潮土专属', '淀粉丰富'],
+    corn: ['粮食饲料', '双产出', '潮土专属', '高大茁壮'],
+    cucumber: ['夏季蔬菜', '5次收获', '潮土专属', '鲜嫩翠绿'],
+    cowpea: ['豆类蔬菜', '4次收获', '潮土专属', '营养丰富'],
+    carrot: ['根茎蔬菜', '双产出', '潮土专属', '清甜可口'],
+    cabbage: ['耐寒蔬菜', '双产出', '潮土专属', '营养丰富'],
+    garlic: ['辛香调味', '高单价', '潮土专属', '药食两用'],
+    sunflower: ['向日特性', '高单价', '褐土专属', '油料食用'],
+    sorghum: ['双产出', '褐土专属', '大穗顶生', '耐旱高收'],
+    peanut: ['双产出', '地下结果', '褐土专属', '油脂丰富'],
+    cotton: ['天然纤维', '4次收获', '黑土专属', '重要工业'],
+    sesame: ['珍贵油料', '高单价', '黑土专属', '调味珍品'],
+    sweet_potato: ['4次收获', '双产出', '黑土专属', '挂机首选'],
+    apple: ['终极挂机', '4次收获', '三产出', '黑土专属'],
+    watermelon: ['超高单价', '黑土专属', '甜蜜大果', '一次性收'],
+    millet: ['三产出', '黑土入门', '杂粮作物', '黑土专属'],
+    oat: ['三产出', '饲料作物', '黑土专属', '营养谷物'],
+    pea: ['4次收获', '黑土专属', '豆类精品', '清甜豌豆'],
   };
   return map[plantId] ?? ['待发现'];
 }
@@ -147,19 +142,12 @@ const LAND_NAME_MAP: Record<string, string> = {
   black_soil:  '黑土',
 };
 
-/** 计算植物可收割次数的说明文本 */
+/** 可收割次数说明文本 */
 function harvestCountLabel(plant: PlantConfig): string {
   const isPerennial = plant.harvestType === 'perennial';
-  if (!isPerennial) return '1 次（一年生）';
-
-  // 多年生：在寿命内首次收获 + 后续按 reharvestMinutes 重复收获
-  if (plant.maxLifespanYears && plant.reharvestMinutes) {
-    const MINUTES_PER_GAME_YEAR = 12 * 1440; // 12个月 × 1440分
-    const lifespanMinutes = plant.maxLifespanYears * MINUTES_PER_GAME_YEAR;
-    const totalHarvests = 1 + Math.floor(
-      (lifespanMinutes - plant.growthMinutes) / plant.reharvestMinutes,
-    );
-    return `约 ${totalHarvests} 次（多年生，寿命 ${plant.maxLifespanYears} 年）`;
+  if (!isPerennial || !plant.maxHarvests) return '1 次（一次性）';
+  if (plant.maxHarvests && plant.reharvestMinutes) {
+    return `${plant.maxHarvests} 次（多收获，每次再生 ${Math.round(plant.reharvestMinutes)} 分钟）`;
   }
   return '多次（多年生）';
 }
@@ -167,11 +155,7 @@ function harvestCountLabel(plant: PlantConfig): string {
 function buildEntry(plant: PlantConfig): PlantCompendiumEntry {
   const regionName = REGION_NAME_MAP[plant.regionId] ?? plant.regionId;
   const stageArt = PLANT_ARTS[plant.id];
-
-  // 播种月份：直接读取 plantableMonths，全年可种则显示"全年"
-  const plantingMonths = plant.plantableMonths?.length
-    ? `${[...plant.plantableMonths].sort((a, b) => a - b).join('、')} 月`
-    : '全年';
+  const allowedLandName = LAND_NAME_MAP[plant.allowedLandTypeId] ?? plant.allowedLandTypeId;
 
   return {
     id: plant.id,
@@ -179,34 +163,19 @@ function buildEntry(plant: PlantConfig): PlantCompendiumEntry {
     regionId: plant.regionId,
     regionName,
     unlockCumulativeGold: plant.unlockCumulativeGold,
-    bestSoilLabel: plant.soilMatch.best.map((id) => LAND_NAME_MAP[id] ?? id).join(' / '),
+    bestSoilLabel: allowedLandName,
     summary: summarize(plant.id),
     highlights: highlightsFor(plant.id),
     details: [
       { label: '区域', value: regionName },
       { label: '购种价格', value: `${plant.purchasePrice} 金/粒` },
       { label: '售卖单价', value: `${plant.sellPricePerUnit} 金/单位` },
-      { label: '生长周期', value: `${Math.round(plant.growthMinutes / 1440)} 个月` },
-      { label: '适宜土地', value: plant.soilMatch.best.map((id) => LAND_NAME_MAP[id] ?? id).join('、') },
-      { label: '兼容土地', value: plant.soilMatch.compatible.length
-          ? plant.soilMatch.compatible.map((id) => LAND_NAME_MAP[id] ?? id).join('、')
-          : '—' },
-      // 播种月份（严格 3 个月窗口，仅此期间可播种，种下后全年生长）
-      { label: '播种月份', value: plantingMonths },
-      // 适宜土地收获量范围
-      { label: '适宜土地收获量', value: (() => {
-        const bestFertilityBonus = plant.soilMatch.best.reduce((max, landId) => {
-          const cfg = LAND_TYPE_CONFIGS.find((c) => c.id === landId);
-          const bonus = cfg ? Math.floor((cfg.baseFertility - 1) / 2) : 0;
-          return Math.max(max, bonus);
-        }, 0);
-        const cap = plant.expectedBestYield + bestFertilityBonus;
-        const minYield = Math.max(0, plant.expectedBestYield - 2 + bestFertilityBonus);
-        return minYield === cap ? `${cap} 个` : `${minYield} ~ ${cap} 个`;
-      })() },
+      { label: '每次产量', value: `${plant.harvestYield} 单位` },
+      { label: '生长周期', value: `${plant.growthMinutes} 分钟` },
+      { label: '种植土地', value: allowedLandName },
       { label: '可收割次数', value: harvestCountLabel(plant) },
       ...(plant.harvestType === 'perennial' && plant.reharvestMinutes
-        ? [{ label: '再生周期', value: `${Math.round(plant.reharvestMinutes / 1440)} 个月` }]
+        ? [{ label: '再生周期', value: `${plant.reharvestMinutes} 分钟` }]
         : []),
     ],
     stages: stageArt ?? {

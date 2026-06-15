@@ -231,8 +231,6 @@ export const LAND_COMPENDIUM_ENTRIES: LandCompendiumEntry[] = LAND_TYPE_CONFIGS.
     highlights: highlightsFor(land.id),
     details: [
       { label: '区域', value: region?.name ?? land.regionId },
-      { label: '地块肥力', value: `${land.baseFertility}` },
-      { label: '土地系数', value: `${land.landFactor}` },
       { label: '默认水分', value: land.defaultWaterState },
       { label: '扩张价格', value: `${land.expandPrice} 金/格` },
       { label: '土地类型', value: land.name },

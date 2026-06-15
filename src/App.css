@@ -272,9 +272,48 @@
 .regionTabs {
   display: flex;
   gap: 0;
+  align-items: stretch;
   border-bottom: 2px solid rgba(90, 60, 20, 0.55);
   background: #120d05;
   padding: 0 18px;
+}
+
+.regionTabGroup {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+}
+
+.regionTabGroup + .regionTabGroup {
+  border-left: 1px solid rgba(90, 60, 20, 0.3);
+}
+
+.regionTabHarvestBtn {
+  align-self: center;
+  margin: 0 6px 0 0;
+  padding: 3px 9px;
+  background: transparent;
+  border: 1px solid rgba(90, 60, 20, 0.4);
+  color: #6a5a38;
+  font: inherit;
+  font-size: 11px;
+  cursor: not-allowed;
+  opacity: 0.45;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.regionTabHarvestBtnReady {
+  border-color: rgba(229, 159, 74, 0.6);
+  color: #c9a96a;
+  cursor: pointer;
+  opacity: 1;
+}
+
+.regionTabHarvestBtnReady:hover {
+  background: rgba(229, 159, 74, 0.15);
+  color: #ffe08a;
+  border-color: #e59f4a;
 }
 
 .regionTab {

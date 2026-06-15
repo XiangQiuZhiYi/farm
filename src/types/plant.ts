@@ -18,18 +18,6 @@ export interface SpriteFrameConfig {
   stageFrameIndex: Record<GrowthStage, number>;
 }
 
-/** 适配土地类型的收益修正 */
-export interface SoilMatchConfig {
-  best: LandTypeId[];
-  compatible: LandTypeId[];
-}
-
-/** 适宜播种月份（1-12） */
-export interface SeasonConfig {
-  bestMonths: number[];
-  okMonths: number[];
-}
-
 /** 植物静态配置 */
 export interface PlantConfig {
   id: string;
@@ -38,19 +26,10 @@ export interface PlantConfig {
   unlockCumulativeGold: number;
   purchasePrice: number;
   sellPricePerUnit: number;
-  expectedBestYield: number;
-  /** 首次成熟所需累计成长分钟（只在 plantableMonths 内累计） */
+  /** 每次收获固定产量 */
+  harvestYield: number;
+  /** 首次成熟所需累计成长分钟 */
   growthMinutes: number;
-
-  // ── 季节生长控制 ─────────────────────────────────────────────
-  /** 植物可以生长（累积成长时间）的月份；不在此列表内则挂起 */
-  plantableMonths?: number[];
-  /**
-   * 越季是否枯萎：
-   * - true：若处于 seed/sprout 阶段且当前月份不在 plantableMonths 内，直接枯萎
-   * - false：仅挂起，等季节回来继续（多年生/跨季作物）
-   */
-  wiltOutOfSeason?: boolean;
 
   // ── 收获类型 ─────────────────────────────────────────────────
   harvestType?: HarvestType;
@@ -60,16 +39,17 @@ export interface PlantConfig {
    */
   reharvestMinutes?: number;
   /**
-    * 多年生：植物最大生命年数（游戏年，1年=12个月=17280分钟）
-   * 超过后自动枯死，需重新购买种植
+   * 多年生：最大收获次数（达到后植株清除，需重新播种）
+   * （仅 harvestType === 'perennial' 时有效）
    */
-  maxLifespanYears?: number;
+  maxHarvests?: number;
 
-  // ── 产量影响 ─────────────────────────────────────────────────
+  // ── 土地限制 ─────────────────────────────────────────────────
+  /** 唯一允许种植的土地类型（严格限定，不允许跨土地种植） */
+  allowedLandTypeId: LandTypeId;
+
+  // ── 生长展示 ─────────────────────────────────────────────────
   stageBoundaries: Record<GrowthStage, number>;
-  soilMatch: SoilMatchConfig;
-  /** 仅用于产量修正的季节配置（区别于 plantableMonths 的生长控制） */
-  season: SeasonConfig;
   preferredWaterState: WaterState;
   sprite: SpriteFrameConfig;
   difficultyFactor: number;

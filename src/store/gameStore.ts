@@ -13,6 +13,7 @@ import type {
   SelectionState,
   TimeScale,
 } from '../types/game';
+// Season type removed
 import type { PlotState, RegionId, LandTypeId } from '../types/land';
 import type { ActiveTaskState, TaskBoardState, TaskDefinition, TaskOffer } from '../types/task';
 import type { FertilizerId } from '../types/fertilizer';
@@ -22,7 +23,7 @@ import { getLandTypeById } from '../config/lands';
 import { FERTILIZER_CONFIGS, getFertilizerById } from '../config/fertilizers';
 import { getPlantById, ALL_PLANTS } from '../config/plants';
 import { TASK_BOARD_RULES, TASK_BOARD_TASKS, getTaskById } from '../config/tasks';
-import { calcYield, getGrowthTargetMinutes, isPlantableMonth } from '../systems/growthSystem';
+import { calcYield, getGrowthTargetMinutes } from '../systems/growthSystem';
 
 // ─────────────────────────────────────────────────────────────
 // Store 接口
@@ -107,28 +108,24 @@ interface GameStore {
   /** 对多选地块批量施肥 */
   batchApplyFertilizer: (plotIds: string[], fertilizerId: FertilizerId) => void;
 
+  /** 收获指定区域内所有可收获的地块 */
+  harvestAll: (regionId: string) => void;
+
   /** 内部方法：解锁检查（不暴露给 UI） */
   _checkUnlocks: () => void;
 }
 
 // ─────────────────────────────────────────────────────────────
-// 工具函数：根据游戏总分钟推算月份进度与季节
+// 工具函数：根据游戏总分钟推算月份
 // ─────────────────────────────────────────────────────────────
 
 const MINUTES_PER_MONTH = 1440;
-const MONTHS_PER_YEAR = 12;
-const MINUTES_PER_YEAR = MINUTES_PER_MONTH * MONTHS_PER_YEAR;
-const GAME_START_ABSOLUTE_MONTH = Math.floor((MINUTES_PER_MONTH * 3) / MINUTES_PER_MONTH) + 1;
+const GAME_START_ABSOLUTE_MONTH = 1;
 
 function minutesToCalendar(total: number) {
   const absoluteMonthIndex = Math.floor(total / MINUTES_PER_MONTH);
   const month = (absoluteMonthIndex % 12) + 1;
-  const seasons = ['spring', 'spring', 'spring',
-                   'summer', 'summer', 'summer',
-                   'autumn', 'autumn', 'autumn',
-                   'winter', 'winter', 'winter'] as const;
-  const season = seasons[month - 1];
-  return { month, season };
+  return { month };
 }
 
 function createBlankPlotState(base: Pick<PlotState, 'id' | 'regionId' | 'landTypeId' | 'waterState'>): PlotState {
@@ -337,32 +334,16 @@ function advancePlotLifecycle(
   plantId: string,
   plant: NonNullable<ReturnType<typeof getPlantById>>,
   newTotal: number,
-  _currentMonth: number,
 ): PlotState {
   if (plot.plantedPlantId !== plantId || plot.plantedAt === null) return plot;
   if (plot.isWilted) {
     return { ...plot, lastGrowthTickAt: newTotal, isReadyToHarvest: false };
   }
 
-  const lifespanMinutes = plant.maxLifespanYears
-    ? plant.maxLifespanYears * MINUTES_PER_YEAR
-    : null;
-  if (lifespanMinutes !== null && newTotal - plot.plantedAt >= lifespanMinutes) {
-    return {
-      ...plot,
-      isReadyToHarvest: false,
-      isWilted: true,
-      lastGrowthTickAt: newTotal,
-    };
-  }
-
   const targetMinutes = getGrowthTargetMinutes(plot, plant);
   const fertilizer = plot.appliedFertilizerId ? getFertilizerById(plot.appliedFertilizerId) : null;
   const growthMultiplier = fertilizer?.effectType === 'growth' ? fertilizer.multiplier : 1;
 
-  // 已播种后全年正常生长，不因季节暂停或枯萎；
-  // 季节限制只在播种入口发生不再居中判断。
-  // 以下 for 弹性字段保留（多年生逆用 + wiltOutOfSeason 字段兼容）
   const lastGrowthTickAt = plot.lastGrowthTickAt ?? plot.plantedAt;
   const delta = Math.max(0, newTotal - lastGrowthTickAt);
   const growthMinutesAccumulated = Math.min(plot.growthMinutesAccumulated + delta * growthMultiplier, targetMinutes);
@@ -388,8 +369,8 @@ function buildInitialPlots(): PlotState[] {
     plots.push(createBlankPlotState({
       id: `paddy_${i}`,
       regionId: 'region_paddy',
-      landTypeId: 'paddy_field',
-      waterState: 'flooded',
+      landTypeId: 'dry_land',
+      waterState: 'dry',
     }));
   }
   return plots;
@@ -402,9 +383,8 @@ function buildInitialPlots(): PlotState[] {
 export const useGameStore = create<GameStore>((set, get) => ({
   // ── 时钟初始值（夏季第一个月 = 第4月）──────────────────────
   clock: {
-    totalMinutes: MINUTES_PER_MONTH * 3, // 跳过春季 3 个月
-    month: 4,
-    season: 'summer',
+    totalMinutes: 0,
+    month: 1,
     timeScale: 1,
     running: true,
   },
@@ -457,7 +437,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       if (!plot.plantedPlantId || plot.plantedAt === null) return plot;
       const plant = getPlantById(plot.plantedPlantId);
       if (!plant) return plot;
-      return advancePlotLifecycle(plot, plot.plantedPlantId, plant, newTotal, cal.month);
+      return advancePlotLifecycle(plot, plot.plantedPlantId, plant, newTotal);
     });
 
     let nextTaskState = { taskBoard, unlockedTasks };
@@ -589,13 +569,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (!unlockedPlants.includes(plantId)) return false;
     const plant = getPlantById(plantId);
     if (!plant) return false;
-    if (!isPlantableMonth(plant, clock.month)) return false;
     const qty = seeds[plantId] ?? 0;
     if (qty <= 0) return false;
 
     const plotIdx = plots.findIndex((p) => p.id === plotId);
     if (plotIdx < 0) return false;
     if (plots[plotIdx].plantedPlantId !== null && !plots[plotIdx].isWilted) return false;
+    // 严格土地限制：只有指定土地类型才能种植
+    if (plots[plotIdx].landTypeId !== plant.allowedLandTypeId) return false;
 
     const updated = [...plots];
     updated[plotIdx] = {
@@ -633,20 +614,20 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const plant = getPlantById(plot.plantedPlantId);
     if (!plant) return;
 
-    const landCfg = getLandTypeById(plot.landTypeId);
-    const yieldAmt = calcYield(plot, plant, landCfg, clock.month);
+    const yieldAmt = calcYield(plot, plant);
 
-    // 更新背包，年生作物收完即清场，多年生作物保留植株继续再生
+    // 更新背包，年生作物收完即清场，多年生达到 maxHarvests 上限后也清场
     const updated = [...plots];
     const isPerennial = (plant.harvestType ?? 'annual') === 'perennial';
-    updated[plotIdx] = isPerennial
+    const nextHarvestCount = plot.harvestCount + 1;
+    const reachedMaxHarvests = isPerennial && plant.maxHarvests !== undefined && nextHarvestCount >= plant.maxHarvests;
+    updated[plotIdx] = isPerennial && !reachedMaxHarvests
       ? {
           ...plot,
           growthMinutesAccumulated: 0,
           lastGrowthTickAt: clock.totalMinutes,
-          harvestCount: plot.harvestCount + 1,
+          harvestCount: nextHarvestCount,
           isReadyToHarvest: false,
-          // 增产类肥料只作用到“下一次收获”为止，收获后立刻清空。
           appliedFertilizerId: null,
         }
       : {
@@ -672,7 +653,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   // ── 经济 ─────────────────────────────────────────────────────
-  economy: { gold: 300, cumulativeEarned: 0 },
+  economy: { gold: 200, cumulativeEarned: 0 },
 
   buyFertilizer: (fertilizerId, quantity) => {
     const fertilizer = getFertilizerById(fertilizerId);
@@ -861,8 +842,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (!plot.plantedPlantId || plot.plantedAt === null || plot.isWilted) return false;
     if (plot.appliedFertilizerId !== null) return false;
 
-    // 生长肥只允许施加在尚未成熟的当前作物上；增产肥可以在收获前任意时点施加。
-    if (fertilizer.effectType === 'growth' && plot.isReadyToHarvest) return false;
+    // 生长肥只允许施加在尚未成熟的作物上。
+    if (plot.isReadyToHarvest) return false;
 
     const qty = miscInventory[fertilizerId] ?? 0;
     if (qty <= 0) return false;
@@ -888,7 +869,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   inventory: {},
 
   // ── 任务板 ───────────────────────────────────────────────────
-  taskBoard: createInitialTaskBoardState(['rice']).taskBoard,
+  taskBoard: createInitialTaskBoardState(['water_spinach', 'soybean']).taskBoard,
 
   // ── 种子库（购买后播种前持有） ───────────────────────────────
   seeds: {},
@@ -897,9 +878,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
   miscInventory: Object.fromEntries(FERTILIZER_CONFIGS.map((fertilizer) => [fertilizer.id, 0])),
 
   // ── 解锁状态 ─────────────────────────────────────────────────
-  unlockedPlants: ['rice'],          // 初始解锁水稻
-  unlockedRegions: ['region_paddy'], // 初始开放水稻土区
-  unlockedTasks: createInitialTaskBoardState(['rice']).unlockedTasks,
+  unlockedPlants: ['water_spinach', 'soybean'],  // 初始解锁空心菜和大豆
+  unlockedRegions: ['region_paddy'],              // 初始开放水稻土区
+  unlockedTasks: createInitialTaskBoardState(['water_spinach', 'soybean']).unlockedTasks,
   completedTasks: [],
   compendium: {},
 
@@ -985,27 +966,33 @@ export const useGameStore = create<GameStore>((set, get) => ({
   batchApplyFertilizer: (plotIds, fertilizerId) => {
     plotIds.forEach((id) => get().applyFertilizer(id, fertilizerId));
   },
+
+  harvestAll: (regionId) => {
+    const { plots } = get();
+    plots
+      .filter((p) => p.regionId === regionId && p.isReadyToHarvest)
+      .forEach((p) => get().harvest(p.id));
+  },
 }));
 
 export function createDefaultPersistedState(): PersistedGameState {
   // 新档必须是全新状态，不能继承当前运行中的任何进度。
-  const initialTaskState = createInitialTaskBoardState(['rice']);
+  const initialTaskState = createInitialTaskBoardState(['water_spinach', 'soybean']);
 
   return {
     clock: {
-      totalMinutes: MINUTES_PER_MONTH * 3,
-      month: 4,
-      season: 'summer',
+      totalMinutes: 0,
+      month: 1,
       timeScale: 1,
       running: true,
     },
     plots: buildInitialPlots(),
-    economy: { gold: 300, cumulativeEarned: 0 },
+    economy: { gold: 200, cumulativeEarned: 0 },
     inventory: {},
     taskBoard: initialTaskState.taskBoard,
     seeds: {},
     miscInventory: Object.fromEntries(FERTILIZER_CONFIGS.map((fertilizer) => [fertilizer.id, 0])),
-    unlockedPlants: ['rice'],
+    unlockedPlants: ['water_spinach', 'soybean'],
     unlockedRegions: ['region_paddy'],
     unlockedTasks: initialTaskState.unlockedTasks,
     completedTasks: [],
@@ -1025,9 +1012,8 @@ export function createSandboxPersistedState(): PersistedGameState {
 
   return {
     clock: {
-      totalMinutes: MINUTES_PER_MONTH * 3,
-      month: 4,
-      season: 'summer',
+      totalMinutes: 0,
+      month: 1,
       timeScale: 1440,
       running: true,
     },

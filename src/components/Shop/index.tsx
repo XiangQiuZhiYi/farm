@@ -23,13 +23,15 @@ function normalizeQuantity(input: string) {
   return parsed;
 }
 
-function bestSoilLabel(bestSoils: string[]) {
-  if (bestSoils.includes('paddy_field')) return '水田';
-  if (bestSoils.includes('dry_land')) return '旱地';
-  if (bestSoils.includes('brown_soil')) return '褐土';
-  if (bestSoils.includes('tidal_soil')) return '潮土';
-  if (bestSoils.includes('black_soil')) return '黑土';
-  return '其他';
+function bestSoilLabel(allowedLandTypeId: string) {
+  const map: Record<string, string> = {
+    paddy_field: '水田',
+    dry_land: '旱地',
+    brown_soil: '褐土',
+    tidal_soil: '潮土',
+    black_soil: '黑土',
+  };
+  return map[allowedLandTypeId] ?? '其他';
 }
 
 export function Shop() {
@@ -48,10 +50,10 @@ export function Shop() {
     .map(getPlantById)
     .filter((p): p is NonNullable<typeof p> => p !== null);
 
-  const seedFilterOptions = ['全部', ...new Set(unlockedConfigs.map((plant) => bestSoilLabel(plant.soilMatch.best)))];
+  const seedFilterOptions = ['全部', ...new Set(unlockedConfigs.map((plant) => bestSoilLabel(plant.allowedLandTypeId)))];
   const filteredSeeds = seedFilter === '全部'
     ? unlockedConfigs
-    : unlockedConfigs.filter((plant) => bestSoilLabel(plant.soilMatch.best) === seedFilter);
+    : unlockedConfigs.filter((plant) => bestSoilLabel(plant.allowedLandTypeId) === seedFilter);
 
   const quantity = normalizeQuantity(purchaseQuantity);
   const activePlant = activeItem?.kind === 'seed' ? getPlantById(activeItem.itemId) : null;

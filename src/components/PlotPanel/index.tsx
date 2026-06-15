@@ -6,7 +6,7 @@
 import { useGameStore } from '../../store/gameStore';
 import { FERTILIZER_CONFIGS, getFertilizerById } from '../../config/fertilizers';
 import { getPlantById } from '../../config/plants';
-import { calcPlotGrowthStage, getGrowthTargetMinutes, isPlantableMonth } from '../../systems/growthSystem';
+import { calcPlotGrowthStage, getGrowthTargetMinutes } from '../../systems/growthSystem';
 import styles from './PlotPanel.module.css';
 
 // ── 批量操作面板 ────────────────────────────────────────────
@@ -16,7 +16,6 @@ function BatchPanel() {
   const seeds = useGameStore((s) => s.seeds);
   const miscInventory = useGameStore((s) => s.miscInventory);
   const unlockedPlants = useGameStore((s) => s.unlockedPlants);
-  const clock = useGameStore((s) => s.clock);
   const clearSelection = useGameStore((s) => s.clearSelection);
   const batchPlantSeed = useGameStore((s) => s.batchPlantSeed);
   const batchApplyFertilizer = useGameStore((s) => s.batchApplyFertilizer);
@@ -63,14 +62,12 @@ function BatchPanel() {
                       key={p.id}
                       type="button"
                       className={styles.plantBtn}
-                      disabled={!isPlantableMonth(p, clock.month)}
                       onClick={() => {
                         batchPlantSeed(plantableIds, p.id);
                         clearSelection();
                       }}
                     >
                       {p.name} ×{seeds[p.id] ?? 0}
-                      {!isPlantableMonth(p, clock.month) ? ' (非播种期)' : ''}
                     </button>
                   ))
                 )}
@@ -116,7 +113,6 @@ export function PlotPanel() {
   // ── 所有 hooks 必须在任何条件返回之前调用（Rules of Hooks）──
   const plots = useGameStore((s) => s.plots);
   const selection = useGameStore((s) => s.selection);
-  const clock = useGameStore((s) => s.clock);
   const miscInventory = useGameStore((s) => s.miscInventory);
   const seeds = useGameStore((s) => s.seeds);
   const unlockedPlants = useGameStore((s) => s.unlockedPlants);
@@ -236,10 +232,8 @@ export function PlotPanel() {
                         type="button"
                         className={styles.plantBtn}
                         onClick={() => plantSeed(plot.id, p.id)}
-                        disabled={!isPlantableMonth(p, clock.month)}
                       >
                         {p.name} ×{seeds[p.id] ?? 0}
-                        {!isPlantableMonth(p, clock.month) ? ' (非播种期)' : ''}
                       </button>
                     ))
                   )}
@@ -303,10 +297,8 @@ export function PlotPanel() {
                     type="button"
                     className={styles.plantBtn}
                     onClick={() => plantSeed(plot.id, p.id)}
-                    disabled={!isPlantableMonth(p, clock.month)}
                   >
                     {p.name} ×{seeds[p.id] ?? 0}
-                    {!isPlantableMonth(p, clock.month) ? ' (非播种期)' : ''}
                   </button>
                 ))
               )}

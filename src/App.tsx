@@ -482,6 +482,7 @@ function App() {
 
   const unlockedRegions = useGameStore((s) => s.unlockedRegions);
   const plots = useGameStore((s) => s.plots);
+  const harvestAll = useGameStore((s) => s.harvestAll);
   const saveProfile = useGameStore((s) => s.saveProfile);
   const setSaveProfile = useGameStore((s) => s.setSaveProfile);
   const hydrateFromSnapshot = useGameStore((s) => s.hydrateFromSnapshot);
@@ -839,26 +840,39 @@ function App() {
               {REGION_TABS.map((tab) => {
                 const locked   = !unlockedRegions.includes(tab.id);
                 const plotCount = plots.filter((p) => p.regionId === tab.id).length;
+                const readyCount = plots.filter((p) => p.regionId === tab.id && p.isReadyToHarvest).length;
                 return (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    role="tab"
-                    aria-selected={activeRegion === tab.id}
-                    className={[
-                      'regionTab',
-                      activeRegion === tab.id ? 'regionTabActive' : '',
-                      locked ? 'regionTabLocked' : '',
-                    ].join(' ')}
-                    disabled={locked}
-                    onClick={() => setActiveRegion(tab.id)}
-                  >
-                    <span className="regionTabIcon">{tab.icon}</span>
-                    <span className="regionTabLabel">{tab.label}</span>
-                    {locked
-                      ? <span className="regionTabBadge regionTabBadgeLocked">未解锁</span>
-                      : <span className="regionTabBadge">{plotCount} 格</span>}
-                  </button>
+                  <div key={tab.id} className="regionTabGroup">
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={activeRegion === tab.id}
+                      className={[
+                        'regionTab',
+                        activeRegion === tab.id ? 'regionTabActive' : '',
+                        locked ? 'regionTabLocked' : '',
+                      ].join(' ')}
+                      disabled={locked}
+                      onClick={() => setActiveRegion(tab.id)}
+                    >
+                      <span className="regionTabIcon">{tab.icon}</span>
+                      <span className="regionTabLabel">{tab.label}</span>
+                      {locked
+                        ? <span className="regionTabBadge regionTabBadgeLocked">未解锁</span>
+                        : <span className="regionTabBadge">{plotCount} 格</span>}
+                    </button>
+                    {!locked && (
+                      <button
+                        type="button"
+                        className={`regionTabHarvestBtn${readyCount > 0 ? ' regionTabHarvestBtnReady' : ''}`}
+                        disabled={readyCount === 0}
+                        onClick={() => harvestAll(tab.id)}
+                        title={readyCount > 0 ? `收获 ${readyCount} 块地` : '暂无可收获'}
+                      >
+                        🌾 一键收获{readyCount > 0 ? ` (${readyCount})` : ''}
+                      </button>
+                    )}
+                  </div>
                 );
               })}
             </div>
