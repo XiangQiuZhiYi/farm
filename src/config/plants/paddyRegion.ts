@@ -21,7 +21,7 @@ export const PADDY_REGION_PLANTS: PlantConfig[] = [
     regionId: 'region_paddy',
     unlockCumulativeGold: 675,
     purchasePrice: 200,
-    sellPricePerUnit: 450,
+    sellPricePerUnit: 430,
     harvestYield: 1,
     growthMinutes: 360,            // 6h
     stageBoundaries: { seed: 0, sprout: 0.15, grow: 0.45, mature: 0.85 },
@@ -36,7 +36,7 @@ export const PADDY_REGION_PLANTS: PlantConfig[] = [
     regionId: 'region_paddy',
     unlockCumulativeGold: 675,
     purchasePrice: 150,
-    sellPricePerUnit: 320,
+    sellPricePerUnit: 325,
     harvestYield: 1,
     growthMinutes: 300,            // 5h
     stageBoundaries: { seed: 0, sprout: 0.15, grow: 0.45, mature: 0.85 },
@@ -51,7 +51,7 @@ export const PADDY_REGION_PLANTS: PlantConfig[] = [
     regionId: 'region_paddy',
     unlockCumulativeGold: 1125,
     purchasePrice: 120,
-    sellPricePerUnit: 100,
+    sellPricePerUnit: 98,
     harvestYield: 1,
     growthMinutes: 180,            // 3h
     harvestType: 'perennial',
@@ -69,7 +69,7 @@ export const PADDY_REGION_PLANTS: PlantConfig[] = [
     regionId: 'region_paddy',
     unlockCumulativeGold: 450,
     purchasePrice: 100,
-    sellPricePerUnit: 90,
+    sellPricePerUnit: 106,
     harvestYield: 2,
     growthMinutes: 240,            // 4h
     stageBoundaries: { seed: 0, sprout: 0.15, grow: 0.45, mature: 0.85 },
@@ -86,7 +86,7 @@ export const PADDY_REGION_PLANTS: PlantConfig[] = [
     regionId: 'region_paddy',
     unlockCumulativeGold: 0,       // 初始解锁
     purchasePrice: 20,
-    sellPricePerUnit: 25,
+    sellPricePerUnit: 15,
     harvestYield: 1,
     growthMinutes: 30,
     harvestType: 'perennial',
@@ -104,7 +104,7 @@ export const PADDY_REGION_PLANTS: PlantConfig[] = [
     regionId: 'region_paddy',
     unlockCumulativeGold: 0,       // 初始解锁
     purchasePrice: 10,
-    sellPricePerUnit: 15,
+    sellPricePerUnit: 8,
     harvestYield: 1,
     growthMinutes: 25,
     harvestType: 'perennial',
@@ -122,7 +122,7 @@ export const PADDY_REGION_PLANTS: PlantConfig[] = [
     regionId: 'region_paddy',
     unlockCumulativeGold: 112,
     purchasePrice: 15,
-    sellPricePerUnit: 22,
+    sellPricePerUnit: 10,
     harvestYield: 1,
     growthMinutes: 35,
     harvestType: 'perennial',
@@ -155,7 +155,7 @@ export const PADDY_REGION_PLANTS: PlantConfig[] = [
     regionId: 'region_paddy',
     unlockCumulativeGold: 2250,
     purchasePrice: 50,
-    sellPricePerUnit: 60,
+    sellPricePerUnit: 51,
     harvestYield: 2,
     growthMinutes: 90,             // 1.5h
     stageBoundaries: { seed: 0, sprout: 0.15, grow: 0.45, mature: 0.85 },
@@ -170,7 +170,7 @@ export const PADDY_REGION_PLANTS: PlantConfig[] = [
     regionId: 'region_paddy',
     unlockCumulativeGold: 3375,
     purchasePrice: 60,
-    sellPricePerUnit: 80,
+    sellPricePerUnit: 65,
     harvestYield: 2,
     growthMinutes: 120,            // 2h
     stageBoundaries: { seed: 0, sprout: 0.12, grow: 0.42, mature: 0.82 },

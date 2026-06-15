@@ -21,7 +21,7 @@ export const BROWN_TIDAL_REGION_PLANTS: PlantConfig[] = [
     regionId: 'region_brown_tidal',
     unlockCumulativeGold: 5625,
     purchasePrice: 80,
-    sellPricePerUnit: 50,
+    sellPricePerUnit: 47,
     harvestYield: 3,
     growthMinutes: 90,             // 1.5h
     stageBoundaries: { seed: 0, sprout: 0.15, grow: 0.45, mature: 0.85 },
@@ -36,7 +36,7 @@ export const BROWN_TIDAL_REGION_PLANTS: PlantConfig[] = [
     regionId: 'region_brown_tidal',
     unlockCumulativeGold: 6750,
     purchasePrice: 100,
-    sellPricePerUnit: 90,
+    sellPricePerUnit: 92,
     harvestYield: 2,
     growthMinutes: 120,            // 2h
     stageBoundaries: { seed: 0, sprout: 0.12, grow: 0.42, mature: 0.82 },
@@ -51,7 +51,7 @@ export const BROWN_TIDAL_REGION_PLANTS: PlantConfig[] = [
     regionId: 'region_brown_tidal',
     unlockCumulativeGold: 18000,
     purchasePrice: 120,
-    sellPricePerUnit: 70,
+    sellPricePerUnit: 69,
     harvestYield: 1,
     growthMinutes: 120,            // 2h
     harvestType: 'perennial',
@@ -69,7 +69,7 @@ export const BROWN_TIDAL_REGION_PLANTS: PlantConfig[] = [
     regionId: 'region_brown_tidal',
     unlockCumulativeGold: 22500,
     purchasePrice: 150,
-    sellPricePerUnit: 80,
+    sellPricePerUnit: 93,
     harvestYield: 1,
     growthMinutes: 150,            // 2.5h
     harvestType: 'perennial',
@@ -87,7 +87,7 @@ export const BROWN_TIDAL_REGION_PLANTS: PlantConfig[] = [
     regionId: 'region_brown_tidal',
     unlockCumulativeGold: 4050,
     purchasePrice: 60,
-    sellPricePerUnit: 55,
+    sellPricePerUnit: 59,
     harvestYield: 2,
     growthMinutes: 90,             // 1.5h
     stageBoundaries: { seed: 0, sprout: 0.15, grow: 0.45, mature: 0.85 },
@@ -102,7 +102,7 @@ export const BROWN_TIDAL_REGION_PLANTS: PlantConfig[] = [
     regionId: 'region_brown_tidal',
     unlockCumulativeGold: 4500,
     purchasePrice: 70,
-    sellPricePerUnit: 60,
+    sellPricePerUnit: 64,
     harvestYield: 2,
     growthMinutes: 90,             // 1.5h
     stageBoundaries: { seed: 0, sprout: 0.15, grow: 0.5, mature: 0.85 },
@@ -117,7 +117,7 @@ export const BROWN_TIDAL_REGION_PLANTS: PlantConfig[] = [
     regionId: 'region_brown_tidal',
     unlockCumulativeGold: 5625,
     purchasePrice: 90,
-    sellPricePerUnit: 220,
+    sellPricePerUnit: 210,
     harvestYield: 1,
     growthMinutes: 150,            // 2.5h
     stageBoundaries: { seed: 0, sprout: 0.15, grow: 0.5, mature: 0.85 },
@@ -134,7 +134,7 @@ export const BROWN_TIDAL_REGION_PLANTS: PlantConfig[] = [
     regionId: 'region_brown_tidal',
     unlockCumulativeGold: 9000,
     purchasePrice: 110,
-    sellPricePerUnit: 260,
+    sellPricePerUnit: 254,
     harvestYield: 1,
     growthMinutes: 180,            // 3h
     stageBoundaries: { seed: 0, sprout: 0.1, grow: 0.4, mature: 0.8 },
@@ -149,7 +149,7 @@ export const BROWN_TIDAL_REGION_PLANTS: PlantConfig[] = [
     regionId: 'region_brown_tidal',
     unlockCumulativeGold: 11250,
     purchasePrice: 130,
-    sellPricePerUnit: 120,
+    sellPricePerUnit: 128,
     harvestYield: 2,
     growthMinutes: 180,            // 3h
     stageBoundaries: { seed: 0, sprout: 0.1, grow: 0.4, mature: 0.8 },
@@ -164,7 +164,7 @@ export const BROWN_TIDAL_REGION_PLANTS: PlantConfig[] = [
     regionId: 'region_brown_tidal',
     unlockCumulativeGold: 13500,
     purchasePrice: 180,
-    sellPricePerUnit: 140,
+    sellPricePerUnit: 160,
     harvestYield: 2,
     growthMinutes: 240,            // 4h
     stageBoundaries: { seed: 0, sprout: 0.12, grow: 0.45, mature: 0.85 },
