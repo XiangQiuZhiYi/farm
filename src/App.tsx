@@ -87,7 +87,10 @@ function TaskBoardModal({ onClose }: { onClose: () => void }) {
   const submitActiveTask = useGameStore((s) => s.submitActiveTask);
   const currentAbsoluteMonth = getAbsoluteMonthIndex(clock.totalMinutes);
 
-  const activeTaskDefinition = taskBoard.activeTask ? getTaskById(taskBoard.activeTask.taskId) : null;
+  const activeTaskDefinitions = taskBoard.activeTasks.map((activeTask) => ({
+    state: activeTask,
+    definition: getTaskById(activeTask.taskId),
+  })).filter((item) => item.definition !== null);
 
   return (
     <div className="modalBackdrop" role="presentation" onClick={onClose}>
@@ -155,7 +158,6 @@ function TaskBoardModal({ onClose }: { onClose: () => void }) {
                         <button
                           type="button"
                           className="toolbarBtn toolbarBtnPrimary"
-                          disabled={taskBoard.activeTask !== null}
                           onClick={() => acceptTask(offer.taskId)}
                         >
                           接取任务
@@ -173,48 +175,52 @@ function TaskBoardModal({ onClose }: { onClose: () => void }) {
           <section className="taskSection">
             <div className="taskSectionHead">
               <h3>已登记任务</h3>
-              <span>{taskBoard.activeTask ? '进行中' : '空闲'}</span>
+              <span>{taskBoard.activeTasks.length > 0 ? `${taskBoard.activeTasks.length} 进行中` : '空闲'}</span>
             </div>
-            {taskBoard.activeTask && activeTaskDefinition ? (
-              <article className="taskOfferCard taskOfferCardActive">
-                <div className="taskOfferHead">
-                  <div>
-                    <h4>{activeTaskDefinition.title}</h4>
-                    <p>
-                      已接于 {formatGameYearMonthByAbsoluteMonth(taskBoard.activeTask.acceptedMonth)}
-                      {' / '}
-                      {formatRemainingMonths(taskBoard.activeTask.expiresOnMonth, currentAbsoluteMonth)}
-                    </p>
-                  </div>
-                  <span className="taskStatusBadge">已登记</span>
-                </div>
-                <ul className="taskRequirementList">
-                  {activeTaskDefinition.requirements.map((requirement) => {
-                    const owned = inventory[requirement.plantId] ?? 0;
-                    const enough = owned >= requirement.quantity;
+            {activeTaskDefinitions.length > 0 ? (
+              <div className="taskOfferList">
+                {activeTaskDefinitions.map(({ state: activeTaskState, definition: activeTaskDefinition }) => (
+                  <article key={activeTaskState.taskId} className="taskOfferCard taskOfferCardActive">
+                    <div className="taskOfferHead">
+                      <div>
+                        <h4>{activeTaskDefinition.title}</h4>
+                        <p>
+                          已接于 {formatGameYearMonthByAbsoluteMonth(activeTaskState.acceptedMonth)}
+                          {' / '}
+                          {formatRemainingMonths(activeTaskState.expiresOnMonth, currentAbsoluteMonth)}
+                        </p>
+                      </div>
+                      <span className="taskStatusBadge">已登记</span>
+                    </div>
+                    <ul className="taskRequirementList">
+                      {activeTaskDefinition.requirements.map((requirement) => {
+                        const owned = inventory[requirement.plantId] ?? 0;
+                        const enough = owned >= requirement.quantity;
 
-                    return (
-                      <li key={`${taskBoard.activeTask?.taskId}-${requirement.plantId}`}>
-                        <span>{getPlantById(requirement.plantId)?.name ?? requirement.plantId}</span>
-                        <strong className={enough ? 'taskEnough' : 'taskLack'}>
-                          {owned} / {requirement.quantity}
-                        </strong>
-                      </li>
-                    );
-                  })}
-                </ul>
-                <div className="taskOfferFooter">
-                  <span>完成奖励 {activeTaskDefinition.rewardGold} 金</span>
-                  <button
-                    type="button"
-                    className="toolbarBtn toolbarBtnPrimary"
-                    disabled={!activeTaskDefinition.requirements.every((requirement) => (inventory[requirement.plantId] ?? 0) >= requirement.quantity)}
-                    onClick={() => submitActiveTask()}
-                  >
-                    一次性交付
-                  </button>
-                </div>
-              </article>
+                        return (
+                          <li key={`${activeTaskState.taskId}-${requirement.plantId}`}>
+                            <span>{getPlantById(requirement.plantId)?.name ?? requirement.plantId}</span>
+                            <strong className={enough ? 'taskEnough' : 'taskLack'}>
+                              {owned} / {requirement.quantity}
+                            </strong>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                    <div className="taskOfferFooter">
+                      <span>完成奖励 {activeTaskDefinition.rewardGold} 金</span>
+                      <button
+                        type="button"
+                        className="toolbarBtn toolbarBtnPrimary"
+                        disabled={!activeTaskDefinition.requirements.every((requirement) => (inventory[requirement.plantId] ?? 0) >= requirement.quantity)}
+                        onClick={() => submitActiveTask(activeTaskState.taskId)}
+                      >
+                        一次性交付
+                      </button>
+                    </div>
+                  </article>
+                ))}
+              </div>
             ) : (
               <p className="taskBoardEmpty">当前还没有登记任务，先从上面的候选任务中接取一条。</p>
             )}

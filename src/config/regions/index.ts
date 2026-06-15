@@ -17,7 +17,7 @@ export const REGION_CONFIGS: RegionConfig[] = [
   {
     id: 'region_brown_tidal',
     name: '褐土/潮土组',
-    unlockGold: 1600,
+    unlockGold: 4000,
     unlockCompendiumCount: 10,
     prerequisiteRegionId: 'region_paddy', // 需要水稻土区 10 种图鉴
     initialPlotCount: 2,
@@ -26,7 +26,7 @@ export const REGION_CONFIGS: RegionConfig[] = [
   {
     id: 'region_black',
     name: '黑土区',
-    unlockGold: 4200,
+    unlockGold: 10500,
     unlockCompendiumCount: 10,
     prerequisiteRegionId: 'region_brown_tidal', // 需要褐土/潮土组 10 种图鉴
     initialPlotCount: 2,

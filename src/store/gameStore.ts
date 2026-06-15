@@ -170,18 +170,18 @@ function getEligibleTasksForBoard(
   unlockedPlants: string[],
   discoveredTasks: string[],
   completedTasks: string[],
-  activeTaskId: string | null,
+  activeTaskIds: string[],
 ) {
   const eligibleTaskIds = new Set(getEligibleTaskIds(unlockedPlants));
 
-  // 显式保证任务板的抽取来源只来自“未发现 + 已发现”的任务池。
+  // 显式保证任务板的抽取来源只来自"未发现 + 已发现"的任务池。
   return TASK_BOARD_TASKS
     .filter((task) => eligibleTaskIds.has(task.id))
     .filter((task) => {
       const status = getTaskCollectionStatus(task, unlockedPlants, discoveredTasks, completedTasks);
       return status === 'undiscovered' || status === 'discovered';
     })
-    .filter((task) => task.id !== activeTaskId);
+    .filter((task) => !activeTaskIds.includes(task.id));
 }
 
 function getAbsoluteMonthIndex(totalMinutes: number) {
@@ -242,13 +242,13 @@ function createInitialTaskBoardState(unlockedPlants: string[]) {
     unlockedPlants,
     discoveredTasks: [],
     completedTasks: [],
-    activeTask: null,
+    activeTasks: [],
   });
 
   return {
     taskBoard: {
       currentOffers: initialOffers,
-      activeTask: null,
+      activeTasks: [],
       lastRefreshMonth: initialOffers.length > 0 ? GAME_START_ABSOLUTE_MONTH : null,
     },
     unlockedTasks: initialOffers.map((offer) => offer.taskId),
@@ -260,7 +260,7 @@ function selectTaskOffers(params: {
   unlockedPlants: string[];
   discoveredTasks: string[];
   completedTasks: string[];
-  activeTask: ActiveTaskState | null;
+  activeTasks: ActiveTaskState[];
 }) {
   const refreshIndex = Math.max(1, Math.floor((params.absoluteMonth - GAME_START_ABSOLUTE_MONTH) / TASK_BOARD_RULES.offerIntervalMonths));
 
@@ -268,7 +268,7 @@ function selectTaskOffers(params: {
     params.unlockedPlants,
     params.discoveredTasks,
     params.completedTasks,
-    params.activeTask?.taskId ?? null,
+    params.activeTasks.map((t) => t.taskId),
   );
 
   const candidates = eligibleTasks
@@ -295,13 +295,14 @@ function processTaskBoardForMonth(state: Pick<GameStore, 'taskBoard' | 'unlocked
 
   // 每月切换时先清理已过期的限时任务，已失败任务会重新回到候选池。
   const filteredOffers = nextTaskBoard.currentOffers.filter((offer) => !isTaskExpired(offer.expiresOnMonth, absoluteMonth));
-  const activeTaskExpired = nextTaskBoard.activeTask && isTaskExpired(nextTaskBoard.activeTask.expiresOnMonth, absoluteMonth);
+  const expiredActiveTasks = nextTaskBoard.activeTasks.filter((task) => isTaskExpired(task.expiresOnMonth, absoluteMonth));
+  const activeTasksAfterExpiry = nextTaskBoard.activeTasks.filter((task) => !isTaskExpired(task.expiresOnMonth, absoluteMonth));
 
-  if (filteredOffers.length !== nextTaskBoard.currentOffers.length || activeTaskExpired) {
+  if (filteredOffers.length !== nextTaskBoard.currentOffers.length || expiredActiveTasks.length > 0) {
     nextTaskBoard = {
       ...nextTaskBoard,
       currentOffers: filteredOffers,
-      activeTask: activeTaskExpired ? null : nextTaskBoard.activeTask,
+      activeTasks: activeTasksAfterExpiry,
     };
   }
 
@@ -311,7 +312,7 @@ function processTaskBoardForMonth(state: Pick<GameStore, 'taskBoard' | 'unlocked
       unlockedPlants: state.unlockedPlants,
       discoveredTasks: nextUnlockedTasks,
       completedTasks: state.completedTasks,
-      activeTask: nextTaskBoard.activeTask,
+      activeTasks: nextTaskBoard.activeTasks,
     });
     const offeredTaskIds = nextOffers.map((offer) => offer.taskId);
 
@@ -676,7 +677,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   acceptTask: (taskId) => {
     const { taskBoard, clock } = get();
-    if (taskBoard.activeTask) return false;
 
     const offer = taskBoard.currentOffers.find((item) => item.taskId === taskId);
     if (!offer) return false;
@@ -687,21 +687,25 @@ export const useGameStore = create<GameStore>((set, get) => ({
       taskBoard: {
         ...state.taskBoard,
         currentOffers: state.taskBoard.currentOffers.filter((item) => item.taskId !== taskId),
-        activeTask: {
-          ...offer,
-          acceptedMonth,
-        },
+        activeTasks: [
+          ...state.taskBoard.activeTasks,
+          {
+            ...offer,
+            acceptedMonth,
+          },
+        ],
       },
     }));
 
     return true;
   },
 
-  submitActiveTask: () => {
+  submitActiveTask: (taskId) => {
     const { taskBoard, inventory } = get();
-    if (!taskBoard.activeTask) return false;
+    const activeTask = taskBoard.activeTasks.find((t) => t.taskId === taskId);
+    if (!activeTask) return false;
 
-    const task = getTaskById(taskBoard.activeTask.taskId);
+    const task = getTaskById(activeTask.taskId);
     if (!task) return false;
 
     const canSubmit = task.requirements.every((requirement) => (inventory[requirement.plantId] ?? 0) >= requirement.quantity);
@@ -723,7 +727,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         completedTasks: [...state.completedTasks, task.id],
         taskBoard: {
           ...state.taskBoard,
-          activeTask: null,
+          activeTasks: state.taskBoard.activeTasks.filter((t) => t.taskId !== taskId),
         },
       };
     });

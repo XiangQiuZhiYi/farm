@@ -1,6 +1,9 @@
 // ============================================================
 // 游戏主循环（requestAnimationFrame 驱动）
-// 负责按照 timeScale 推进游戏时钟，不直接渲染
+// 负责将按照 timeScale 推进游戏时钟，不直接渲染
+//
+// 修复：使用 Date.now() 计算 delta，确保锁屏/切后台期间的时间
+//       在恢复后能被正确补算，不受 rAF 暂停影响。
 // ============================================================
 
 import { useGameStore } from '../store/gameStore';
@@ -12,16 +15,25 @@ import { useGameStore } from '../store/gameStore';
  */
 const REAL_MS_TO_GAME_MINUTES = 1 / 60000;
 
-let lastTimestamp: number | null = null;
+/** 单次 delta 上限（24 小时）：防止异常时间跳跃 */
+const MAX_DELTA_MS = 86_400_000; // 24 小时
+
+let lastRealTime: number | null = null;
 let rafId: number | null = null;
 
-function loop(ts: number) {
-  if (lastTimestamp === null) {
-    lastTimestamp = ts;
+function loop() {
+  const now = Date.now();
+  if (lastRealTime === null) {
+    lastRealTime = now;
   }
 
-  const deltaMs = ts - lastTimestamp;
-  lastTimestamp = ts;
+  let deltaMs = now - lastRealTime;
+  lastRealTime = now;
+
+  // 限制单帧最大推进量，避免锁屏数小时导致作物瞬间成熟
+  if (deltaMs > MAX_DELTA_MS) {
+    deltaMs = MAX_DELTA_MS;
+  }
 
   const { clock, tickMinutes } = useGameStore.getState();
 
@@ -45,6 +57,6 @@ export function stopGameLoop() {
   if (rafId !== null) {
     cancelAnimationFrame(rafId);
     rafId = null;
-    lastTimestamp = null;
+    lastRealTime = null;
   }
 }

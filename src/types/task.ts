@@ -75,8 +75,8 @@ export interface ActiveTaskState extends TaskOffer {
 export interface TaskBoardState {
   /** 当前任务板上可选的任务 */
   currentOffers: TaskOffer[];
-  /** 当前已接取任务；首版仅支持同时接 1 个 */
-  activeTask: ActiveTaskState | null;
+  /** 当前已接取任务；首版仅支持同时接 1 个 -> 已移除上限 */
+  activeTasks: ActiveTaskState[];
   /** 上次刷新任务板的绝对月份序号 */
   lastRefreshMonth: number | null;
 }
