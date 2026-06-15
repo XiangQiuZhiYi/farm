@@ -163,10 +163,10 @@ export const BROWN_TIDAL_REGION_PLANTS: PlantConfig[] = [
     name: '花生',
     regionId: 'region_brown_tidal',
     unlockCumulativeGold: 13500,
-    purchasePrice: 180,
-    sellPricePerUnit: 160,
-    harvestYield: 2,
-    growthMinutes: 240,            // 4h
+    purchasePrice: 200,
+    sellPricePerUnit: 110,
+    harvestYield: 5,
+    growthMinutes: 360,            // 4h
     stageBoundaries: { seed: 0, sprout: 0.12, grow: 0.45, mature: 0.85 },
     allowedLandTypeId: 'brown_soil',
     preferredWaterState: 'dry',

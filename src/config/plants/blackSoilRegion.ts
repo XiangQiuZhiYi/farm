@@ -39,7 +39,7 @@ export const BLACK_SOIL_REGION_PLANTS: PlantConfig[] = [
     purchasePrice: 400,
     sellPricePerUnit: 900,
     harvestYield: 1,
-    growthMinutes: 360,            // 6h
+    growthMinutes: 420,            // 7h
     stageBoundaries: { seed: 0, sprout: 0.12, grow: 0.45, mature: 0.85 },
     allowedLandTypeId: 'black_soil',
     preferredWaterState: 'moist',
@@ -71,7 +71,7 @@ export const BLACK_SOIL_REGION_PLANTS: PlantConfig[] = [
     unlockCumulativeGold: 56250,
     purchasePrice: 800,
     sellPricePerUnit: 200,
-    harvestYield: 3,
+    harvestYield: 5,
     growthMinutes: 720,            // 12h
     harvestType: 'perennial',
     reharvestMinutes: 720,         // 12h

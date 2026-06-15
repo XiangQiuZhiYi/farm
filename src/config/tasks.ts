@@ -9,12 +9,15 @@ import type { TaskBoardRules, TaskDefinition, TaskDifficulty, TaskRequirement } 
 /** 任务板固定刷新规则 */
 export const TASK_BOARD_RULES: TaskBoardRules = {
   skipFirstMonth: false,
-  offerIntervalMonths: 5,
+  offerIntervalMonths: 1,
   offerChoices: 2,
   submissionMode: 'all-at-once',
   completedTasksRemoved: true,
   failedTimedTasksReturnToPool: true,
 };
+
+/** 已登记任务上限：达到此数量后不再刷新新任务 */
+export const MAX_ACTIVE_TASKS = 6;
 
 /** 各难度的基础奖励倍数 */
 export const TASK_DIFFICULTY_MULTIPLIERS: Record<TaskDifficulty, number> = {

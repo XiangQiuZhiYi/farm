@@ -86,7 +86,7 @@ export const PADDY_REGION_PLANTS: PlantConfig[] = [
     regionId: 'region_paddy',
     unlockCumulativeGold: 0,       // 初始解锁
     purchasePrice: 20,
-    sellPricePerUnit: 15,
+    sellPricePerUnit: 13,
     harvestYield: 1,
     growthMinutes: 30,
     harvestType: 'perennial',

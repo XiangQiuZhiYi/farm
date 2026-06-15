@@ -129,6 +129,11 @@ function TaskBoardModal({ onClose }: { onClose: () => void }) {
             <div className="taskSectionHead">
               <h3>当前可选任务</h3>
               <span>{taskBoard.currentOffers.length} / 2</span>
+              {taskBoard.activeTasks.length > 0 && (
+                <span style={{ color: '#e07050', fontSize: 11 }}>
+                  已登记 {taskBoard.activeTasks.length} / 6
+                </span>
+              )}
             </div>
             {taskBoard.currentOffers.length > 0 ? (
               <div className="taskOfferList">

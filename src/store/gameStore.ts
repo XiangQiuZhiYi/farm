@@ -23,7 +23,7 @@ import { REGION_CONFIGS } from '../config/regions';
 import { getLandTypeById } from '../config/lands';
 import { FERTILIZER_CONFIGS, getFertilizerById } from '../config/fertilizers';
 import { getPlantById, ALL_PLANTS } from '../config/plants';
-import { TASK_BOARD_RULES, TASK_BOARD_TASKS, getTaskById } from '../config/tasks';
+import { TASK_BOARD_RULES, TASK_BOARD_TASKS, getTaskById, MAX_ACTIVE_TASKS } from '../config/tasks';
 import { ACHIEVEMENT_CONFIGS } from '../config/achievements';
 import { calcYield, getGrowthTargetMinutes } from '../systems/growthSystem';
 
@@ -317,7 +317,7 @@ function processTaskBoardForMonth(state: Pick<GameStore, 'taskBoard' | 'unlocked
     };
   }
 
-  if (shouldRefreshTaskBoard(absoluteMonth)) {
+  if (shouldRefreshTaskBoard(absoluteMonth) && nextTaskBoard.activeTasks.length < MAX_ACTIVE_TASKS) {
     const nextOffers = selectTaskOffers({
       absoluteMonth,
       unlockedPlants: state.unlockedPlants,

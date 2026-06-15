@@ -197,6 +197,12 @@ export function renderGame(
           ctx.fillStyle = 'rgba(40, 0, 0, 0.38)';
           ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE);
         } else {
+          // 土壤蒙层：覆盖种植区域上方土地，让土地变暗凸显植物
+          ctx.save();
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.30)';
+          ctx.fillRect(x, y, TILE_SIZE, GROUND_PX);
+          ctx.restore();
+
           // 根部投影橢圆，加大加深让植物更有入土感
           ctx.fillStyle = 'rgba(0, 0, 0, 0.48)';
           ctx.beginPath();
