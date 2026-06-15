@@ -6,6 +6,7 @@
 import { useGameStore } from '../../store/gameStore';
 import { FERTILIZER_CONFIGS, getFertilizerById } from '../../config/fertilizers';
 import { getPlantById } from '../../config/plants';
+import { getLandTypeById } from '../../config/lands';
 import { calcPlotGrowthStage, getGrowthTargetMinutes } from '../../systems/growthSystem';
 import styles from './PlotPanel.module.css';
 
@@ -120,6 +121,8 @@ export function PlotPanel() {
   const applyFertilizer = useGameStore((s) => s.applyFertilizer);
   const plantSeed = useGameStore((s) => s.plantSeed);
   const selectPlot = useGameStore((s) => s.selectPlot);
+  const removePlant = useGameStore((s) => s.removePlant);
+  const removePlot = useGameStore((s) => s.removePlot);
 
   // 批量面板由用户点击「操作」按鈕手动打开，不再自动弹出。
   // 旧存档兼容：batchPanelOpen 可能为 undefined
@@ -161,6 +164,9 @@ export function PlotPanel() {
   const plantableList = unlockedPlants
     .map(getPlantById)
     .filter((p): p is NonNullable<typeof p> => p !== null && (seeds[p.id] ?? 0) > 0);
+
+  const landCfg = getLandTypeById(plot.landTypeId);
+  const removeRefund = landCfg ? Math.floor(landCfg.expandPrice * 0.5) : 0;
 
   return (
     // 点击面板外部区域关闭
@@ -280,6 +286,34 @@ export function PlotPanel() {
                       : '同一时间只能存在一种肥料效果。生长肥仅限未成熟作物施加。'}
                   </p>
                 </div>
+
+                {/* 危险操作 */}
+                <div className={styles.dangerSection}>
+                  <p className={styles.dangerTitle}>危险操作</p>
+                  {plot.plantedPlantId && (
+                    <button
+                      type="button"
+                      className={styles.dangerBtn}
+                      onClick={() => {
+                        removePlant(plot.id);
+                        selectPlot(null);
+                      }}
+                    >
+                      ✕ 移除当前作物
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    className={styles.dangerBtn}
+                    onClick={() => {
+                      removePlot(plot.id);
+                      selectPlot(null);
+                    }}
+                  >
+                    ✕ 移除此地块（返还 {removeRefund} 金）
+                  </button>
+                  <p className={styles.dangerHint}>移除此地块将返还 50% 扩展费用，地块上的作物将一同消失。</p>
+                </div>
               </>
             )}
           </div>
@@ -302,6 +336,22 @@ export function PlotPanel() {
                   </button>
                 ))
               )}
+            </div>
+
+            {/* 危险操作 */}
+            <div className={styles.dangerSection}>
+              <p className={styles.dangerTitle}>危险操作</p>
+              <button
+                type="button"
+                className={styles.dangerBtn}
+                onClick={() => {
+                  removePlot(plot.id);
+                  selectPlot(null);
+                }}
+              >
+                ✕ 移除此地块（返还 {removeRefund} 金）
+              </button>
+              <p className={styles.dangerHint}>移除此地块将返还 50% 扩展费用。</p>
             </div>
           </div>
         )}

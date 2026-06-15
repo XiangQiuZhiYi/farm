@@ -50,6 +50,10 @@ interface GameStore {
   plots: PlotState[];
   /** 购买扩展一块地（扣除购买费用） */
   expandPlot: (regionId: RegionId, landTypeId: LandTypeId) => boolean;
+  /** 移除地块上的作物（不返还种子） */
+  removePlant: (plotId: string) => boolean;
+  /** 移除已扩展的地块（返还 50% 扩展费用） */
+  removePlot: (plotId: string) => boolean;
   /** 在指定地块播种 */
   plantSeed: (plotId: string, plantId: string) => boolean;
   /** 收获 */
@@ -561,6 +565,50 @@ export const useGameStore = create<GameStore>((set, get) => ({
         gold: s.economy.gold - landCfg.expandPrice,
       },
     }));
+    return true;
+  },
+
+  removePlant: (plotId) => {
+    const { plots } = get();
+    const plotIdx = plots.findIndex((p) => p.id === plotId);
+    if (plotIdx < 0) return false;
+    const plot = plots[plotIdx];
+    if (!plot.plantedPlantId) return false;
+
+    const updated = [...plots];
+    updated[plotIdx] = {
+      ...plot,
+      plantedPlantId: null,
+      plantedAt: null,
+      growthMinutesAccumulated: 0,
+      lastGrowthTickAt: null,
+      harvestCount: 0,
+      isReadyToHarvest: false,
+      isWilted: false,
+      appliedFertilizerId: null,
+    };
+    set({ plots: updated });
+    return true;
+  },
+
+  removePlot: (plotId) => {
+    const { plots, economy } = get();
+    if (plots.length <= 1) return false; // 至少保留一块地
+    const plot = plots.find((p) => p.id === plotId);
+    if (!plot) return false;
+
+    // 返还 50% 扩展费用
+    const landCfg = getLandTypeById(plot.landTypeId);
+    if (!landCfg) return false;
+    const refund = Math.floor(landCfg.expandPrice * 0.5);
+
+    set({
+      plots: plots.filter((p) => p.id !== plotId),
+      economy: {
+        ...economy,
+        gold: economy.gold + refund,
+      },
+    });
     return true;
   },
 

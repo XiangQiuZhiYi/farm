@@ -7,6 +7,7 @@ export type FertilizerEffectType = 'growth';
 
 /** 肥料唯一标识 */
 export type FertilizerId =
+  | 'growth_hormone_basic'
   | 'growth_hormone'
   | 'advanced_growth_hormone';
 

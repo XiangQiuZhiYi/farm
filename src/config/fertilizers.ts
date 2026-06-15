@@ -6,8 +6,8 @@ import type { FertilizerConfig, FertilizerId } from '../types/fertilizer';
 
 export const FERTILIZER_CONFIGS: FertilizerConfig[] = [
   {
-    id: 'growth_hormone',
-    name: '生长激素肥料',
+    id: 'growth_hormone_basic',
+    name: '低级生长激素肥料',
     purchasePrice: 100,
     effectType: 'growth',
     multiplier: 1.2,
@@ -15,11 +15,20 @@ export const FERTILIZER_CONFIGS: FertilizerConfig[] = [
     shortLabel: '生长',
   },
   {
-    id: 'advanced_growth_hormone',
-    name: '高级生长激素肥料',
+    id: 'growth_hormone',
+    name: '生长激素肥料',
     purchasePrice: 200,
     effectType: 'growth',
     multiplier: 1.5,
+    plotStatusLabel: '生长肥',
+    shortLabel: '生长',
+  },
+  {
+    id: 'advanced_growth_hormone',
+    name: '高级生长激素肥料',
+    purchasePrice: 350,
+    effectType: 'growth',
+    multiplier: 2.0,
     plotStatusLabel: '高级生长肥',
     shortLabel: '高生',
   },
