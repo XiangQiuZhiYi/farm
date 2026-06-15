@@ -180,6 +180,13 @@ const TASK_SEEDS: TaskSeed[] = [
     isTimed: false,
     requirements: [{ plantId: 'corn', quantity: 6 }],
   },
+  {
+    id: 'task_easy_15',
+    title: '萝卜脆爽单',
+    difficulty: 'easy',
+    isTimed: false,
+    requirements: [{ plantId: 'green_radish', quantity: 6 }],
+  },
 
   // ── MEDIUM（11 条）──────────────────────────────────────────
   {
@@ -291,6 +298,16 @@ const TASK_SEEDS: TaskSeed[] = [
     requirements: [
       { plantId: 'pea', quantity: 20 },
       { plantId: 'cotton', quantity: 10 },
+    ],
+  },
+  {
+    id: 'task_medium_12',
+    title: '香料与根茎',
+    difficulty: 'medium',
+    isTimed: false,
+    requirements: [
+      { plantId: 'saffron', quantity: 6 },
+      { plantId: 'green_radish', quantity: 12 },
     ],
   },
 
@@ -409,6 +426,16 @@ const TASK_SEEDS: TaskSeed[] = [
       { plantId: 'sweet_potato', quantity: 14 },
     ],
   },
+  {
+    id: 'task_hard_11',
+    title: '水珍与药果',
+    difficulty: 'hard',
+    isTimed: false,
+    requirements: [
+      { plantId: 'gorgon', quantity: 8 },
+      { plantId: 'wolfberry', quantity: 12 },
+    ],
+  },
 
   // ── HELL（5 条）─────────────────────────────────────────────
   {
@@ -473,6 +500,17 @@ const TASK_SEEDS: TaskSeed[] = [
       { plantId: 'sorghum', quantity: 18 },
     ],
   },
+  {
+    id: 'task_hell_06',
+    title: '黑土极珍荟萃',
+    difficulty: 'hell',
+    isTimed: false,
+    requirements: [
+      { plantId: 'kiwi', quantity: 16 },
+      { plantId: 'sesame', quantity: 14 },
+      { plantId: 'apple', quantity: 8 },
+    ],
+  },
 ];
 function validateTaskCoverage(tasks: TaskDefinition[]) {
   const difficultyCount: Record<TaskDifficulty, number> = {
@@ -492,7 +530,7 @@ function validateTaskCoverage(tasks: TaskDefinition[]) {
   });
 
   // 这层校验保证任务难度分布不被后续维护误改。
-  if (difficultyCount.easy !== 14 || difficultyCount.medium !== 11 || difficultyCount.hard !== 10 || difficultyCount.hell !== 5) {
+  if (difficultyCount.easy !== 15 || difficultyCount.medium !== 12 || difficultyCount.hard !== 11 || difficultyCount.hell !== 6) {
     throw new Error(
       `Invalid task difficulty distribution: ${JSON.stringify(difficultyCount)}`,
     );

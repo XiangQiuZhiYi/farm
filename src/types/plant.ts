@@ -51,6 +51,9 @@ export interface PlantConfig {
   // ── 生长展示 ─────────────────────────────────────────────────
   stageBoundaries: Record<GrowthStage, number>;
   preferredWaterState: WaterState;
-  sprite: SpriteFrameConfig;
+  /** 难度因子（用于任务权重计算） */
   difficultyFactor: number;
+
+  /** 是否为珍稀植物：不可通过金币解锁，不可购买，只能通过收获概率掉落种子 */
+  isRare?: boolean;
 }

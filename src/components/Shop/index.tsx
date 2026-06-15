@@ -5,7 +5,7 @@
 import { useState } from 'react';
 import { useGameStore } from '../../store/gameStore';
 import { FERTILIZER_CONFIGS, getFertilizerById } from '../../config/fertilizers';
-import { getPlantById } from '../../config/plants';
+import { getPlantById, ALL_PLANTS } from '../../config/plants';
 import styles from './Shop.module.css';
 
 type Tab = 'seeds' | 'misc';
@@ -43,12 +43,14 @@ export function Shop() {
   const seeds = useGameStore((s) => s.seeds);
   const miscInventory = useGameStore((s) => s.miscInventory);
   const unlockedPlants = useGameStore((s) => s.unlockedPlants);
+  // 过滤掉珍稀植物，不可购买
+  const availablePlants = ALL_PLANTS.filter((p) => unlockedPlants.includes(p.id) && !p.isRare);
   const buySeeds = useGameStore((s) => s.buySeeds);
   const buyFertilizer = useGameStore((s) => s.buyFertilizer);
 
   const unlockedConfigs = unlockedPlants
     .map(getPlantById)
-    .filter((p): p is NonNullable<typeof p> => p !== null);
+    .filter((p): p is NonNullable<typeof p> => p !== null && !p.isRare);
 
   const seedFilterOptions = ['全部', ...new Set(unlockedConfigs.map((plant) => bestSoilLabel(plant.allowedLandTypeId)))];
   const filteredSeeds = seedFilter === '全部'

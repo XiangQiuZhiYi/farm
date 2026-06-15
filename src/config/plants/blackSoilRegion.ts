@@ -145,4 +145,20 @@ export const BLACK_SOIL_REGION_PLANTS: PlantConfig[] = [
     sprite: placeholderSprite('pea'),
     difficultyFactor: 1.5,
   },
+  {
+    id: 'kiwi',
+    name: '猕猴桃',
+    regionId: 'region_black',
+    unlockCumulativeGold: 99999999,
+    isRare: true,
+    purchasePrice: 350,
+    sellPricePerUnit: 490,
+    harvestYield: 2,
+    growthMinutes: 420,            // 7h
+    stageBoundaries: { seed: 0, sprout: 0.1, grow: 0.4, mature: 0.85 },
+    allowedLandTypeId: 'black_soil',
+    preferredWaterState: 'moist',
+    sprite: placeholderSprite('kiwi'),
+    difficultyFactor: 1.5,
+  },
 ];

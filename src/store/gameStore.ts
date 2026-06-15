@@ -715,6 +715,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   harvest: (plotId) => {
+    const RARE_DROPS: Record<string, string[]> = {
+      paddy_field: ['gorgon'],
+      dry_land: ['saffron'],
+      tidal_soil: ['green_radish', 'wolfberry'],
+      black_soil: ['kiwi'],
+    };
+
     const { plots, clock, achievements, weather } = get();
     const plotIdx = plots.findIndex((p) => p.id === plotId);
     if (plotIdx < 0) return;
@@ -769,17 +776,40 @@ export const useGameStore = create<GameStore>((set, get) => ({
           appliedFertilizerId: null,
         };
 
-    set((s) => ({
-      plots: updated,
-      inventory: {
-        ...s.inventory,
-        [plant.id]: (s.inventory[plant.id] ?? 0) + yieldAmt,
-      },
-      compendium: { ...s.compendium, [plant.id]: true },
-      seeds: seedReturnId
-        ? { ...s.seeds, [seedReturnId]: (s.seeds[seedReturnId] ?? 0) + 1 }
-        : s.seeds,
-      achievements: {
+    set((s) => {
+      // 基础掉落更新
+      const nextSeeds = { ...s.seeds };
+      
+      // 1. 天气种子返还
+      if (seedReturnId) {
+        nextSeeds[seedReturnId] = (nextSeeds[seedReturnId] ?? 0) + 1;
+      }
+
+      // 2. 珍稀植物掉落 (5%)
+      if (Math.random() < 0.05) {
+        const candidates = RARE_DROPS[plot.landTypeId];
+        if (candidates && candidates.length > 0) {
+          // 随机选择一个对应的珍稀植物
+          const rarePlantId = candidates[Math.floor(Math.random() * candidates.length)];
+          nextSeeds[rarePlantId] = (nextSeeds[rarePlantId] ?? 0) + 1;
+          
+          // 确保该植物已解锁（加入图鉴）
+          if (!s.unlockedPlants.includes(rarePlantId)) {
+            s.unlockedPlants = [...s.unlockedPlants, rarePlantId];
+          }
+        }
+      }
+
+      return {
+        plots: updated,
+        inventory: {
+          ...s.inventory,
+          [plant.id]: (s.inventory[plant.id] ?? 0) + yieldAmt,
+        },
+        compendium: { ...s.compendium, [plant.id]: true },
+        seeds: nextSeeds,
+        unlockedPlants: s.unlockedPlants,
+        achievements: {
         ...s.achievements,
         progress: {
           ...s.achievements.progress,
@@ -789,7 +819,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
           uniqueCropsHarvested: [...new Set([...Object.entries(s.compendium).filter(([, v]) => v).map(([k]) => k), plant.id])].length,
         },
       },
-    }));
+      };
+    });
   },
 
   // ── 经济 ─────────────────────────────────────────────────────
