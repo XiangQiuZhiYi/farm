@@ -2,6 +2,7 @@ import type { ClockState, Compendium, EconomyState, Inventory, MiscInventory, Se
 import type { PlotState } from './land';
 import type { TaskBoardState } from './task';
 import type { AchievementState } from './achievement';
+import type { WeatherState } from './weather';
 
 export type SaveSlotType = 'real' | 'test' | 'sandbox';
 
@@ -20,6 +21,7 @@ export interface PersistedGameState {
   compendium: Compendium;
   selection: SelectionState;
   achievements: AchievementState;
+  weather: WeatherState;
 }
 
 export interface SaveSlotSummary {

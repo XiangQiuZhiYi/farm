@@ -1,0 +1,46 @@
+/* ── 天气栏 ───────────────────────────── */
+.weatherBar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  border: 1px solid rgba(229, 159, 74, 0.3);
+  background: rgba(5, 22, 20, 0.6);
+  color: #c9d8cc;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 13px;
+  border-radius: 4px;
+}
+
+.icon {
+  font-size: 16px;
+}
+
+.name {
+  color: #fff1c7;
+  font-weight: normal;
+}
+
+.remaining {
+  font-size: 11px;
+  color: #7f968d;
+}
+
+.priceHint {
+  font-size: 11px;
+  margin-left: 4px;
+}
+
+.priceDown {
+  color: #e07050;
+}
+
+.priceUp {
+  color: #7de07d;
+}
+
+.bonusHint {
+  font-size: 11px;
+  color: #ffe066;
+  margin-left: 6px;
+}

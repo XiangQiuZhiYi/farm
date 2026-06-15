@@ -19,12 +19,14 @@ import type { ActiveTaskState, TaskBoardState, TaskDefinition, TaskOffer } from 
 import type { FertilizerId } from '../types/fertilizer';
 import type { PersistedGameState, SaveProfile } from '../types/save';
 import type { AchievementState, AchievementBuffType, AchievementProgress } from '../types/achievement';
+import type { WeatherState, WeatherDefinition } from '../types/weather';
 import { REGION_CONFIGS } from '../config/regions';
 import { getLandTypeById } from '../config/lands';
 import { FERTILIZER_CONFIGS, getFertilizerById } from '../config/fertilizers';
 import { getPlantById, ALL_PLANTS } from '../config/plants';
 import { TASK_BOARD_RULES, TASK_BOARD_TASKS, getTaskById, MAX_ACTIVE_TASKS } from '../config/tasks';
 import { ACHIEVEMENT_CONFIGS } from '../config/achievements';
+import { WEATHER_CONFIGS, rollWeather } from '../config/weather';
 import { calcYield, getGrowthTargetMinutes } from '../systems/growthSystem';
 
 // ─────────────────────────────────────────────────────────────
@@ -103,6 +105,15 @@ interface GameStore {
   achievements: AchievementState;
   /** 内部方法：成就检查与奖励发放（不暴露给 UI） */
   _checkAchievements: () => void;
+
+  // ── 天气 ────────────────────────────────────────────────────
+  weather: WeatherState;
+  /** 内部方法：检查并更新天气状态 */
+  _tickWeather: (absoluteMonth: number) => void;
+  /** 初始化天气（首次启动） */
+  _initWeather: () => void;
+  /** 获取当前天气配置 */
+  getWeather: () => WeatherDefinition | null;
 
   // ── 选中状态 ─────────────────────────────────────────────────
   selection: SelectionState;
@@ -348,6 +359,7 @@ function advancePlotLifecycle(
   newTotal: number,
   growthSpeedBuff = 0,
   fertilizerPowerBuff = 0,
+  weatherGrowthMultiplier = 1.0,
 ): PlotState {
   if (plot.plantedPlantId !== plantId || plot.plantedAt === null) return plot;
   if (plot.isWilted) {
@@ -364,7 +376,7 @@ function advancePlotLifecycle(
   const lastGrowthTickAt = plot.lastGrowthTickAt ?? plot.plantedAt;
   const delta = Math.max(0, newTotal - lastGrowthTickAt);
   const growthMinutesAccumulated = Math.min(
-    plot.growthMinutesAccumulated + delta * fertilizerMultiplier * growthSpeedMultiplier,
+    plot.growthMinutesAccumulated + delta * fertilizerMultiplier * growthSpeedMultiplier * weatherGrowthMultiplier,
     targetMinutes,
   );
   const reachedMature = growthMinutesAccumulated >= targetMinutes;
@@ -444,7 +456,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     set((s) => ({ clock: { ...s.clock, running: !s.clock.running } })),
 
   tickMinutes: (deltaMinutes) => {
-    const { clock, plots, taskBoard, unlockedPlants, unlockedTasks, completedTasks, achievements } = get();
+    const { clock, plots, taskBoard, unlockedPlants, unlockedTasks, completedTasks, achievements, weather } = get();
     if (!clock.running) return;
 
     const previousAbsoluteMonth = getAbsoluteMonthIndex(clock.totalMinutes);
@@ -459,7 +471,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       if (!plant) return plot;
       const growthSpeedBuff = achievements.activeBuffs.growthSpeed ?? 0;
       const fertilizerPowerBuff = achievements.activeBuffs.fertilizerPower ?? 0;
-      return advancePlotLifecycle(plot, plot.plantedPlantId, plant, newTotal, growthSpeedBuff, fertilizerPowerBuff);
+      const weatherGrowthMultiplier = weather?.growthSpeedMultiplier ?? 1.0;
+      return advancePlotLifecycle(plot, plot.plantedPlantId, plant, newTotal, growthSpeedBuff, fertilizerPowerBuff, weatherGrowthMultiplier);
     });
 
     let nextTaskState = { taskBoard, unlockedTasks };
@@ -490,6 +503,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     // 月份切换时检查成就
     if (nextAbsoluteMonth > previousAbsoluteMonth) {
       get()._checkAchievements();
+      get()._tickWeather(nextAbsoluteMonth);
     }
   },
 
@@ -528,6 +542,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       compendium: state.compendium,
       selection: state.selection,
       achievements: state.achievements,
+      weather: state.weather,
     };
   },
 
@@ -558,6 +573,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         activeBuffs: {},
         toast: null,
       },
+      weather: snapshot.weather ?? { current: null, remainingMonths: 0, lastRollMonth: null },
       // 兼容旧存档：activeTask → activeTasks
       taskBoard: {
         ...snapshot.taskBoard,
@@ -699,7 +715,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   harvest: (plotId) => {
-    const { plots, clock, achievements } = get();
+    const { plots, clock, achievements, weather } = get();
     const plotIdx = plots.findIndex((p) => p.id === plotId);
     if (plotIdx < 0) return;
 
@@ -710,10 +726,22 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const plant = getPlantById(plot.plantedPlantId);
     if (!plant) return;
 
-    const baseYield = calcYield(plot, plant);
+    let baseYield = calcYield(plot, plant);
     // 应用额外收获 buff
     const extraYieldBuff = achievements.activeBuffs.extraYield ?? 0;
-    const yieldAmt = Math.max(1, Math.round(baseYield * (1 + extraYieldBuff / 100)));
+    let yieldAmt = Math.max(1, Math.round(baseYield * (1 + extraYieldBuff / 100)));
+
+    // 天气词条：晴阳天额外产出
+    const weatherCfg = WEATHER_CONFIGS.find((w) => w.id === weather?.current);
+    if (weatherCfg?.bonusType === 'extraYield' && Math.random() < weatherCfg.bonusChance) {
+      yieldAmt += 1;
+    }
+
+    // 天气词条：早霜返还种子
+    let seedReturnId: string | null = null;
+    if (weatherCfg?.bonusType === 'seedReturn' && Math.random() < weatherCfg.bonusChance) {
+      seedReturnId = plot.plantedPlantId;
+    }
 
     // 更新背包，年生作物收完即清场，多年生达到 maxHarvests 上限后也清场
     const updated = [...plots];
@@ -748,6 +776,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
         [plant.id]: (s.inventory[plant.id] ?? 0) + yieldAmt,
       },
       compendium: { ...s.compendium, [plant.id]: true },
+      seeds: seedReturnId
+        ? { ...s.seeds, [seedReturnId]: (s.seeds[seedReturnId] ?? 0) + 1 }
+        : s.seeds,
       achievements: {
         ...s.achievements,
         progress: {
@@ -928,7 +959,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   sellHarvest: (plantId, quantity) => {
     // 只允许出售果实背包中的内容，种子不可出售
-    const { inventory, achievements } = get();
+    const { inventory, achievements, weather } = get();
     const qty = inventory[plantId] ?? 0;
     if (qty < quantity) return false;
     const plant = getPlantById(plantId);
@@ -936,7 +967,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     // 应用售价 buff
     const sellPriceBuff = 1 + (achievements.activeBuffs.sellPrice ?? 0) / 100;
-    const income = Math.round(plant.sellPricePerUnit * quantity * sellPriceBuff);
+    // 应用天气价格系数（如绵绵雨 -10%）
+    const weatherCfg = WEATHER_CONFIGS.find((w) => w.id === weather?.current);
+    const weatherSellMultiplier = weatherCfg?.sellPriceMultiplier ?? 1.0;
+    const income = Math.round(plant.sellPricePerUnit * quantity * sellPriceBuff * weatherSellMultiplier);
 
     set((s) => ({
       inventory: {
@@ -1044,6 +1078,49 @@ export const useGameStore = create<GameStore>((set, get) => ({
     },
     activeBuffs: {},
     toast: null,
+  },
+
+  // ── 天气初始状态 ──────────────────────────────────────────────
+  weather: {
+    current: null,
+    remainingMonths: 0,
+    lastRollMonth: null,
+  },
+
+  _tickWeather: (absoluteMonth) => {
+    const { weather } = get();
+
+    // 首次或天气过期时 roll 新天气
+    if (!weather.current || weather.remainingMonths <= 0 || weather.lastRollMonth === null || absoluteMonth > weather.lastRollMonth + weather.remainingMonths) {
+      const rolled = rollWeather();
+      const duration = rolled.durationMin + Math.floor(Math.random() * (rolled.durationMax - rolled.durationMin + 1));
+      set({
+        weather: {
+          current: rolled.id,
+          remainingMonths: duration,
+          lastRollMonth: absoluteMonth,
+        },
+      });
+    }
+  },
+
+  getWeather: () => {
+    const { weather } = get();
+    if (!weather.current) return null;
+    return WEATHER_CONFIGS.find((w) => w.id === weather.current) ?? null;
+  },
+
+  // 初始 roll 天气
+  _initWeather: () => {
+    const rolled = rollWeather();
+    const duration = rolled.durationMin + Math.floor(Math.random() * (rolled.durationMax - rolled.durationMin + 1));
+    set({
+      weather: {
+        current: rolled.id,
+        remainingMonths: duration,
+        lastRollMonth: 1,
+      },
+    });
   },
 
   /** 内部：检查并解锁满足条件的植物和区域（sellHarvest 后调用） */
