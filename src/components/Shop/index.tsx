@@ -8,7 +8,7 @@ import { FERTILIZER_CONFIGS, getFertilizerById } from '../../config/fertilizers'
 import { getPlantById, ALL_PLANTS } from '../../config/plants';
 import styles from './Shop.module.css';
 
-type Tab = 'seeds' | 'misc';
+type Tab = 'seeds' | 'unlock' | 'misc';
 type ShopItemKind = 'seed' | 'fertilizer';
 
 type ActivePurchaseItem = {
@@ -43,8 +43,6 @@ export function Shop() {
   const seeds = useGameStore((s) => s.seeds);
   const miscInventory = useGameStore((s) => s.miscInventory);
   const unlockedPlants = useGameStore((s) => s.unlockedPlants);
-  // 过滤掉珍稀植物，不可购买
-  const availablePlants = ALL_PLANTS.filter((p) => unlockedPlants.includes(p.id) && !p.isRare);
   const buySeeds = useGameStore((s) => s.buySeeds);
   const buyFertilizer = useGameStore((s) => s.buyFertilizer);
 
@@ -56,6 +54,12 @@ export function Shop() {
   const filteredSeeds = seedFilter === '全部'
     ? unlockedConfigs
     : unlockedConfigs.filter((plant) => bestSoilLabel(plant.allowedLandTypeId) === seedFilter);
+
+  // 可解锁植物列表（按解锁费用从少到多排序）
+  const unlockablePlants = ALL_PLANTS
+    .filter((p) => !unlockedPlants.includes(p.id) && !p.isRare && p.unlockCost > 0)
+    .sort((a, b) => a.unlockCost - b.unlockCost);
+  const unlockPlant = useGameStore((s) => s.unlockPlant);
 
   const quantity = normalizeQuantity(purchaseQuantity);
   const activePlant = activeItem?.kind === 'seed' ? getPlantById(activeItem.itemId) : null;
@@ -94,6 +98,13 @@ export function Shop() {
           onClick={() => setTab('seeds')}
         >
           种子
+        </button>
+        <button
+          type="button"
+          className={tab === 'unlock' ? styles.activeTab : ''}
+          onClick={() => setTab('unlock')}
+        >
+          解锁
         </button>
         <button
           type="button"
@@ -142,6 +153,34 @@ export function Shop() {
               <p className={styles.empty}>当前筛选下暂无可购买种子</p>
             )}
           </>
+        ) : tab === 'unlock' ? (
+          unlockablePlants.length > 0 ? (
+            <div className={styles.tagGrid}>
+              {unlockablePlants.map((plant) => (
+                <button
+                  key={plant.id}
+                  type="button"
+                  className={styles.tagCard}
+                  disabled={economy.gold < plant.unlockCost}
+                  onClick={() => {
+                    if (unlockPlant(plant.id)) {
+                      // 解锁成功
+                    }
+                  }}
+                >
+                  <span className={styles.name}>
+                    {plant.name} {plant.harvestType === 'perennial' ? '（多年生）' : '（一次性）'}
+                  </span>
+                  <span className={styles.price} style={{fontSize: 18}}>解锁 {plant.unlockCost} 金</span>
+                  <span className={styles.preview}>
+                    {bestSoilLabel(plant.allowedLandTypeId)} · 售价 {plant.sellPricePerUnit} 金
+                  </span>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <p className={styles.empty}>所有植物已解锁</p>
+          )
         ) : (
           <div className={styles.tagGrid}>
             {FERTILIZER_CONFIGS.map((fertilizer) => (

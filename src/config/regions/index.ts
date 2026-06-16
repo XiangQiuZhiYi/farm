@@ -13,6 +13,8 @@ export const REGION_CONFIGS: RegionConfig[] = [
     prerequisiteRegionId: null, // 初始开放
     initialPlotCount: 6,
     maxPlotCount: 18,
+    minExpandPrice: 200,
+    maxExpandPrice: 1200,
   },
   {
     id: 'region_brown_tidal',
@@ -22,6 +24,8 @@ export const REGION_CONFIGS: RegionConfig[] = [
     prerequisiteRegionId: 'region_paddy', // 需要水稻土区 10 种图鉴
     initialPlotCount: 2,
     maxPlotCount: 18,
+    minExpandPrice: 1200,
+    maxExpandPrice: 6000,
   },
   {
     id: 'region_black',
@@ -31,6 +35,8 @@ export const REGION_CONFIGS: RegionConfig[] = [
     prerequisiteRegionId: 'region_brown_tidal', // 需要褐土/潮土组 10 种图鉴
     initialPlotCount: 2,
     maxPlotCount: 18,
+    minExpandPrice: 6000,
+    maxExpandPrice: 10000,
   },
 ];
 

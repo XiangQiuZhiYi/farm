@@ -13,8 +13,8 @@ export interface PlantCompendiumEntry {
   name: string;
   regionId: string;
   regionName: string;
-  /** 解锁所需累计收入（0 = 初始解锁） */
-  unlockCumulativeGold: number;
+  /** 解锁所需金币（0 = 初始解锁，99999999 = 珍稀植物） */
+  unlockCost: number;
   /** 最适宜土地的中文标签，用于卡片徽标显示 */
   bestSoilLabel: string;
   summary: string;
@@ -172,7 +172,7 @@ function buildEntry(plant: PlantConfig): PlantCompendiumEntry {
     name: plant.name,
     regionId: plant.regionId,
     regionName,
-    unlockCumulativeGold: plant.unlockCumulativeGold,
+    unlockCost: plant.unlockCost,
     bestSoilLabel: allowedLandName,
     summary: summarize(plant.id),
     highlights: highlightsFor(plant.id),

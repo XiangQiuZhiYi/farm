@@ -7,8 +7,8 @@ const DEV_SERVER_URL = 'http://localhost:5173';
 
 function createWindow() {
   const window = new BrowserWindow({
-    width: 1440,
-    height: 920,
+    width: 600,
+    height: 400,
     minWidth: 600,
     minHeight: 400,
     backgroundColor: '#061d1b',

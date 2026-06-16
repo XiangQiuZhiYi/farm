@@ -102,7 +102,7 @@ function TaskBoardModal({ onClose }: { onClose: () => void }) {
             state: activeTask,
             definition: getTaskById(activeTask.taskId),
         }))
-        .filter((item) => item.definition !== null);
+        .filter((item): item is { state: typeof activeTask; definition: NonNullable<ReturnType<typeof getTaskById>> } => item.definition !== null);
 
     return (
         <div className="modalBackdrop" role="presentation" onClick={onClose}>
@@ -453,35 +453,45 @@ function ExpandModal({ onClose }: { onClose: () => void }) {
                                 {/* 每种土地类型单独一行，可选择购买 */}
                                 {!locked && !full && (
                                     <ul className="expandLandList">
-                                        {landTypes.map((land) => (
-                                            <li
-                                                key={land.id}
-                                                className="expandLandItem"
-                                            >
-                                                <span className="expandLandName">
-                                                    {land.name}
-                                                </span>
-                                                <span className="expandLandPrice">
-                                                    {land.expandPrice} 金/格
-                                                </span>
-                                                <button
-                                                    type="button"
-                                                    className="expandBtn"
-                                                    disabled={
-                                                        economy.gold <
-                                                        land.expandPrice
-                                                    }
-                                                    onClick={() =>
-                                                        expandPlot(
-                                                            region.id,
-                                                            land.id,
-                                                        )
-                                                    }
+                                        {landTypes.map((land) => {
+                                            // 计算动态价格
+                                            const totalExpansions = region.maxPlotCount - region.initialPlotCount;
+                                            const currentExpansions = current - region.initialPlotCount;
+                                            const progress = Math.min(1, Math.max(0, currentExpansions / totalExpansions));
+                                            const price = Math.round(
+                                                region.minExpandPrice + (region.maxExpandPrice - region.minExpandPrice) * progress
+                                            );
+
+                                            return (
+                                                <li
+                                                    key={land.id}
+                                                    className="expandLandItem"
                                                 >
-                                                    扩建 +1
-                                                </button>
-                                            </li>
-                                        ))}
+                                                    <span className="expandLandName">
+                                                        {land.name}
+                                                    </span>
+                                                    <span className="expandLandPrice">
+                                                        {price} 金/格
+                                                    </span>
+                                                    <button
+                                                        type="button"
+                                                        className="expandBtn"
+                                                        disabled={
+                                                            economy.gold <
+                                                            price
+                                                        }
+                                                        onClick={() =>
+                                                            expandPlot(
+                                                                region.id,
+                                                                land.id,
+                                                            )
+                                                        }
+                                                    >
+                                                        扩建 +1
+                                                    </button>
+                                                </li>
+                                            );
+                                        })}
                                     </ul>
                                 )}
                             </li>

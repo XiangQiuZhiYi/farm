@@ -23,7 +23,8 @@ export interface PlantConfig {
   id: string;
   name: string;
   regionId: RegionId;
-  unlockCumulativeGold: number;
+  /** 手动解锁所需金币（珍稀植物为 99999999，不可手动解锁） */
+  unlockCost: number;
   purchasePrice: number;
   sellPricePerUnit: number;
   /** 每次收获固定产量 */
@@ -53,6 +54,9 @@ export interface PlantConfig {
   preferredWaterState: WaterState;
   /** 难度因子（用于任务权重计算） */
   difficultyFactor: number;
+
+  /** 精灵图配置 */
+  sprite: SpriteFrameConfig;
 
   /** 是否为珍稀植物：不可通过金币解锁，不可购买，只能通过收获概率掉落种子 */
   isRare?: boolean;

@@ -75,7 +75,7 @@ export function AchievementModal({ onClose }: { onClose: () => void }) {
               return (
                 <div key={ach.id} className={styles.card}>
                   <div className={styles.cardHeader}>
-                    <h4>{ach.name}</h4>
+                    <h3>{ach.name}</h3>
                     <span className={`${styles.badge} ${styles[ach.difficulty]}`}>
                       {DIFFICULTY_LABELS[ach.difficulty]}
                     </span>

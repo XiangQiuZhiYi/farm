@@ -133,7 +133,10 @@ interface GameStore {
   /** 收获指定区域内所有可收获的地块 */
   harvestAll: (regionId: string) => void;
 
-  /** 内部方法：解锁检查（不暴露给 UI） */
+  /** 手动解锁植物（花费金币） */
+  unlockPlant: (plantId: string) => boolean;
+
+  /** 内部方法：区域解锁检查（不暴露给 UI） */
   _checkUnlocks: () => void;
 }
 
@@ -600,7 +603,16 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (!landCfg) return false;
     // 确保所选土地类型属于该区域
     if (landCfg.regionId !== regionId) return false;
-    if (economy.gold < landCfg.expandPrice) return false;
+
+    // 计算动态扩张价格：基于当前地块数在 [min, max] 之间线性插值
+    const totalExpansions = regionCfg.maxPlotCount - regionCfg.initialPlotCount;
+    const currentExpansions = existing - regionCfg.initialPlotCount;
+    const progress = Math.min(1, Math.max(0, currentExpansions / totalExpansions));
+    const price = Math.round(
+      regionCfg.minExpandPrice + (regionCfg.maxExpandPrice - regionCfg.minExpandPrice) * progress
+    );
+
+    if (economy.gold < price) return false;
 
     const newPlot: PlotState = {
       id: `${regionId}_${existing}`,
@@ -621,7 +633,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       plots: [...s.plots, newPlot],
       economy: {
         ...s.economy,
-        gold: s.economy.gold - landCfg.expandPrice,
+        gold: s.economy.gold - price,
       },
     }));
 
@@ -785,8 +797,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
         nextSeeds[seedReturnId] = (nextSeeds[seedReturnId] ?? 0) + 1;
       }
 
-      // 2. 珍稀植物掉落 (5%)
-      if (Math.random() < 0.05) {
+      // 2. 珍稀植物掉落 (2%)
+      if (Math.random() < 0.02) {
         const candidates = RARE_DROPS[plot.landTypeId];
         if (candidates && candidates.length > 0) {
           // 随机选择一个对应的珍稀植物
@@ -1154,17 +1166,26 @@ export const useGameStore = create<GameStore>((set, get) => ({
     });
   },
 
-  /** 内部：检查并解锁满足条件的植物和区域（sellHarvest 后调用） */
-  _checkUnlocks: () => {
-    const { economy, unlockedPlants, unlockedRegions, compendium } = get();
+  /** 手动解锁植物（花费金币） */
+  unlockPlant: (plantId: string) => {
+    const { economy, unlockedPlants } = get();
+    const plant = ALL_PLANTS.find((p) => p.id === plantId);
 
-    // 植物解锁：累计收入 >= unlockCumulativeGold
-    const newPlants = ALL_PLANTS
-      .filter((p) =>
-        !unlockedPlants.includes(p.id) &&
-        economy.cumulativeEarned >= p.unlockCumulativeGold,
-      )
-      .map((p) => p.id);
+    if (!plant) return false;
+    if (unlockedPlants.includes(plantId)) return false;
+    if (economy.gold < plant.unlockCost) return false;
+
+    set((s) => ({
+      economy: { ...s.economy, gold: s.economy.gold - plant.unlockCost },
+      unlockedPlants: [...s.unlockedPlants, plantId],
+    }));
+
+    return true;
+  },
+
+  /** 内部：检查并解锁满足条件的区域（sellHarvest 后调用） */
+  _checkUnlocks: () => {
+    const { economy, unlockedRegions, compendium } = get();
 
     // 区域解锁：累计收入 + 前置图鉴数
     const compendiumCount = (regionId: string) =>
@@ -1177,9 +1198,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       return compendiumCount(r.prerequisiteRegionId) >= r.unlockCompendiumCount;
     }).map((r) => r.id);
 
-    if (newPlants.length > 0 || newRegions.length > 0) {
+    if (newRegions.length > 0) {
       set((s) => ({
-        unlockedPlants: [...s.unlockedPlants, ...newPlants],
         unlockedRegions: [...s.unlockedRegions, ...newRegions],
       }));
     }

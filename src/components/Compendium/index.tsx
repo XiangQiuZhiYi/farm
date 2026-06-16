@@ -164,23 +164,20 @@ function LandAchievementCard({
 function PlantCard({
   entry,
   unlocked,
-  cumulativeEarned,
   onOpen,
 }: {
   entry: PlantCompendiumEntry;
   unlocked: boolean;
-  cumulativeEarned: number;
   onOpen: (id: string) => void;
 }) {
   const stages = (['seed', 'sprout', 'grow', 'mature'] as const);
-  const unlockTarget = entry.unlockCumulativeGold;
-  const currentProgress = unlockTarget <= 0 ? unlockTarget : Math.min(cumulativeEarned, unlockTarget);
-  const progressPercent = unlockTarget <= 0 || unlocked
-    ? 100
-    : Math.min((currentProgress / unlockTarget) * 100, 100);
-  const progressLabel = unlockTarget <= 0
+  const unlockCost = entry.unlockCost;
+  const isRare = unlockCost >= 99999999;
+  const progressLabel = unlockCost <= 0
     ? '初始解锁'
-    : `${Math.round(currentProgress)} / ${unlockTarget}`;
+    : isRare
+      ? '珍稀植物'
+      : `解锁费用 ${unlockCost} 金`;
 
   return (
     <button
@@ -218,15 +215,14 @@ function PlantCard({
           </div>
         </div>
         {unlocked ? <p className={styles.cardText}>{entry.summary}</p> : null}
-        <div className={styles.plantProgressBlock}>
-          <div className={styles.plantProgressHead}>
-            <span>解锁进度</span>
-            <span>{progressLabel}</span>
+        {!unlocked && (
+          <div className={styles.plantProgressBlock}>
+            <div className={styles.plantProgressHead}>
+              <span>解锁条件</span>
+              <span>{progressLabel}</span>
+            </div>
           </div>
-          <div className={styles.progressTrack}>
-            <span style={{ width: `${progressPercent}%` }} />
-          </div>
-        </div>
+        )}
       </div>
     </button>
   );
@@ -306,7 +302,6 @@ function TaskCard({
 export function Compendium() {
   const unlockedRegions = useGameStore((s) => s.unlockedRegions);
   const unlockedPlants = useGameStore((s) => s.unlockedPlants);
-  const cumulativeEarned = useGameStore((s) => s.economy.cumulativeEarned);
   const compendium = useGameStore((s) => s.compendium);
   const unlockedTasks = useGameStore((s) => s.unlockedTasks);
   const completedTasks = useGameStore((s) => s.completedTasks);
@@ -550,7 +545,6 @@ export function Compendium() {
                 key={entry.id}
                 entry={entry}
                 unlocked={unlockedPlants.includes(entry.id)}
-                cumulativeEarned={cumulativeEarned}
                 onOpen={setPlantModalId}
               />
             ))}
@@ -687,9 +681,14 @@ export function Compendium() {
                 <span className={unlockedPlants.includes(plantModalEntry.id) ? styles.statusUnlocked : styles.statusLocked}>
                   {unlockedPlants.includes(plantModalEntry.id) ? '已解锁' : '未解锁'}
                 </span>
-                {!unlockedPlants.includes(plantModalEntry.id) && plantModalEntry.unlockCumulativeGold > 0 && (
+                {!unlockedPlants.includes(plantModalEntry.id) && plantModalEntry.unlockCost > 0 && plantModalEntry.unlockCost < 99999999 && (
                   <span className={styles.unlockCondition}>
-                    需累计收入 {plantModalEntry.unlockCumulativeGold} 金
+                    解锁费用 {plantModalEntry.unlockCost} 金
+                  </span>
+                )}
+                {!unlockedPlants.includes(plantModalEntry.id) && plantModalEntry.unlockCost >= 99999999 && (
+                  <span className={styles.unlockCondition}>
+                    珍稀植物（无法手动解锁）
                   </span>
                 )}
               </div>

@@ -108,6 +108,7 @@
 /* ── 成就卡片 ──────────────────────────────────── */
 .achievementList {
   display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: 10px;
 }
 
@@ -168,7 +169,7 @@
 
 .description {
   margin: 0;
-  font-size: 12px;
+  font-size: 14px;
   color: #8ca198;
 }
 
@@ -198,7 +199,7 @@
 }
 
 .rewardLabel {
-  font-size: 12px;
+  font-size: 14px;
   color: #ffe066;
   padding: 2px 8px;
   border: 1px solid rgba(255, 224, 102, 0.3);

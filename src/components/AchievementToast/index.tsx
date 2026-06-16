@@ -24,7 +24,7 @@ export function AchievementToast() {
       useGameStore.setState((s) => ({
         achievements: { ...s.achievements, toast: null },
       }));
-    }, 1000);
+    }, 2000);
     return () => clearTimeout(timer);
   }, [toast]);
 

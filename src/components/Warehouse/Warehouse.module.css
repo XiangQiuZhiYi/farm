@@ -122,17 +122,17 @@
 
 .name {
   color: #d7dfcf;
-  font-size: 13px;
+  font-size: 16px;
 }
 
 .meta {
   color: #c88b39;
-  font-size: 12px;
+  font-size: 18px;
 }
 
 .preview {
   color: #8ce0a1;
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .actions {
@@ -254,4 +254,36 @@
   color: #5e7870;
   padding: 8px 0;
   font-size: 12px;
+}
+
+.sortControls {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+  flex-wrap: wrap;
+}
+
+.sortBtn,
+.sortOrderBtn {
+  border: 1px solid rgba(190, 135, 57, 0.38);
+  color: #b9c9c0;
+  padding: 6px 8px;
+  font-size: 12px;
+  background: rgba(9, 39, 36, 0.72);
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.sortBtn:hover,
+.sortOrderBtn:hover {
+  border-color: rgba(235, 151, 61, 0.7);
+  color: #e8c987;
+  background: rgba(9, 39, 36, 0.92);
+}
+
+.sortBtn[title*="单价"]:hover,
+.sortBtn[title*="库存"]:hover,
+.sortBtn[title*="总价值"]:hover {
+  color: #fff2ce;
 }

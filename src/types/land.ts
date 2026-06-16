@@ -46,6 +46,10 @@ export interface RegionConfig {
   initialPlotCount: number;
   /** 地块数量上限 */
   maxPlotCount: number;
+  /** 扩张地块的最低价格（初始扩张） */
+  minExpandPrice: number;
+  /** 扩张地块的最高价格（最后扩张） */
+  maxExpandPrice: number;
 }
 
 /** 单块地的运行时状态 */

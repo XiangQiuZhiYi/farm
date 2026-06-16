@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { FERTILIZER_CONFIGS, getFertilizerById } from '../../config/fertilizers';
 import { getPlantById } from '../../config/plants';
 import { useGameStore } from '../../store/gameStore';
@@ -6,6 +6,8 @@ import styles from './Warehouse.module.css';
 
 type Tab = 'seeds' | 'harvest' | 'misc';
 type WarehouseItemKind = 'seed' | 'harvest' | 'fertilizer';
+type HarvestSortField = 'price' | 'quantity' | 'totalValue';
+type SortOrder = 'asc' | 'desc';
 
 type ActiveSaleItem = {
   kind: WarehouseItemKind;
@@ -40,6 +42,9 @@ export function Warehouse() {
   const [sellQuantities, setSellQuantities] = useState<Record<string, string>>({});
   const [activeSaleItem, setActiveSaleItem] = useState<ActiveSaleItem | null>(null);
   const [seedFilter, setSeedFilter] = useState('全部');
+  const [harvestFilter, setHarvestFilter] = useState('全部');
+  const [harvestSortField, setHarvestSortField] = useState<HarvestSortField>('totalValue');
+  const [harvestSortOrder, setHarvestSortOrder] = useState<SortOrder>('desc');
   const seeds = useGameStore((state) => state.seeds);
   const inventory = useGameStore((state) => state.inventory);
   const miscInventory = useGameStore((state) => state.miscInventory);
@@ -63,6 +68,48 @@ export function Warehouse() {
       const plant = getPlantById(plantId);
       return plant ? bestSoilLabel(plant.allowedLandTypeId) === seedFilter : false;
     });
+
+  // 农作物筛选和排序
+  const harvestFilterOptions = useMemo(() => ['全部', ...new Set(harvestEntries
+    .map(([plantId]) => getPlantById(plantId))
+    .filter((plant): plant is NonNullable<typeof plant> => plant !== null)
+    .map((plant) => bestSoilLabel(plant.allowedLandTypeId)))], [harvestEntries]);
+
+  const filteredAndSortedHarvestEntries = useMemo(() => {
+    let entries = harvestFilter === '全部'
+      ? [...harvestEntries]
+      : harvestEntries.filter(([plantId]) => {
+        const plant = getPlantById(plantId);
+        return plant ? bestSoilLabel(plant.allowedLandTypeId) === harvestFilter : false;
+      });
+
+    // 排序
+    entries.sort((a, b) => {
+      const plantA = getPlantById(a[0]);
+      const plantB = getPlantById(b[0]);
+      if (!plantA || !plantB) return 0;
+
+      let comparison = 0;
+      switch (harvestSortField) {
+        case 'price':
+          comparison = plantA.sellPricePerUnit - plantB.sellPricePerUnit;
+          break;
+        case 'quantity':
+          comparison = a[1] - b[1];
+          break;
+        case 'totalValue':
+          comparison = (plantA.sellPricePerUnit * a[1]) - (plantB.sellPricePerUnit * b[1]);
+          break;
+      }
+      return harvestSortOrder === 'asc' ? comparison : -comparison;
+    });
+
+    return entries;
+  }, [harvestEntries, harvestFilter, harvestSortField, harvestSortOrder]);
+
+  const toggleHarvestSortOrder = () => {
+    setHarvestSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+  };
 
   const updateQuantity = (key: string, nextValue: string) => {
     const max = activeSaleItem?.quantity ?? Number.MAX_SAFE_INTEGER;
@@ -209,8 +256,9 @@ export function Warehouse() {
                     className={styles.tagCard}
                     onClick={() => openSaleModal('seed', plantId, quantity)}
                   >
-                    <span className={styles.name}>{plant.name} 种子</span>
-                    <span className={styles.meta}>库存 {quantity}</span>
+                    <span className={styles.name}>{plant.name} 种子
+                        <span className={styles.meta}>（ {quantity} ）</span>
+                    </span>
                     <span className={styles.preview}>回收 {sellPrice} 金/粒</span>
                   </button>
                 );
@@ -220,9 +268,56 @@ export function Warehouse() {
           ) : (
             <p className={styles.empty}>暂无种子库存</p>
           )
-        ) : tab === 'harvest' ? harvestEntries.length > 0 ? (
-          <div className={styles.tagGrid}>
-            {harvestEntries.map(([plantId, quantity]) => {
+        ) : tab === 'harvest' ? filteredAndSortedHarvestEntries.length > 0 ? (
+          <>
+            <div className={styles.filters}>
+              {harvestFilterOptions.map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  className={harvestFilter === option ? styles.activeFilter : styles.filterBtn}
+                  onClick={() => setHarvestFilter(option)}
+                >
+                  {option}
+                </button>
+              ))}
+              <div className={styles.sortControls}>
+                <button
+                  type="button"
+                  className={styles.sortBtn}
+                  onClick={() => setHarvestSortField('price')}
+                  title="按单价排序"
+                >
+                  单价 {harvestSortField === 'price' ? (harvestSortOrder === 'asc' ? '↑' : '↓') : ''}
+                </button>
+                <button
+                  type="button"
+                  className={styles.sortBtn}
+                  onClick={() => setHarvestSortField('quantity')}
+                  title="按库存排序"
+                >
+                  库存 {harvestSortField === 'quantity' ? (harvestSortOrder === 'asc' ? '↑' : '↓') : ''}
+                </button>
+                <button
+                  type="button"
+                  className={styles.sortBtn}
+                  onClick={() => setHarvestSortField('totalValue')}
+                  title="按总价值排序"
+                >
+                  总价 {harvestSortField === 'totalValue' ? (harvestSortOrder === 'asc' ? '↑' : '↓') : ''}
+                </button>
+                <button
+                  type="button"
+                  className={styles.sortOrderBtn}
+                  onClick={toggleHarvestSortOrder}
+                  title="切换排序方向"
+                >
+                  {harvestSortOrder === 'asc' ? '↑ 升序' : '↓ 降序'}
+                </button>
+              </div>
+            </div>
+            <div className={styles.tagGrid}>
+            {filteredAndSortedHarvestEntries.map(([plantId, quantity]) => {
               const plant = getPlantById(plantId);
               if (!plant) return null;
 
@@ -233,13 +328,15 @@ export function Warehouse() {
                   className={styles.tagCard}
                   onClick={() => openSaleModal('harvest', plantId, quantity)}
                 >
-                  <span className={styles.name}>{plant.name}</span>
-                  <span className={styles.meta}>库存 {quantity}</span>
+                  <span className={styles.name}>{plant.name}
+                      <span className={styles.meta}>（ {quantity} ）</span>
+                  </span>
                   <span className={styles.preview}>售价 {plant.sellPricePerUnit} 金/份</span>
                 </button>
               );
             })}
-          </div>
+            </div>
+          </>
         ) : (
           <p className={styles.empty}>暂无农作物库存</p>
         ) : miscEntries.length > 0 ? (
@@ -255,8 +352,9 @@ export function Warehouse() {
                   className={styles.tagCard}
                   onClick={() => openSaleModal('fertilizer', fertilizerId, quantity)}
                 >
-                  <span className={styles.name}>{fertilizer.name}</span>
-                  <span className={styles.meta}>库存 {quantity}</span>
+                  <span className={styles.name}>{fertilizer.name}
+                      <span className={styles.meta}>（ {quantity} ）</span>
+                  </span>
                   <span className={styles.preview}>回收 {Math.ceil(fertilizer.purchasePrice / 10)} 金/份</span>
                 </button>
               );
@@ -281,8 +379,8 @@ export function Warehouse() {
               <button type="button" className={styles.closeBtn} onClick={() => setActiveSaleItem(null)}>×</button>
             </div>
             <div className={styles.saleBody}>
-              <p className={styles.meta}>库存 {activeSaleItem.quantity} / 单价 {activeUnitPrice} 金</p>
-              <p className={styles.preview}>本次售卖可得 {activePreviewIncome} 金</p>
+              <p className={styles.meta} style={{fontSize: 20}}>库存 {activeSaleItem.quantity} / 单价 {activeUnitPrice} 金</p>
+              <p className={styles.preview} style={{fontSize: 18}}>本次售卖可得 {activePreviewIncome} 金</p>
               <div className={styles.actions}>
                 <button type="button" onClick={() => stepQuantity(activeKey, activeSaleItem.quantity, -1)}>-</button>
                 <input
