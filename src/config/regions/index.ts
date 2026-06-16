@@ -8,34 +8,31 @@ export const REGION_CONFIGS: RegionConfig[] = [
   {
     id: 'region_paddy',
     name: '水稻土区',
-    unlockGold: 0,
-    unlockCompendiumCount: 0,
+    prerequisitePlotCount: 0,
     prerequisiteRegionId: null, // 初始开放
     initialPlotCount: 6,
     maxPlotCount: 18,
-    minExpandPrice: 200,
-    maxExpandPrice: 1200,
+    minExpandPrice: 100,
+    maxExpandPrice: 900,
   },
   {
     id: 'region_brown_tidal',
     name: '褐土/潮土组',
-    unlockGold: 4000,
-    unlockCompendiumCount: 10,
-    prerequisiteRegionId: 'region_paddy', // 需要水稻土区 10 种图鉴
+    prerequisitePlotCount: 15, // 水稻土区需扩展到 15 块
+    prerequisiteRegionId: 'region_paddy',
     initialPlotCount: 2,
     maxPlotCount: 18,
-    minExpandPrice: 1200,
-    maxExpandPrice: 6000,
+    minExpandPrice: 900,
+    maxExpandPrice: 3000,
   },
   {
     id: 'region_black',
     name: '黑土区',
-    unlockGold: 10500,
-    unlockCompendiumCount: 10,
-    prerequisiteRegionId: 'region_brown_tidal', // 需要褐土/潮土组 10 种图鉴
+    prerequisitePlotCount: 15, // 褐土/潮土组需扩展到 15 块
+    prerequisiteRegionId: 'region_brown_tidal',
     initialPlotCount: 2,
     maxPlotCount: 18,
-    minExpandPrice: 6000,
+    minExpandPrice: 4000,
     maxExpandPrice: 10000,
   },
 ];

@@ -5,7 +5,7 @@
 
 import { useGameStore } from '../../store/gameStore';
 import { FERTILIZER_CONFIGS, getFertilizerById } from '../../config/fertilizers';
-import { getPlantById } from '../../config/plants';
+import { getPlantById, ALL_PLANTS } from '../../config/plants';
 import { getLandTypeById } from '../../config/lands';
 import { calcPlotGrowthStage, getGrowthTargetMinutes } from '../../systems/growthSystem';
 import styles from './PlotPanel.module.css';
@@ -32,9 +32,21 @@ function BatchPanel() {
     .filter((p) => p.plantedPlantId && !p.isWilted && p.appliedFertilizerId === null)
     .map((p) => p.id);
 
-  const plantableList = unlockedPlants
-    .map(getPlantById)
-    .filter((p): p is NonNullable<typeof p> => p !== null && (seeds[p.id] ?? 0) > 0);
+  // 计算选中地块涉及的所有土地类型（仅针对可播种的地块）
+  const plantablePlots = selectedPlots.filter((p) => !p.plantedPlantId || p.isWilted);
+  const selectedLandTypes = [...new Set(plantablePlots.map((p) => p.landTypeId))];
+  const hasMixedLandTypes = selectedLandTypes.length > 1;
+
+  // 批量播种：显示种子库中有库存的所有种子（store 层会自动按土地类型过滤）
+  const plantableList = ALL_PLANTS.filter((p): p is NonNullable<typeof p> =>
+    (seeds[p.id] ?? 0) > 0
+  );
+
+  // 按土地类型分组统计可播种的地块数量
+  const landTypeCounts: Record<string, number> = {};
+  plantablePlots.forEach((p) => {
+    landTypeCounts[p.landTypeId] = (landTypeCounts[p.landTypeId] ?? 0) + 1;
+  });
 
   return (
     <div className={styles.overlay} role="presentation" onClick={clearSelection}>
@@ -54,23 +66,37 @@ function BatchPanel() {
               <p className={styles.emptyHint}>
                 批量种植（空地/枯萎：{plantableIds.length} 块）
               </p>
+              {hasMixedLandTypes && (
+                <p className={styles.mixedHint}>
+                  ⚠ 选中了 {selectedLandTypes.length} 种不同类型的土地，种子只会种在匹配的土地类型上，不符合的地块将被跳过
+                </p>
+              )}
               <div className={styles.plantList}>
                 {plantableList.length === 0 ? (
                   <span className={styles.empty}>背包无种子，请购买</span>
                 ) : (
-                  plantableList.map((p) => (
-                    <button
-                      key={p.id}
-                      type="button"
-                      className={styles.plantBtn}
-                      onClick={() => {
-                        batchPlantSeed(plantableIds, p.id);
-                        clearSelection();
-                      }}
-                    >
-                      {p.name} ×{seeds[p.id] ?? 0}
-                    </button>
-                  ))
+                  plantableList.map((p) => {
+                    // 计算该种子能种在多少块选中土地上
+                    const matchCount = hasMixedLandTypes
+                      ? (landTypeCounts[p.allowedLandTypeId] ?? 0)
+                      : plantableIds.length;
+                    return (
+                      <button
+                        key={p.id}
+                        type="button"
+                        className={styles.plantBtn}
+                        disabled={matchCount <= 0}
+                        title={hasMixedLandTypes ? `将种在 ${matchCount} 块 ${p.allowedLandTypeId} 类型的土地上` : undefined}
+                        onClick={() => {
+                          batchPlantSeed(plantableIds, p.id);
+                          clearSelection();
+                        }}
+                      >
+                        {p.name} ×{seeds[p.id] ?? 0}
+                        {hasMixedLandTypes && ` (${matchCount} 块地)`}
+                      </button>
+                    );
+                  })
                 )}
               </div>
             </div>
@@ -160,10 +186,8 @@ export function PlotPanel() {
 
   const fertilizerStatusLabel = fertilizer?.plotStatusLabel ?? '未施肥';
 
-  // 种子库中有存货的已解锁植物列表
-  const plantableList = unlockedPlants
-    .map(getPlantById)
-    .filter((p): p is NonNullable<typeof p> => p !== null && (seeds[p.id] ?? 0) > 0);
+  // 种子库中有存货的所有植物列表，按当前地块类型过滤
+  const plantableList = ALL_PLANTS.filter((p) => (seeds[p.id] ?? 0) > 0 && p.allowedLandTypeId === plot.landTypeId);
 
   const landCfg = getLandTypeById(plot.landTypeId);
   const removeRefund = landCfg ? Math.floor(landCfg.expandPrice * 0.5) : 0;

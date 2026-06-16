@@ -36,10 +36,8 @@ export interface LandTypeConfig {
 export interface RegionConfig {
   id: RegionId;
   name: string;
-  /** 解锁所需持有资金 */
-  unlockGold: number;
-  /** 解锁所需前一区域图鉴数量 */
-  unlockCompendiumCount: number;
+  /** 解锁所需前一区域的地块数量（需达到此数量才允许解锁） */
+  prerequisitePlotCount: number;
   /** 前置区域（null 表示初始开放） */
   prerequisiteRegionId: RegionId | null;
   /** 初始地块数量 */

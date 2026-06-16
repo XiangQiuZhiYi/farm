@@ -689,8 +689,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   plantSeed: (plotId, plantId) => {
     // 从种子库消耗种子，而非从果实背包
-    const { plots, seeds, clock, unlockedPlants } = get();
-    if (!unlockedPlants.includes(plantId)) return false;
+    const { plots, seeds, clock } = get();
     const plant = getPlantById(plantId);
     if (!plant) return false;
     const qty = seeds[plantId] ?? 0;
@@ -1180,22 +1179,35 @@ export const useGameStore = create<GameStore>((set, get) => ({
       unlockedPlants: [...s.unlockedPlants, plantId],
     }));
 
+    // 解锁新植物后，重新检查成就（可能补发之前跳过的种子奖励成就）
+    get()._checkAchievements();
+
     return true;
   },
 
-  /** 内部：检查并解锁满足条件的区域（sellHarvest 后调用） */
+  /** 内部：检查并解锁满足条件的区域 */
   _checkUnlocks: () => {
-    const { economy, unlockedRegions, compendium } = get();
+    const { plots, unlockedRegions, unlockedPlants } = get();
 
-    // 区域解锁：累计收入 + 前置图鉴数
-    const compendiumCount = (regionId: string) =>
-      ALL_PLANTS.filter((p) => p.regionId === regionId && compendium[p.id]).length;
-
+    // 新区域解锁规则：
+    // 1. 前置区域的地块数量 >= 15
+    // 2. 已解锁至少一种目标区域的植物
     const newRegions = REGION_CONFIGS.filter((r) => {
       if (unlockedRegions.includes(r.id)) return false;
-      if (economy.cumulativeEarned < r.unlockGold) return false;
       if (r.prerequisiteRegionId === null) return true;
-      return compendiumCount(r.prerequisiteRegionId) >= r.unlockCompendiumCount;
+
+      // 检查前置区域的地块数量
+      const prereqPlotCount = plots.filter((p) => p.regionId === r.prerequisiteRegionId).length;
+      if (prereqPlotCount < r.prerequisitePlotCount) return false;
+
+      // 检查是否已解锁至少一种目标区域的植物
+      const hasUnlockedPlant = unlockedPlants.some((pid) => {
+        const plant = ALL_PLANTS.find((p) => p.id === pid);
+        return plant?.regionId === r.id;
+      });
+      if (!hasUnlockedPlant) return false;
+
+      return true;
     }).map((r) => r.id);
 
     if (newRegions.length > 0) {
@@ -1336,8 +1348,16 @@ export const useGameStore = create<GameStore>((set, get) => ({
     set((s) => ({ selection: { ...s.selection, panelMode: mode } })),
 
   batchPlantSeed: (plotIds, plantId) => {
-    // 逐个地块尝试播种，失败的地块不影响其他
-    plotIds.forEach((id) => get().plantSeed(id, plantId));
+    // 批量播种时，仅对与植物允许的土地类型匹配的地块生效
+    const plant = getPlantById(plantId);
+    if (!plant) return;
+
+    plotIds.forEach((id) => {
+      const plot = get().plots.find((p) => p.id === id);
+      if (plot && plot.landTypeId === plant.allowedLandTypeId) {
+        get().plantSeed(id, plantId);
+      }
+    });
   },
 
   batchApplyFertilizer: (plotIds, fertilizerId) => {

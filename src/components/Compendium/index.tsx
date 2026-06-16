@@ -145,11 +145,10 @@ function LandAchievementCard({
             <span className={unlocked ? styles.statusUnlocked : styles.statusDiscovered}>
               {unlocked ? '已解锁' : '已发现'}
             </span>
-            <span>目标 {target}</span>
+            {/* <span>目标 {target}</span> */}
           </div>
         </div>
         <p className={styles.cardText}>{entry.summary}</p>
-        <div className={styles.condition}>计入条件</div>
         <div className={styles.progressRow}>
           <div className={styles.progressTrack}>
             <span style={{ width: `${progress}%` }} />
@@ -302,6 +301,7 @@ function TaskCard({
 export function Compendium() {
   const unlockedRegions = useGameStore((s) => s.unlockedRegions);
   const unlockedPlants = useGameStore((s) => s.unlockedPlants);
+  const plots = useGameStore((s) => s.plots);
   const compendium = useGameStore((s) => s.compendium);
   const unlockedTasks = useGameStore((s) => s.unlockedTasks);
   const completedTasks = useGameStore((s) => s.completedTasks);
@@ -502,17 +502,17 @@ export function Compendium() {
                 entry={entry}
                 unlocked={unlockedRegions.includes(entry.regionId)}
                 progressCurrent={(() => {
-                  // 计算该土地对应区域的唤醒条件：前置区域图鉴数
+                  // 计算该土地对应区域的解锁条件：前置区域地块数量
                   const regionCfg = REGION_CONFIGS.find((r) => r.id === entry.regionId);
                   const prereqId = regionCfg?.prerequisiteRegionId;
                   if (!prereqId) return 0; // 初始开放区域，无需前置
-                  // 统计前置区域中已收获的植物种数
-                  return ALL_PLANTS.filter((p) => p.regionId === prereqId && compendium[p.id]).length;
+                  // 统计前置区域的地块数量
+                  return plots.filter((p) => p.regionId === prereqId).length;
                 })()}
                 progressTotal={(() => {
                   const regionCfg = REGION_CONFIGS.find((r) => r.id === entry.regionId);
                   if (!regionCfg?.prerequisiteRegionId) return 0;
-                  return regionCfg.unlockCompendiumCount;
+                  return regionCfg.prerequisitePlotCount;
                 })()}
                 onOpen={setModalId}
               />

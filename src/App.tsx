@@ -10,7 +10,7 @@ import { AchievementModal } from "./components/AchievementModal";
 import { AchievementToast } from "./components/AchievementToast";
 import { WeatherBar } from "./components/WeatherBar";
 import { getTaskById } from "./config/tasks";
-import { getPlantById } from "./config/plants";
+import { getPlantById, ALL_PLANTS } from "./config/plants";
 import {
     createDefaultPersistedState,
     createSandboxPersistedState,
@@ -394,6 +394,7 @@ function ExpandModal({ onClose }: { onClose: () => void }) {
     const economy = useGameStore((s) => s.economy);
     const plots = useGameStore((s) => s.plots);
     const unlockedRegions = useGameStore((s) => s.unlockedRegions);
+    const unlockedPlants = useGameStore((s) => s.unlockedPlants);
     const expandPlot = useGameStore((s) => s.expandPlot);
 
     return (
@@ -438,12 +439,19 @@ function ExpandModal({ onClose }: { onClose: () => void }) {
                                     <span className="expandCount">
                                         {current} / {region.maxPlotCount} 格
                                     </span>
-                                    {locked && (
-                                        <span className="expandStatus">
-                                            未解锁（需累计收入{" "}
-                                            {region.unlockGold} 金）
-                                        </span>
-                                    )}
+                                    {locked && region.prerequisiteRegionId !== null && (() => {
+                                        const prereqRegion = REGION_CONFIGS.find(r => r.id === region.prerequisiteRegionId);
+                                        const prereqPlots = plots.filter(p => p.regionId === region.prerequisiteRegionId).length;
+                                        const prereqPlants = ALL_PLANTS.filter(p => {
+                                            const unlocked = unlockedPlants.includes(p.id);
+                                            return unlocked && p.regionId === region.id;
+                                        });
+                                        return (
+                                            <span className="expandStatus">
+                                                未解锁（前置区域需 {region.prerequisitePlotCount} 格，当前 {prereqPlots} 格；需解锁 1 种该区域种子{prereqPlants.length > 0 ? ' ✓' : ''}）
+                                            </span>
+                                        );
+                                    })()}
                                     {!locked && full && (
                                         <span className="expandStatus">
                                             已达上限
