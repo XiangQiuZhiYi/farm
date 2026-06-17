@@ -367,10 +367,12 @@ export function Compendium() {
     [plantRegionNames],
   );
   const filteredPlants = useMemo(() => {
-    if (plantFilter === '已解锁') return PLANT_COMPENDIUM_ENTRIES.filter((e) => unlockedPlants.includes(e.id));
-    if (plantFilter === '未解锁') return PLANT_COMPENDIUM_ENTRIES.filter((e) => !unlockedPlants.includes(e.id));
-    if (plantFilter !== '全部') return PLANT_COMPENDIUM_ENTRIES.filter((e) => e.regionName === plantFilter);
-    return PLANT_COMPENDIUM_ENTRIES;
+    let result: typeof PLANT_COMPENDIUM_ENTRIES;
+    if (plantFilter === '已解锁') result = PLANT_COMPENDIUM_ENTRIES.filter((e) => unlockedPlants.includes(e.id));
+    else if (plantFilter === '未解锁') result = PLANT_COMPENDIUM_ENTRIES.filter((e) => !unlockedPlants.includes(e.id));
+    else if (plantFilter !== '全部') result = PLANT_COMPENDIUM_ENTRIES.filter((e) => e.regionName === plantFilter);
+    else result = PLANT_COMPENDIUM_ENTRIES;
+    return [...result].sort((a, b) => a.unlockCost - b.unlockCost);
   }, [plantFilter, unlockedPlants]);
 
   const taskFilterOptions = useMemo(
