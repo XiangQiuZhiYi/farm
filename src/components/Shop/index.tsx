@@ -39,6 +39,7 @@ export function Shop() {
   const [purchaseQuantity, setPurchaseQuantity] = useState('1');
   const [activeItem, setActiveItem] = useState<ActivePurchaseItem | null>(null);
   const [seedFilter, setSeedFilter] = useState('全部');
+  const [unlockFilter, setUnlockFilter] = useState('全部');
   const economy = useGameStore((s) => s.economy);
   const seeds = useGameStore((s) => s.seeds);
   const miscInventory = useGameStore((s) => s.miscInventory);
@@ -59,6 +60,10 @@ export function Shop() {
   const unlockablePlants = ALL_PLANTS
     .filter((p) => !unlockedPlants.includes(p.id) && !p.isRare && p.unlockCost > 0)
     .sort((a, b) => a.unlockCost - b.unlockCost);
+  const unlockFilterOptions = ['全部', ...new Set(unlockablePlants.map((plant) => bestSoilLabel(plant.allowedLandTypeId)))];
+  const filteredUnlockable = unlockFilter === '全部'
+    ? unlockablePlants
+    : unlockablePlants.filter((plant) => bestSoilLabel(plant.allowedLandTypeId) === unlockFilter);
   const unlockPlant = useGameStore((s) => s.unlockPlant);
 
   const quantity = normalizeQuantity(purchaseQuantity);
@@ -102,7 +107,7 @@ export function Shop() {
         <button
           type="button"
           className={tab === 'unlock' ? styles.activeTab : ''}
-          onClick={() => setTab('unlock')}
+          onClick={() => { setTab('unlock'); setUnlockFilter('全部'); }}
         >
           解锁
         </button>
@@ -154,9 +159,22 @@ export function Shop() {
             )}
           </>
         ) : tab === 'unlock' ? (
-          unlockablePlants.length > 0 ? (
-            <div className={styles.tagGrid}>
-              {unlockablePlants.map((plant) => (
+          <>
+            <div className={styles.filters}>
+              {unlockFilterOptions.map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  className={unlockFilter === option ? styles.activeFilter : styles.filterBtn}
+                  onClick={() => setUnlockFilter(option)}
+                >
+                  {option}
+                </button>
+              ))}
+            </div>
+            {filteredUnlockable.length > 0 ? (
+              <div className={styles.tagGrid}>
+                {filteredUnlockable.map((plant) => (
                 <button
                   key={plant.id}
                   type="button"
@@ -177,10 +195,11 @@ export function Shop() {
                   </span>
                 </button>
               ))}
-            </div>
-          ) : (
-            <p className={styles.empty}>所有植物已解锁</p>
-          )
+              </div>
+            ) : (
+              <p className={styles.empty}>当前筛选下暂无可解锁植物</p>
+            )}
+          </>
         ) : (
           <div className={styles.tagGrid}>
             {FERTILIZER_CONFIGS.map((fertilizer) => (

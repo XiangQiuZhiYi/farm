@@ -105,7 +105,7 @@ export const ACHIEVEMENT_CONFIGS: AchievementDefinition[] = [
     difficulty: 'medium',
     tracker: 'totalEarned',
     target: 5000,
-    reward: { type: 'buff', value: 2, buffType: 'sellPrice' },
+    reward: { type: 'buff', value: 2, buffType: 'sellPrice', description: '作物售价 +2%（永久）' },
   },
   {
     id: 'ach_twenty_plots',
@@ -161,7 +161,7 @@ export const ACHIEVEMENT_CONFIGS: AchievementDefinition[] = [
     difficulty: 'hard',
     tracker: 'uniqueCropsHarvested',
     target: 30,
-    reward: { type: 'buff', value: 3, buffType: 'sellPrice' },
+    reward: { type: 'buff', value: 3, buffType: 'sellPrice', description: '作物售价 +3%（永久）' },
   },
   {
     id: 'ach_millionaire',
@@ -170,7 +170,7 @@ export const ACHIEVEMENT_CONFIGS: AchievementDefinition[] = [
     difficulty: 'hard',
     tracker: 'totalEarned',
     target: 50000,
-    reward: { type: 'buff', value: 5, buffType: 'fertilizerPower' },
+    reward: { type: 'buff', value: 5, buffType: 'fertilizerPower', description: '肥料效果 +5%（永久）' },
   },
   {
     id: 'ach_task_master',
@@ -188,7 +188,7 @@ export const ACHIEVEMENT_CONFIGS: AchievementDefinition[] = [
     difficulty: 'hard',
     tracker: 'totalPlots',
     target: 54,
-    reward: { type: 'buff', value: 2, buffType: 'extraYield' },
+    reward: { type: 'buff', value: 2, buffType: 'extraYield', description: '额外收获概率 +2%（永久）' },
   },
   {
     id: 'ach_hell_clear',
@@ -208,7 +208,7 @@ export const ACHIEVEMENT_CONFIGS: AchievementDefinition[] = [
     difficulty: 'legendary',
     tracker: 'totalHarvest',
     target: 1000,
-    reward: { type: 'buff', value: 5, buffType: 'growthSpeed' },
+    reward: { type: 'buff', value: 5, buffType: 'growthSpeed', description: '生长速度 +5%（永久）' },
   },
   {
     id: 'ach_complete_game',
@@ -217,7 +217,7 @@ export const ACHIEVEMENT_CONFIGS: AchievementDefinition[] = [
     difficulty: 'legendary',
     tracker: 'tasksCompleted',
     target: 0, // 特殊处理：在 _checkAchievements 里判断
-    reward: { type: 'buff', value: 5, buffType: 'sellPrice' },
+    reward: { type: 'buff', value: 5, buffType: 'sellPrice', description: '作物售价 +5%（永久）' },
   },
 ];
 

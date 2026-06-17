@@ -331,7 +331,8 @@ function processTaskBoardForMonth(state: Pick<GameStore, 'taskBoard' | 'unlocked
     };
   }
 
-  if (shouldRefreshTaskBoard(absoluteMonth) && nextTaskBoard.activeTasks.length < MAX_ACTIVE_TASKS) {
+  // 每个月都刷新任务板的 currentOffers，不受活跃任务数量影响
+  if (shouldRefreshTaskBoard(absoluteMonth)) {
     const nextOffers = selectTaskOffers({
       absoluteMonth,
       unlockedPlants: state.unlockedPlants,

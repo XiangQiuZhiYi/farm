@@ -8,7 +8,7 @@ export const FERTILIZER_CONFIGS: FertilizerConfig[] = [
   {
     id: 'growth_hormone_basic',
     name: '低级生长激素肥料',
-    purchasePrice: 100,
+    purchasePrice: 80,
     effectType: 'growth',
     multiplier: 1.2,
     plotStatusLabel: '生长肥',
@@ -17,7 +17,7 @@ export const FERTILIZER_CONFIGS: FertilizerConfig[] = [
   {
     id: 'growth_hormone',
     name: '生长激素肥料',
-    purchasePrice: 200,
+    purchasePrice: 150,
     effectType: 'growth',
     multiplier: 1.5,
     plotStatusLabel: '生长肥',
@@ -26,7 +26,7 @@ export const FERTILIZER_CONFIGS: FertilizerConfig[] = [
   {
     id: 'advanced_growth_hormone',
     name: '高级生长激素肥料',
-    purchasePrice: 350,
+    purchasePrice: 250,
     effectType: 'growth',
     multiplier: 2.0,
     plotStatusLabel: '高级生长肥',

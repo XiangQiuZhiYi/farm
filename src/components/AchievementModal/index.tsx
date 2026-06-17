@@ -16,11 +16,21 @@ const DIFFICULTY_LABELS: Record<string, string> = {
   legendary: '传说',
 };
 
+const BUFF_LABEL_MAP: Record<string, string> = {
+  growthSpeed: '生长速度',
+  sellPrice: '作物售价',
+  fertilizerPower: '肥料效果',
+  extraYield: '额外收获',
+};
+
 function rewardLabel(reward: { type: string; value: number; plantId?: string; buffType?: string }) {
   if (reward.type === 'gold') return `${reward.value} 金`;
   if (reward.type === 'seeds') return `种子 ×${reward.value}`;
   if (reward.type === 'harvest') return `果实 ×${reward.value}`;
-  if (reward.type === 'buff') return `永久增益 +${reward.value}%`;
+  if (reward.type === 'buff') {
+    const buffName = BUFF_LABEL_MAP[reward.buffType ?? ''] ?? '永久增益';
+    return `${buffName} +${reward.value}%（永久）`;
+  }
   return '';
 }
 

@@ -1,18 +1,17 @@
 // ============================================================
-// 植物静态配置 — 黑土区（8 种）
-// 黑土：棉花、芝麻、红薯、苹果、西瓜、谷子、燕麦、豌豆
+// 植物静态配置 — 水稻土区（10 种）
+// 水田：水稻、莲藕、茭白、荸荠
+// 旱地：大豆、空心菜、水芹、油菜、蚕豆、小麦
 // ============================================================
 
-import type { PlantConfig } from '../../types/plant';
-
-const placeholderSprite = (name: string) => ({
-  sheet: `plants/${name}/spritesheet.png`,
-  frameWidth: 16,
-  frameHeight: 16,
-  stageFrameIndex: { seed: 0, sprout: 1, grow: 2, mature: 3 },
+const placeholderSprite = (name) => ({
+    sheet: `plants/${name}/spritesheet.png`,
+    frameWidth: 16,
+    frameHeight: 16,
+    stageFrameIndex: { seed: 0, sprout: 1, grow: 2, mature: 3 },
 });
 
-export const BLACK_SOIL_REGION_PLANTS: PlantConfig[] =  [
+export const PADDY_REGION_PLANTS = [
   {
     id: 'cotton',
     name: '棉花',
@@ -162,3 +161,38 @@ export const BLACK_SOIL_REGION_PLANTS: PlantConfig[] =  [
     difficultyFactor: 1.5,
   },
 ];
+
+const fn = () => {
+
+    PADDY_REGION_PLANTS.sort((a, b) => a.unlockCost-b.unlockCost ).forEach((item) => {
+        const text = {
+            id: item.id,
+            name: item.name,
+            yieldRate:
+                ((item.sellPricePerUnit *
+                    item.harvestYield *
+                    (item.maxHarvests ?? 1) -
+                    item.purchasePrice) /
+                    (((item.reharvestMinutes ?? 1) - 1) *
+                        (item.maxHarvests ?? 1) +
+                        item.growthMinutes)) *
+                60,
+        };
+        console.log(
+            item.name +
+                ": " +
+                text.yieldRate.toFixed(2) +
+                " 金/小时" +
+                "，总收益：" +
+                (item.sellPricePerUnit *
+                    item.harvestYield *
+                    (item.maxHarvests ?? 1) -
+                    item.purchasePrice) +
+                "，总耗时：" +
+                (((item.reharvestMinutes ?? 1) - 1) * (item.maxHarvests ?? 1) +
+                    item.growthMinutes) +
+                " 分钟",
+        );
+    });
+};
+fn();

@@ -21,7 +21,7 @@ export const BROWN_TIDAL_REGION_PLANTS: PlantConfig[] = [
     regionId: 'region_brown_tidal',
     unlockCost: 3750,
     purchasePrice: 80,
-    sellPricePerUnit: 47,
+    sellPricePerUnit: 50,
     harvestYield: 3,
     growthMinutes: 90,             // 1.5h
     stageBoundaries: { seed: 0, sprout: 0.15, grow: 0.45, mature: 0.85 },
@@ -36,7 +36,7 @@ export const BROWN_TIDAL_REGION_PLANTS: PlantConfig[] = [
     regionId: 'region_brown_tidal',
     unlockCost: 4500,
     purchasePrice: 100,
-    sellPricePerUnit: 92,
+    sellPricePerUnit: 100,
     harvestYield: 2,
     growthMinutes: 120,            // 2h
     stageBoundaries: { seed: 0, sprout: 0.12, grow: 0.42, mature: 0.82 },
@@ -51,8 +51,8 @@ export const BROWN_TIDAL_REGION_PLANTS: PlantConfig[] = [
     regionId: 'region_brown_tidal',
     unlockCost: 12000,
     purchasePrice: 120,
-    sellPricePerUnit: 69,
-    harvestYield: 1,
+    sellPricePerUnit: 45,
+    harvestYield: 2,
     growthMinutes: 120,            // 2h
     harvestType: 'perennial',
     reharvestMinutes: 45,
@@ -69,8 +69,8 @@ export const BROWN_TIDAL_REGION_PLANTS: PlantConfig[] = [
     regionId: 'region_brown_tidal',
     unlockCost: 15000,
     purchasePrice: 150,
-    sellPricePerUnit: 93,
-    harvestYield: 1,
+    sellPricePerUnit: 68,
+    harvestYield: 2,
     growthMinutes: 150,            // 2.5h
     harvestType: 'perennial',
     reharvestMinutes: 60,
@@ -134,7 +134,7 @@ export const BROWN_TIDAL_REGION_PLANTS: PlantConfig[] = [
     regionId: 'region_brown_tidal',
     unlockCost: 6000,
     purchasePrice: 110,
-    sellPricePerUnit: 254,
+    sellPricePerUnit: 260,
     harvestYield: 1,
     growthMinutes: 180,            // 3h
     stageBoundaries: { seed: 0, sprout: 0.1, grow: 0.4, mature: 0.8 },
@@ -148,7 +148,7 @@ export const BROWN_TIDAL_REGION_PLANTS: PlantConfig[] = [
     name: '高粱',
     regionId: 'region_brown_tidal',
     unlockCost: 7500,
-    purchasePrice: 130,
+    purchasePrice: 100,
     sellPricePerUnit: 128,
     harvestYield: 2,
     growthMinutes: 180,            // 3h
@@ -164,7 +164,7 @@ export const BROWN_TIDAL_REGION_PLANTS: PlantConfig[] = [
     regionId: 'region_brown_tidal',
     unlockCost: 9000,
     purchasePrice: 200,
-    sellPricePerUnit: 110,
+    sellPricePerUnit: 105,
     harvestYield: 5,
     growthMinutes: 360,            // 4h
     stageBoundaries: { seed: 0, sprout: 0.12, grow: 0.45, mature: 0.85 },
@@ -180,7 +180,7 @@ export const BROWN_TIDAL_REGION_PLANTS: PlantConfig[] = [
     unlockCost: 99999999,
     isRare: true,
     purchasePrice: 0,
-    sellPricePerUnit: 120,
+    sellPricePerUnit: 160,
     harvestYield: 2,
     growthMinutes: 120,            // 2h
     stageBoundaries: { seed: 0, sprout: 0.15, grow: 0.45, mature: 0.85 },
@@ -196,11 +196,11 @@ export const BROWN_TIDAL_REGION_PLANTS: PlantConfig[] = [
     unlockCost: 99999999,
     isRare: true,
     purchasePrice: 0,
-    sellPricePerUnit: 125,
-    harvestYield: 2,
+    sellPricePerUnit: 130,
+    harvestYield: 3,
     growthMinutes: 180,            // 3h
     harvestType: 'perennial',
-    reharvestMinutes: 60,          // 1h
+    reharvestMinutes: 90,          // 1h
     maxHarvests: 3,
     stageBoundaries: { seed: 0, sprout: 0.1, grow: 0.4, mature: 0.85 },
     allowedLandTypeId: 'tidal_soil',
@@ -208,4 +208,4 @@ export const BROWN_TIDAL_REGION_PLANTS: PlantConfig[] = [
     sprite: placeholderSprite('wolfberry'),
     difficultyFactor: 1.2,
   },
-];
+]
