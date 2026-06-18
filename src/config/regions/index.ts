@@ -22,8 +22,8 @@ export const REGION_CONFIGS: RegionConfig[] = [
     prerequisiteRegionId: 'region_paddy',
     initialPlotCount: 2,
     maxPlotCount: 24,
-    minExpandPrice: 1200,
-    maxExpandPrice: 4500,
+    minExpandPrice: 800,
+    maxExpandPrice: 3500,
   },
   {
     id: 'region_black',
@@ -32,8 +32,8 @@ export const REGION_CONFIGS: RegionConfig[] = [
     prerequisiteRegionId: 'region_brown_tidal',
     initialPlotCount: 2,
     maxPlotCount: 24,
-    minExpandPrice: 4500,
-    maxExpandPrice: 10000,
+    minExpandPrice: 3000,
+    maxExpandPrice: 8000,
   },
 ];
 
