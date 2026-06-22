@@ -81,7 +81,7 @@ export function AchievementModal({ onClose }: { onClose: () => void }) {
           {activeTab === 'progress' && inProgress.length > 0 && (
             inProgress.map((ach) => {
               const progress = achievements.progress[ach.tracker as keyof typeof achievements.progress] ?? 0;
-              const pct = Math.min(100, (progress / ach.target) * 100);
+              const pct = Math.min(100, (Number(progress) / ach.target) * 100);
               return (
                 <div key={ach.id} className={styles.card}>
                   <div className={styles.cardHeader}>

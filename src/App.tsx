@@ -17,6 +17,7 @@ import {
     useGameStore,
 } from "./store/gameStore";
 import type { SaveSlotSummary, SaveSlotType } from "./types/save";
+import type { ActiveTaskState } from "./types/task";
 import {
     createSaveSlot,
     deleteSaveSlot,
@@ -102,7 +103,7 @@ function TaskBoardModal({ onClose }: { onClose: () => void }) {
             state: activeTask,
             definition: getTaskById(activeTask.taskId),
         }))
-        .filter((item): item is { state: typeof activeTask; definition: NonNullable<ReturnType<typeof getTaskById>> } => item.definition !== null);
+        .filter((item): item is { state: ActiveTaskState; definition: NonNullable<ReturnType<typeof getTaskById>> } => item.definition !== null);
 
     return (
         <div className="modalBackdrop" role="presentation" onClick={onClose}>
@@ -363,7 +364,8 @@ function TaskBoardModal({ onClose }: { onClose: () => void }) {
                                                         }
                                                         onClick={() =>
                                                             submitActiveTask(
-                                                                activeTaskState.taskId,
+                                                                activeTaskState
+                                                                    .taskId,
                                                             )
                                                         }
                                                     >
@@ -440,7 +442,6 @@ function ExpandModal({ onClose }: { onClose: () => void }) {
                                         {current} / {region.maxPlotCount} 格
                                     </span>
                                     {locked && region.prerequisiteRegionId !== null && (() => {
-                                        const prereqRegion = REGION_CONFIGS.find(r => r.id === region.prerequisiteRegionId);
                                         const prereqPlots = plots.filter(p => p.regionId === region.prerequisiteRegionId).length;
                                         const prereqPlants = ALL_PLANTS.filter(p => {
                                             const unlocked = unlockedPlants.includes(p.id);

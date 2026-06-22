@@ -10,6 +10,9 @@
     "dev:electron": "concurrently -k \"npm:dev:web\" \"wait-on tcp:5173 && electron .\"",
     "build": "tsc -b && vite build",
     "build:web": "tsc -b && vite build",
+    "build:electron": "npm run build && electron-builder",
+    "build:electron:mac": "npm run build && electron-builder --mac",
+    "build:electron:win": "cross-env ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ npm run build && cross-env ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ electron-builder --win",
     "electron:start": "electron .",
     "lint": "eslint .",
     "preview": "vite preview"
@@ -27,7 +30,9 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
     "concurrently": "^10.0.3",
+    "cross-env": "^10.1.0",
     "electron": "^42.4.0",
+    "electron-builder": "^26.15.3",
     "eslint": "^10.3.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
@@ -36,5 +41,32 @@
     "typescript-eslint": "^8.59.2",
     "vite": "^8.0.12",
     "wait-on": "^9.0.10"
+  },
+  "build": {
+    "appId": "com.xiaobao.game",
+    "productName": "TerminalFarmGame",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "mac": {
+      "target": ["dmg", "zip"],
+      "category": "public.app-category.games"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "zip",
+          "arch": ["x64"]
+        }
+      ]
+    },
+    "linux": {
+      "target": ["AppImage", "deb"]
+    }
   }
 }

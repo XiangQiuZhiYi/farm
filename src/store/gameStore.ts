@@ -18,13 +18,13 @@ import type { PlotState, RegionId, LandTypeId } from '../types/land';
 import type { ActiveTaskState, TaskBoardState, TaskDefinition, TaskOffer } from '../types/task';
 import type { FertilizerId } from '../types/fertilizer';
 import type { PersistedGameState, SaveProfile } from '../types/save';
-import type { AchievementState, AchievementBuffType, AchievementProgress } from '../types/achievement';
+import type { AchievementState } from '../types/achievement';
 import type { WeatherState, WeatherDefinition } from '../types/weather';
 import { REGION_CONFIGS } from '../config/regions';
 import { getLandTypeById } from '../config/lands';
 import { FERTILIZER_CONFIGS, getFertilizerById } from '../config/fertilizers';
 import { getPlantById, ALL_PLANTS } from '../config/plants';
-import { TASK_BOARD_RULES, TASK_BOARD_TASKS, getTaskById, MAX_ACTIVE_TASKS } from '../config/tasks';
+import { TASK_BOARD_RULES, TASK_BOARD_TASKS, getTaskById } from '../config/tasks';
 import { ACHIEVEMENT_CONFIGS } from '../config/achievements';
 import { WEATHER_CONFIGS, rollWeather } from '../config/weather';
 import { calcYield, getGrowthTargetMinutes } from '../systems/growthSystem';
@@ -78,7 +78,7 @@ interface GameStore {
   /** 接取当前任务板上的某个任务 */
   acceptTask: (taskId: string) => boolean;
   /** 一次性提交当前已接取任务 */
-  submitActiveTask: () => boolean;
+  submitActiveTask: (taskId: string) => boolean;
   /** 对当前种植作物施肥 */
   applyFertilizer: (plotId: string, fertilizerId: FertilizerId) => boolean;
 
@@ -475,7 +475,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       if (!plant) return plot;
       const growthSpeedBuff = achievements.activeBuffs.growthSpeed ?? 0;
       const fertilizerPowerBuff = achievements.activeBuffs.fertilizerPower ?? 0;
-      const weatherGrowthMultiplier = weather?.growthSpeedMultiplier ?? 1.0;
+      const weatherDef = weather?.current ? WEATHER_CONFIGS.find(w => w.id === weather.current) : null;
+      const weatherGrowthMultiplier = weatherDef?.growthMultiplier ?? 1.0;
       return advancePlotLifecycle(plot, plot.plantedPlantId, plant, newTotal, growthSpeedBuff, fertilizerPowerBuff, weatherGrowthMultiplier);
     });
 
@@ -557,7 +558,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
       plots: snapshot.plots,
       economy: snapshot.economy,
       inventory: snapshot.inventory,
-      taskBoard: snapshot.taskBoard,
       seeds: snapshot.seeds,
       miscInventory: snapshot.miscInventory,
       unlockedPlants: snapshot.unlockedPlants,
@@ -582,7 +582,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       taskBoard: {
         ...snapshot.taskBoard,
         activeTasks: snapshot.taskBoard.activeTasks
-          ?? (snapshot.taskBoard.activeTask ? [{ ...snapshot.taskBoard.activeTask, acceptedMonth: snapshot.taskBoard.offeredMonth ?? 0 }] : []),
+          ?? ((snapshot.taskBoard as any).activeTask ? [{ ...(snapshot.taskBoard as any).activeTask, acceptedMonth: (snapshot.taskBoard as any).offeredMonth ?? 0 }] : []),
       },
     });
   },
@@ -903,13 +903,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
         inventory: nextInventory,
         economy: {
           gold: state.economy.gold + task.rewardGold,
-          // 任务奖励同样计入累计收入，用于植物和区域解锁。
           cumulativeEarned: state.economy.cumulativeEarned + task.rewardGold,
         },
         completedTasks: [...state.completedTasks, task.id],
         taskBoard: {
           ...state.taskBoard,
-          activeTasks: state.taskBoard.activeTasks.filter((t) => t.taskId !== taskId),
+          activeTasks: state.taskBoard.activeTasks.filter((t) => t.taskId !== activeTask.taskId),
         },
       };
     });
@@ -1220,7 +1219,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   /** 内部：检查成就进度并发放奖励 */
   _checkAchievements: () => {
-    const { achievements, inventory, seeds, economy, completedTasks, compendium } = get();
+    const { achievements, completedTasks, compendium } = get();
     if (achievements.completed.length >= ACHIEVEMENT_CONFIGS.length) return;
 
     const progress = { ...achievements.progress };
@@ -1246,8 +1245,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       if (newCompleted.includes(ach.id)) continue;
       if (ach.id === 'ach_complete_game') continue; // 特殊处理
 
-      let currentValue = progress[ach.tracker as keyof typeof progress] ?? 0;
-      if (currentValue >= ach.target) {
+      let currentValue: number = progress[ach.tracker as keyof typeof progress] as number ?? 0;
+      if (Number(currentValue) >= ach.target) {
         newCompleted.push(ach.id);
         if (ach.reward.type === 'gold') {
           goldReward += ach.reward.value;
@@ -1396,6 +1395,18 @@ export function createDefaultPersistedState(): PersistedGameState {
     completedTasks: [],
     compendium: {},
     selection: { selectedPlotId: null, selectedPlotIds: [], batchPanelOpen: false, panelMode: 'none' },
+    achievements: {
+      completed: [],
+      progress: {
+        totalHarvest: 0, totalSell: 0, totalEarned: 0, totalFertilizer: 0,
+        uniqueCropsHarvested: 0, tasksCompleted: 0, totalPlots: 6,
+        perennialHarvest: 0, monthlyHarvest: 0, regionsUnlocked: 1,
+        hellTasksCompleted: 0, compendiumComplete: false,
+      },
+      activeBuffs: {},
+      toast: null,
+    },
+    weather: { current: null, remainingMonths: 0, lastRollMonth: null },
   };
 }
 
@@ -1427,5 +1438,17 @@ export function createSandboxPersistedState(): PersistedGameState {
     completedTasks: [],
     compendium: fullCompendium,
     selection: { selectedPlotId: null, selectedPlotIds: [], batchPanelOpen: false, panelMode: 'none' },
+    achievements: {
+      completed: [],
+      progress: {
+        totalHarvest: 0, totalSell: 0, totalEarned: 0, totalFertilizer: 0,
+        uniqueCropsHarvested: 0, tasksCompleted: 0, totalPlots: 6,
+        perennialHarvest: 0, monthlyHarvest: 0, regionsUnlocked: 1,
+        hellTasksCompleted: 0, compendiumComplete: false,
+      },
+      activeBuffs: {},
+      toast: null,
+    },
+    weather: { current: null, remainingMonths: 0, lastRollMonth: null },
   };
 }

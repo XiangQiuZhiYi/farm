@@ -11,7 +11,7 @@ import {
   type TaskCompendiumEntry,
 } from '../../config/compendium/tasks';
 import { REGION_CONFIGS } from '../../config/regions';
-import { ALL_PLANTS } from '../../config/plants';
+
 import type { LandTypeId } from '../../types/land';
 import styles from './Compendium.module.css';
 
@@ -120,7 +120,6 @@ function LandAchievementCard({
     : progressTotal <= 0
       ? '初始解锁'
       : `${progressCurrent} / ${progressTotal}`;
-  const target = entry.details.find((item) => item.label === '扩张价格')?.value ?? '';
 
   return (
     <button
@@ -302,7 +301,6 @@ export function Compendium() {
   const unlockedRegions = useGameStore((s) => s.unlockedRegions);
   const unlockedPlants = useGameStore((s) => s.unlockedPlants);
   const plots = useGameStore((s) => s.plots);
-  const compendium = useGameStore((s) => s.compendium);
   const unlockedTasks = useGameStore((s) => s.unlockedTasks);
   const completedTasks = useGameStore((s) => s.completedTasks);
   const [activeTab, setActiveTab] = useState<'land' | 'plant' | 'task'>('land');

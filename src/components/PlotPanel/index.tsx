@@ -16,7 +16,6 @@ function BatchPanel() {
   const selection = useGameStore((s) => s.selection);
   const seeds = useGameStore((s) => s.seeds);
   const miscInventory = useGameStore((s) => s.miscInventory);
-  const unlockedPlants = useGameStore((s) => s.unlockedPlants);
   const clearSelection = useGameStore((s) => s.clearSelection);
   const batchPlantSeed = useGameStore((s) => s.batchPlantSeed);
   const batchApplyFertilizer = useGameStore((s) => s.batchApplyFertilizer);
@@ -142,7 +141,6 @@ export function PlotPanel() {
   const selection = useGameStore((s) => s.selection);
   const miscInventory = useGameStore((s) => s.miscInventory);
   const seeds = useGameStore((s) => s.seeds);
-  const unlockedPlants = useGameStore((s) => s.unlockedPlants);
   const harvest = useGameStore((s) => s.harvest);
   const applyFertilizer = useGameStore((s) => s.applyFertilizer);
   const plantSeed = useGameStore((s) => s.plantSeed);
