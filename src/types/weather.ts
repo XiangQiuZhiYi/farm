@@ -28,12 +28,12 @@ export interface WeatherDefinition {
   description: string;
 }
 
-/** 天气运行时状态 */
+/** 天气运行时状态（基于真实时间） */
 export interface WeatherState {
   /** 当前天气 id */
   current: WeatherId | null;
-  /** 剩余持续月数 */
-  remainingMonths: number;
-  /** 上次 roll 天气的绝对月份序号 */
-  lastRollMonth: number | null;
+  /** 本次天气开始时的真实时间戳（ms），null 表示尚未初始化 */
+  startedAt: number | null;
+  /** 本次天气持续的真实分钟数 */
+  durationMinutes: number;
 }

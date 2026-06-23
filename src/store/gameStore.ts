@@ -21,12 +21,12 @@ import type { PersistedGameState, SaveProfile } from '../types/save';
 import type { AchievementState } from '../types/achievement';
 import type { WeatherState, WeatherDefinition } from '../types/weather';
 import { REGION_CONFIGS } from '../config/regions';
-import { getLandTypeById } from '../config/lands';
+import { getLandTypeById, LAND_TYPE_CONFIGS } from '../config/lands';
 import { FERTILIZER_CONFIGS, getFertilizerById } from '../config/fertilizers';
 import { getPlantById, ALL_PLANTS } from '../config/plants';
 import { TASK_BOARD_RULES, TASK_BOARD_TASKS, getTaskById } from '../config/tasks';
 import { ACHIEVEMENT_CONFIGS } from '../config/achievements';
-import { WEATHER_CONFIGS, rollWeather } from '../config/weather';
+import { WEATHER_CONFIGS, rollWeather, REAL_MINUTES_PER_WEATHER_MONTH } from '../config/weather';
 import { calcYield, getGrowthTargetMinutes } from '../systems/growthSystem';
 
 // ─────────────────────────────────────────────────────────────
@@ -106,12 +106,16 @@ interface GameStore {
   /** 内部方法：成就检查与奖励发放（不暴露给 UI） */
   _checkAchievements: () => void;
 
+  // ── 种子掉落提示 ────────────────────────────────────────────
+  seedDropToast: { plantId: string; timestamp: number } | null;
+  clearSeedDropToast: () => void;
+
   // ── 天气 ────────────────────────────────────────────────────
   weather: WeatherState;
-  /** 内部方法：检查并更新天气状态 */
-  _tickWeather: (absoluteMonth: number) => void;
-  /** 初始化天气（首次启动） */
-  _initWeather: () => void;
+  /** 内部方法：根据真实时间检查并更新天气（在线时由 gameLoop 调用） */
+  _tickWeather: (nowMs: number) => void;
+  /** 初始化天气（首次启动或离线追赶后兜底） */
+  _initWeather: (nowMs: number) => void;
   /** 获取当前天气配置 */
   getWeather: () => WeatherDefinition | null;
 
@@ -508,7 +512,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
     // 月份切换时检查成就
     if (nextAbsoluteMonth > previousAbsoluteMonth) {
       get()._checkAchievements();
-      get()._tickWeather(nextAbsoluteMonth);
     }
   },
 
@@ -577,7 +580,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         activeBuffs: {},
         toast: null,
       },
-      weather: snapshot.weather ?? { current: null, remainingMonths: 0, lastRollMonth: null },
+      weather: snapshot.weather ?? { current: null, startedAt: null, durationMinutes: 0 },
       // 兼容旧存档：activeTask → activeTasks
       taskBoard: {
         ...snapshot.taskBoard,
@@ -585,6 +588,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
           ?? ((snapshot.taskBoard as any).activeTask ? [{ ...(snapshot.taskBoard as any).activeTask, acceptedMonth: (snapshot.taskBoard as any).offeredMonth ?? 0 }] : []),
       },
     });
+
+    // 加载存档后重新检查区域解锁（兼容旧存档：已解锁植物但未解锁区域的情况）
+    get()._checkUnlocks();
   },
 
   // ── 地块 ─────────────────────────────────────────────────────
@@ -638,6 +644,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       },
     }));
 
+    get()._checkUnlocks();
     get()._checkAchievements();
     return true;
   },
@@ -798,16 +805,17 @@ export const useGameStore = create<GameStore>((set, get) => ({
       }
 
       // 2. 珍稀植物掉落 (2%)
+      let rareDropId: string | null = null;
       if (Math.random() < 0.02) {
         const candidates = RARE_DROPS[plot.landTypeId];
         if (candidates && candidates.length > 0) {
           // 随机选择一个对应的珍稀植物
-          const rarePlantId = candidates[Math.floor(Math.random() * candidates.length)];
-          nextSeeds[rarePlantId] = (nextSeeds[rarePlantId] ?? 0) + 1;
+          rareDropId = candidates[Math.floor(Math.random() * candidates.length)];
+          nextSeeds[rareDropId] = (nextSeeds[rareDropId] ?? 0) + 1;
           
           // 确保该植物已解锁（加入图鉴）
-          if (!s.unlockedPlants.includes(rarePlantId)) {
-            s.unlockedPlants = [...s.unlockedPlants, rarePlantId];
+          if (!s.unlockedPlants.includes(rareDropId)) {
+            s.unlockedPlants = [...s.unlockedPlants, rareDropId];
           }
         }
       }
@@ -821,6 +829,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         compendium: { ...s.compendium, [plant.id]: true },
         seeds: nextSeeds,
         unlockedPlants: s.unlockedPlants,
+        seedDropToast: rareDropId ? { plantId: rareDropId, timestamp: Date.now() } : null,
         achievements: {
         ...s.achievements,
         progress: {
@@ -1122,25 +1131,38 @@ export const useGameStore = create<GameStore>((set, get) => ({
     toast: null,
   },
 
+  // ── 种子掉落提示 ──────────────────────────────────────────────
+  seedDropToast: null,
+  clearSeedDropToast: () => set({ seedDropToast: null }),
+
   // ── 天气初始状态 ──────────────────────────────────────────────
   weather: {
     current: null,
-    remainingMonths: 0,
-    lastRollMonth: null,
+    startedAt: null,
+    durationMinutes: 0,
   },
 
-  _tickWeather: (absoluteMonth) => {
+  _tickWeather: (nowMs) => {
     const { weather } = get();
 
-    // 首次或天气过期时 roll 新天气
-    if (!weather.current || weather.remainingMonths <= 0 || weather.lastRollMonth === null || absoluteMonth > weather.lastRollMonth + weather.remainingMonths) {
+    // 天气过期判断：当前真实时间 >= 开始时间 + 持续分钟数
+    const isExpired =
+      !weather.current ||
+      weather.startedAt === null ||
+      nowMs >= weather.startedAt + weather.durationMinutes * 60_000;
+
+    if (isExpired) {
       const rolled = rollWeather();
-      const duration = rolled.durationMin + Math.floor(Math.random() * (rolled.durationMax - rolled.durationMin + 1));
+      // 天气持续月数换算为真实分钟（1 天气月 = 1 天 = 1440 分钟）
+      const durationMonths =
+        rolled.durationMin +
+        Math.floor(Math.random() * (rolled.durationMax - rolled.durationMin + 1));
+      const durationMinutes = durationMonths * REAL_MINUTES_PER_WEATHER_MONTH;
       set({
         weather: {
           current: rolled.id,
-          remainingMonths: duration,
-          lastRollMonth: absoluteMonth,
+          startedAt: nowMs,
+          durationMinutes,
         },
       });
     }
@@ -1152,15 +1174,18 @@ export const useGameStore = create<GameStore>((set, get) => ({
     return WEATHER_CONFIGS.find((w) => w.id === weather.current) ?? null;
   },
 
-  // 初始 roll 天气
-  _initWeather: () => {
+  // 初始 roll 天气（首次建档时调用）
+  _initWeather: (nowMs) => {
     const rolled = rollWeather();
-    const duration = rolled.durationMin + Math.floor(Math.random() * (rolled.durationMax - rolled.durationMin + 1));
+    const durationMonths =
+      rolled.durationMin +
+      Math.floor(Math.random() * (rolled.durationMax - rolled.durationMin + 1));
+    const durationMinutes = durationMonths * REAL_MINUTES_PER_WEATHER_MONTH;
     set({
       weather: {
         current: rolled.id,
-        remainingMonths: duration,
-        lastRollMonth: 1,
+        startedAt: nowMs,
+        durationMinutes,
       },
     });
   },
@@ -1179,7 +1204,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       unlockedPlants: [...s.unlockedPlants, plantId],
     }));
 
-    // 解锁新植物后，重新检查成就（可能补发之前跳过的种子奖励成就）
+    // 解锁新植物后，重新检查区域解锁和成就
+    get()._checkUnlocks();
     get()._checkAchievements();
 
     return true;
@@ -1211,9 +1237,49 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }).map((r) => r.id);
 
     if (newRegions.length > 0) {
+      // 为新解锁的区域创建初始地块
+      const newPlots: PlotState[] = [];
+      for (const regionId of newRegions) {
+        const regionCfg = REGION_CONFIGS.find((r) => r.id === regionId);
+        if (!regionCfg) continue;
+        // 取该区域第一种土地类型作为默认
+        const defaultLandType = LAND_TYPE_CONFIGS.find((l) => l.regionId === regionId);
+        if (!defaultLandType) continue;
+        for (let i = 0; i < regionCfg.initialPlotCount; i++) {
+          newPlots.push(createBlankPlotState({
+            id: `${regionId}_${i}`,
+            regionId: regionId as RegionId,
+            landTypeId: defaultLandType.id as LandTypeId,
+            waterState: defaultLandType.defaultWaterState,
+          }));
+        }
+      }
       set((s) => ({
         unlockedRegions: [...s.unlockedRegions, ...newRegions],
+        plots: [...s.plots, ...newPlots],
       }));
+    }
+
+    // 旧存档修复：已解锁区域但缺少初始地块时补全
+    const missingPlots: PlotState[] = [];
+    for (const regionId of unlockedRegions) {
+      const regionCfg = REGION_CONFIGS.find((r) => r.id === regionId);
+      if (!regionCfg) continue;
+      const existingCount = plots.filter((p) => p.regionId === regionId).length;
+      if (existingCount >= regionCfg.initialPlotCount) continue;
+      const defaultLandType = LAND_TYPE_CONFIGS.find((l) => l.regionId === regionId);
+      if (!defaultLandType) continue;
+      for (let i = existingCount; i < regionCfg.initialPlotCount; i++) {
+        missingPlots.push(createBlankPlotState({
+          id: `${regionId}_${i}`,
+          regionId: regionId as RegionId,
+          landTypeId: defaultLandType.id as LandTypeId,
+          waterState: defaultLandType.defaultWaterState,
+        }));
+      }
+    }
+    if (missingPlots.length > 0) {
+      set((s) => ({ plots: [...s.plots, ...missingPlots] }));
     }
   },
 
@@ -1406,7 +1472,7 @@ export function createDefaultPersistedState(): PersistedGameState {
       activeBuffs: {},
       toast: null,
     },
-    weather: { current: null, remainingMonths: 0, lastRollMonth: null },
+    weather: { current: null, startedAt: null, durationMinutes: 0 },
   };
 }
 
@@ -1449,6 +1515,6 @@ export function createSandboxPersistedState(): PersistedGameState {
       activeBuffs: {},
       toast: null,
     },
-    weather: { current: null, remainingMonths: 0, lastRollMonth: null },
+    weather: { current: null, startedAt: null, durationMinutes: 0 },
   };
 }

@@ -43,6 +43,9 @@ function loop() {
     tickMinutes(deltaGameMinutes);
   }
 
+  // 天气按真实时间推进，不受游戏倍速/暂停影响
+  useGameStore.getState()._tickWeather(now);
+
   rafId = requestAnimationFrame(loop);
 }
 

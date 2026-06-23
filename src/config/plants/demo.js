@@ -34,7 +34,7 @@ export const PADDY_REGION_PLANTS = [
         regionId: "region_paddy",
         unlockCost: 450,
         purchasePrice: 140,
-        sellPricePerUnit: 335,
+        sellPricePerUnit: 338,
         harvestYield: 1,
         growthMinutes: 270, // 4.5h
         stageBoundaries: { seed: 0, sprout: 0.15, grow: 0.45, mature: 0.85 },
@@ -49,7 +49,7 @@ export const PADDY_REGION_PLANTS = [
         regionId: "region_paddy",
         unlockCost: 750,
         purchasePrice: 100,
-        sellPricePerUnit: 116,
+        sellPricePerUnit: 118,
         harvestYield: 1,
         growthMinutes: 180, // 3h
         harvestType: "perennial",
@@ -168,7 +168,7 @@ export const PADDY_REGION_PLANTS = [
         regionId: "region_paddy",
         unlockCost: 2250,
         purchasePrice: 60,
-        sellPricePerUnit: 80,
+        sellPricePerUnit: 81,
         harvestYield: 2,
         growthMinutes: 120, // 2h
         stageBoundaries: { seed: 0, sprout: 0.12, grow: 0.42, mature: 0.82 },
@@ -209,7 +209,7 @@ export const PADDY_REGION_PLANTS = [
         sprite: placeholderSprite("saffron"),
         difficultyFactor: 1.0,
     },
-];
+]
 
 const fn = () => {
 

@@ -8,6 +8,7 @@ import { Warehouse } from "./components/Warehouse";
 import { Compendium } from "./components/Compendium";
 import { AchievementModal } from "./components/AchievementModal";
 import { AchievementToast } from "./components/AchievementToast";
+import { SeedDropToast } from "./components/SeedDropToast";
 import { WeatherBar } from "./components/WeatherBar";
 import { getTaskById } from "./config/tasks";
 import { getPlantById, ALL_PLANTS } from "./config/plants";
@@ -938,14 +939,46 @@ function App() {
             lastSavedAt: slot.lastSavedAt,
         });
 
-        // 初始化天气（如果未设置）
+        // 初始化天气（如果未设置，或旧存档迁移）
+        const now = Date.now();
         const currentWeather = useGameStore.getState().weather;
-        if (!currentWeather.current) {
-            useGameStore.getState()._initWeather();
+
+        // 旧存档兼容：remainingMonths/lastRollMonth → startedAt/durationMinutes
+        const oldWeather = (slot.gameState.weather as any);
+        if (oldWeather && oldWeather.remainingMonths !== undefined && oldWeather.current) {
+          // 旧存档：用 lastSavedAt 作为开始时间，剩余月数换算为分钟
+          const startedAt = oldWeather.lastRollMonth
+            ? slot.lastSavedAt - (oldWeather.remainingMonths ?? 0) * 1440 * 60_000
+            : slot.lastSavedAt;
+          const durationMinutes = (oldWeather.remainingMonths ?? 0) * 1440;
+          useGameStore.setState({
+            weather: {
+              current: oldWeather.current,
+              startedAt: Math.max(0, startedAt),
+              durationMinutes,
+            },
+          });
+        } else if (!currentWeather.current) {
+          // 新存档但天气未初始化
+          useGameStore.getState()._initWeather(now);
+        }
+
+        // 离线天气追赶：按真实时间逐步推进天气
+        let weatherNow = slot.lastSavedAt;
+        // 最多追 365 天防止无限循环
+        let safety = 0;
+        while (weatherNow < now && safety < 365) {
+          const ws = useGameStore.getState().weather;
+          if (!ws.current || ws.startedAt === null) break;
+          const weatherEnd = ws.startedAt + ws.durationMinutes * 60_000;
+          if (now < weatherEnd) break; // 当前天气还没过期
+          // 跳到天气结束时间点，触发下一次 roll
+          weatherNow = weatherEnd;
+          useGameStore.getState()._tickWeather(weatherNow);
+          safety++;
         }
 
         // 读档时根据真实离线时长补算；真实档固定 1x，测试档沿用档内倍率。
-        const now = Date.now();
         const offlineMinutes = Math.max(
             0,
             Math.floor((now - slot.lastSavedAt) / 60000),
@@ -1410,6 +1443,9 @@ function App() {
 
                         {/* 成就完成提示 */}
                         <AchievementToast />
+
+                        {/* 稀有种子掉落提示 */}
+                        <SeedDropToast />
 
                         {/* 购买种子弹框 */}
                         {shopOpen && (

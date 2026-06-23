@@ -86,10 +86,10 @@ export const BROWN_TIDAL_REGION_PLANTS: PlantConfig[] = [
     name: '胡萝卜',
     regionId: 'region_brown_tidal',
     unlockCost: 2700,
-    purchasePrice: 60,
-    sellPricePerUnit: 59,
+    purchasePrice: 80,
+    sellPricePerUnit: 85,
     harvestYield: 2,
-    growthMinutes: 90,             // 1.5h
+    growthMinutes: 120,             // 2h
     stageBoundaries: { seed: 0, sprout: 0.15, grow: 0.45, mature: 0.85 },
     allowedLandTypeId: 'tidal_soil',
     preferredWaterState: 'moist',
@@ -101,10 +101,10 @@ export const BROWN_TIDAL_REGION_PLANTS: PlantConfig[] = [
     name: '甘蓝',
     regionId: 'region_brown_tidal',
     unlockCost: 3000,
-    purchasePrice: 70,
-    sellPricePerUnit: 64,
+    purchasePrice: 30,
+    sellPricePerUnit: 34,
     harvestYield: 2,
-    growthMinutes: 90,             // 1.5h
+    growthMinutes: 50,             // 50min
     stageBoundaries: { seed: 0, sprout: 0.15, grow: 0.5, mature: 0.85 },
     allowedLandTypeId: 'tidal_soil',
     preferredWaterState: 'moist',

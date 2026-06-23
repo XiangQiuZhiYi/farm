@@ -170,7 +170,7 @@ export const PADDY_REGION_PLANTS: PlantConfig[] = [
         regionId: "region_paddy",
         unlockCost: 2250,
         purchasePrice: 60,
-        sellPricePerUnit: 80,
+        sellPricePerUnit: 81,
         harvestYield: 2,
         growthMinutes: 120, // 2h
         stageBoundaries: { seed: 0, sprout: 0.12, grow: 0.42, mature: 0.82 },
@@ -211,4 +211,4 @@ export const PADDY_REGION_PLANTS: PlantConfig[] = [
         sprite: placeholderSprite("saffron"),
         difficultyFactor: 1.0,
     },
-];
+]
