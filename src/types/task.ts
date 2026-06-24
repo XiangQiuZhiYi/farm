@@ -15,10 +15,10 @@ export interface TaskRequirement {
 
 /** 任务板基础规则配置 */
 export interface TaskBoardRules {
-  /** 第一个游戏月不刷新任务 */
-  skipFirstMonth: boolean;
-  /** 除第一个游戏月外，每隔多少个月刷新一次 */
-  offerIntervalMonths: number;
+  /** 第一个游戏天不刷新任务 */
+  skipFirstDay: boolean;
+  /** 除第一个游戏天外，每隔多少天刷新一次 */
+  offerIntervalDays: number;
   /** 每次刷新给玩家几个候选任务 */
   offerChoices: number;
   /** 任务必须一次性提交完成 */
@@ -39,8 +39,8 @@ export interface TaskDefinition {
   difficulty: TaskDifficulty;
   /** 是否为限时任务 */
   isTimed: boolean;
-  /** 限时任务的时限月数；不限时为 null */
-  timeLimitMonths: number | null;
+  /** 限时任务的时限天数；不限时为 null */
+  timeLimitDays: number | null;
   /** 任务需要的农作物清单 */
   requirements: TaskRequirement[];
   /** 按当前提交清单直接售卖可获得的基础金额 */
@@ -59,16 +59,16 @@ export interface TaskDefinition {
 export interface TaskOffer {
   /** 任务 id */
   taskId: string;
-  /** 出现在任务板上的绝对月份序号 */
-  offeredMonth: number;
-  /** 到期绝对月份序号；不限时为 null */
-  expiresOnMonth: number | null;
+  /** 出现在任务板上的绝对天数序号 */
+  offeredDay: number;
+  /** 到期真实时间戳（ms）；不限时为 null */
+  expiresAt: number | null;
 }
 
 /** 玩家已接取的任务状态 */
 export interface ActiveTaskState extends TaskOffer {
-  /** 接取任务的绝对月份序号 */
-  acceptedMonth: number;
+  /** 接取任务的绝对天数序号 */
+  acceptedDay: number;
 }
 
 /** 任务板运行时状态 */
@@ -77,6 +77,6 @@ export interface TaskBoardState {
   currentOffers: TaskOffer[];
   /** 当前已接取任务；首版仅支持同时接 1 个 -> 已移除上限 */
   activeTasks: ActiveTaskState[];
-  /** 上次刷新任务板的绝对月份序号 */
-  lastRefreshMonth: number | null;
+  /** 上次刷新任务板的绝对天数序号 */
+  lastRefreshDay: number | null;
 }

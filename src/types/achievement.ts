@@ -44,7 +44,8 @@ export interface AchievementProgress {
   tasksCompleted: number;
   totalPlots: number;
   perennialHarvest: number;
-  monthlyHarvest: number;
+  /** 每日收获计数（天数切换时重置） */
+  dailyHarvest: number;
   regionsUnlocked: number;
   hellTasksCompleted: number;
   compendiumComplete: boolean;

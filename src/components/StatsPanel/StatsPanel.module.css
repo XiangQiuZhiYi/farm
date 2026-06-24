@@ -1,0 +1,159 @@
+/* ── 统计面板 ───────────────────────────── */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.panel {
+  width: 680px;
+  max-height: 85vh;
+  background: #1a2a1e;
+  border: 1px solid rgba(229, 159, 74, 0.35);
+  border-radius: 8px;
+  color: #c9d8cc;
+  font-family: Georgia, 'Times New Roman', serif;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: 1px solid rgba(229, 159, 74, 0.2);
+}
+
+.header h2 {
+  margin: 0;
+  font-size: 16px;
+  color: #fff1c7;
+  font-weight: normal;
+}
+
+.closeBtn {
+  background: none;
+  border: none;
+  color: #7f968d;
+  font-size: 22px;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+}
+
+.closeBtn:hover {
+  color: #e07050;
+}
+
+/* ── Tabs ──────────────────────────────── */
+.tabs {
+  display: flex;
+  border-bottom: 1px solid rgba(229, 159, 74, 0.15);
+  padding: 0 20px;
+}
+
+.tab {
+  padding: 8px 16px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: #7f968d;
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.tab:hover {
+  color: #c9d8cc;
+}
+
+.tab.active {
+  color: #e59f4a;
+  border-bottom-color: #e59f4a;
+}
+
+/* ── Content ───────────────────────────── */
+.content {
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* ── Overview Grid ─────────────────────── */
+.overviewGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.card {
+  background: rgba(5, 22, 20, 0.5);
+  border: 1px solid rgba(229, 159, 74, 0.15);
+  border-radius: 6px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.cardIcon {
+  font-size: 20px;
+}
+
+.cardValue {
+  font-size: 20px;
+  font-weight: bold;
+  color: #fff1c7;
+}
+
+.cardLabel {
+  font-size: 11px;
+  color: #7f968d;
+}
+
+/* ── Charts ────────────────────────────── */
+.chartsSection {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.chartsSection h3 {
+  margin: 0;
+  font-size: 14px;
+  color: #fff1c7;
+  font-weight: normal;
+}
+
+.empty {
+  text-align: center;
+  color: #7f968d;
+  padding: 40px 0;
+  font-size: 14px;
+}
+
+/* Recharts 文本颜色覆盖 */
+:global(.recharts-text) {
+  fill: #c9d8cc !important;
+  font-size: 11px;
+}
+
+:global(.recharts-cartesian-grid-horizontal line),
+:global(.recharts-cartesian-grid-vertical line) {
+  stroke: rgba(229, 159, 74, 0.12);
+}
+
+:global(.recharts-tooltip-wrapper .recharts-default-tooltip) {
+  background: #1a2a1e !important;
+  border: 1px solid rgba(229, 159, 74, 0.3) !important;
+  border-radius: 4px;
+}

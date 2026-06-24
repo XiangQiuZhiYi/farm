@@ -1,11 +1,11 @@
 // ============================================================
-// 天气静态配置（按月为周期，1 天气月 = 1 真实天 = 1440 分钟）
+// 天气静态配置（按天为周期，1 天气天 = 1 真实天 = 1440 分钟）
 // ============================================================
 
 import type { WeatherDefinition } from '../types/weather';
 
-/** 1 天气月对应的真实分钟数（1 天 = 1440 分钟） */
-export const REAL_MINUTES_PER_WEATHER_MONTH = 1440;
+/** 1 天气天对应的真实分钟数（1 天 = 1440 分钟） */
+export const REAL_MINUTES_PER_WEATHER_DAY = 1440;
 
 export const WEATHER_CONFIGS: WeatherDefinition[] = [
   {

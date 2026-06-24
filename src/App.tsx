@@ -7,6 +7,7 @@ import { Shop } from "./components/Shop";
 import { Warehouse } from "./components/Warehouse";
 import { Compendium } from "./components/Compendium";
 import { AchievementModal } from "./components/AchievementModal";
+import { StatsPanel } from "./components/StatsPanel";
 import { AchievementToast } from "./components/AchievementToast";
 import { SeedDropToast } from "./components/SeedDropToast";
 import { WeatherBar } from "./components/WeatherBar";
@@ -32,24 +33,27 @@ import {
 import { REGION_CONFIGS } from "./config/regions";
 import { LAND_TYPE_CONFIGS } from "./config/lands";
 
-const MINUTES_PER_MONTH = 1440;
-
-function getAbsoluteMonthIndex(totalMinutes: number) {
-    return Math.floor(totalMinutes / MINUTES_PER_MONTH) + 1;
+function formatGameDayByAbsoluteDay(absoluteDay: number) {
+    const year = Math.floor((absoluteDay - 1) / 12) + 1;
+    const day = ((absoluteDay - 1) % 12) + 1;
+    return `第 ${year} 年 第 ${day} 天`;
 }
 
-function formatGameYearMonthByAbsoluteMonth(absoluteMonth: number) {
-    const year = Math.floor((absoluteMonth - 1) / 12) + 1;
-    const month = ((absoluteMonth - 1) % 12) + 1;
-    return `第 ${year} 年 ${month} 月`;
-}
+function formatTaskRemaining(expiresAt: number | null | undefined) {
+    if (expiresAt == null || !Number.isFinite(expiresAt)) return "不限时";
+    const remainMs = Math.max(0, expiresAt - Date.now());
+    const totalMinutes = Math.floor(remainMs / 60_000);
+    const days = Math.floor(totalMinutes / 1440);
+    const hours = Math.floor((totalMinutes % 1440) / 60);
+    const mins = totalMinutes % 60;
 
-function formatRemainingMonths(
-    expiresOnMonth: number | null,
-    currentMonthIndex: number,
-) {
-    if (expiresOnMonth === null) return "不限时";
-    return `剩余 ${Math.max(0, expiresOnMonth - currentMonthIndex + 1)} 个月`;
+    if (days > 0) {
+        return `剩余 ${days} 天 ${hours} 小时 ${mins} 分钟`;
+    }
+    if (hours > 0) {
+        return `剩余 ${hours} 小时 ${mins} 分钟`;
+    }
+    return `剩余 ${mins} 分钟`;
 }
 
 function formatTimestamp(ts: number | null) {
@@ -92,12 +96,18 @@ async function persistSlotFromStore(slot: SaveSlotSummary) {
 
 function TaskBoardModal({ onClose }: { onClose: () => void }) {
     const [activeTab, setActiveTab] = useState<"active" | "offers">("active");
-    const clock = useGameStore((s) => s.clock);
     const inventory = useGameStore((s) => s.inventory);
     const taskBoard = useGameStore((s) => s.taskBoard);
     const acceptTask = useGameStore((s) => s.acceptTask);
     const submitActiveTask = useGameStore((s) => s.submitActiveTask);
-    const currentAbsoluteMonth = getAbsoluteMonthIndex(clock.totalMinutes);
+
+    // 每 30 秒刷新限时任务剩余时间显示
+    const [, setTick] = useState(0);
+    useEffect(() => {
+        const id = setInterval(() => setTick((t) => t + 1), 30_000);
+        return () => clearInterval(id);
+
+    }, []);
 
     const activeTaskDefinitions = (taskBoard.activeTasks ?? [])
         .map((activeTask) => ({
@@ -166,14 +176,14 @@ function TaskBoardModal({ onClose }: { onClose: () => void }) {
                                 <span>
                                     {taskBoard.currentOffers.length} / 2
                                 </span>
-                                {taskBoard.activeTasks.length > 0 && (
+                                {taskBoard.currentOffers.length > 0 && (
                                     <span
                                         style={{
                                             color: "#e07050",
                                             fontSize: 11,
                                         }}
                                     >
-                                        已登记 {taskBoard.activeTasks.length} /
+                                        已登记 {taskBoard.currentOffers.length} /
                                         6
                                     </span>
                                 )}
@@ -194,7 +204,7 @@ function TaskBoardModal({ onClose }: { onClose: () => void }) {
                                                         <h4>{task.title}</h4>
                                                         <p>
                                                             {task.isTimed
-                                                                ? `${task.timeLimitMonths} 个月限时`
+                                                                ? `${task.timeLimitDays} 天限时`
                                                                 : "不限时任务"}{" "}
                                                             / 奖励{" "}
                                                             {task.rewardGold} 金
@@ -230,9 +240,8 @@ function TaskBoardModal({ onClose }: { onClose: () => void }) {
                                                 </ul>
                                                 <div className="taskOfferFooter">
                                                     <span>
-                                                        {formatRemainingMonths(
-                                                            offer.expiresOnMonth,
-                                                            currentAbsoluteMonth,
+                                                        {formatTaskRemaining(
+                                                            offer.expiresAt,
                                                         )}
                                                     </span>
                                                     <button
@@ -262,8 +271,8 @@ function TaskBoardModal({ onClose }: { onClose: () => void }) {
                             <div className="taskSectionHead">
                                 <h3>已登记任务</h3>
                                 <span>
-                                    {taskBoard.activeTasks.length > 0
-                                        ? `${taskBoard.activeTasks.length} 进行中`
+                                    {taskBoard.currentOffers.length > 0
+                                        ? `${taskBoard.currentOffers.length} 进行中`
                                         : "空闲"}
                                 </span>
                             </div>
@@ -287,13 +296,12 @@ function TaskBoardModal({ onClose }: { onClose: () => void }) {
                                                         </h4>
                                                         <p>
                                                             已接于{" "}
-                                                            {formatGameYearMonthByAbsoluteMonth(
-                                                                activeTaskState.acceptedMonth,
+                                                            {formatGameDayByAbsoluteDay(
+                                                                activeTaskState.acceptedDay,
                                                             )}
                                                             {" / "}
-                                                            {formatRemainingMonths(
-                                                                activeTaskState.expiresOnMonth,
-                                                                currentAbsoluteMonth,
+                                                            {formatTaskRemaining(
+                                                                activeTaskState.expiresAt,
                                                             )}
                                                         </p>
                                                     </div>
@@ -893,6 +901,7 @@ function App() {
     const [expandOpen, setExpandOpen] = useState(false);
     const [taskBoardOpen, setTaskBoardOpen] = useState(false);
     const [achievementOpen, setAchievementOpen] = useState(false);
+    const [statsOpen, setStatsOpen] = useState(false);
     // 当前展示的农田区域
     const [activeRegion, setActiveRegion] = useState("region_paddy");
 
@@ -978,17 +987,14 @@ function App() {
           safety++;
         }
 
-        // 读档时根据真实离线时长补算；真实档固定 1x，测试档沿用档内倍率。
+        // 读档时根据真实离线时长补算（时间始终 1:1 流逝，生长加速在 tickMinutes 内部处理）
         const offlineMinutes = Math.max(
             0,
             Math.floor((now - slot.lastSavedAt) / 60000),
         );
-        const multiplier =
-            slot.type === "real" ? 1 : slot.gameState.clock.timeScale;
-        const appliedOfflineMinutes = offlineMinutes * multiplier;
 
-        if (appliedOfflineMinutes > 0) {
-            applyOfflineMinutes(appliedOfflineMinutes);
+        if (offlineMinutes > 0) {
+            applyOfflineMinutes(offlineMinutes);
         }
 
         await updateSaveSlot({
@@ -1337,6 +1343,13 @@ function App() {
                             <button
                                 type="button"
                                 className="toolbarBtn"
+                                onClick={() => setStatsOpen(true)}
+                            >
+                                📊 统计
+                            </button>
+                            <button
+                                type="button"
+                                className="toolbarBtn"
                                 onClick={() => setSaveModalOpen(true)}
                                 disabled={saveLoading || !electronRuntime}
                             >
@@ -1518,6 +1531,12 @@ function App() {
                         {achievementOpen && (
                             <AchievementModal
                                 onClose={() => setAchievementOpen(false)}
+                            />
+                        )}
+
+                        {statsOpen && (
+                            <StatsPanel
+                                onClose={() => setStatsOpen(false)}
                             />
                         )}
 

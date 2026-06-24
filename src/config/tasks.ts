@@ -1,6 +1,6 @@
 // ============================================================
 // 任务板静态配置
-// 说明：本文件先固定 40 条任务内容与奖励计算规则，具体限时持续天数后续功能再接入。
+// 说明：限时任务按真实时间计时（timeLimitDays 天 = 对应真实天数），不受游戏倍速/暂停影响。
 // ============================================================
 
 import { ALL_PLANTS, getPlantById } from './plants';
@@ -8,8 +8,8 @@ import type { TaskBoardRules, TaskDefinition, TaskDifficulty, TaskRequirement } 
 
 /** 任务板固定刷新规则 */
 export const TASK_BOARD_RULES: TaskBoardRules = {
-  skipFirstMonth: false,
-  offerIntervalMonths: 1,
+  skipFirstDay: false,
+  offerIntervalDays: 1,
   offerChoices: 2,
   submissionMode: 'all-at-once',
   completedTasksRemoved: true,
@@ -35,7 +35,7 @@ type TaskSeed = {
   title: string;
   difficulty: TaskDifficulty;
   isTimed: boolean;
-  timeLimitMonths?: number;
+  timeLimitDays?: number;
   requirements: TaskRequirement[];
 };
 
@@ -55,7 +55,7 @@ function createTask(seed: TaskSeed): TaskDefinition {
 
   return {
     ...seed,
-    timeLimitMonths: seed.isTimed ? seed.timeLimitMonths ?? defaultTimeLimitMonths(seed.difficulty) : null,
+    timeLimitDays: seed.isTimed ? seed.timeLimitDays ?? defaultTimeLimitDays(seed.difficulty) : null,
     baseSaleValue,
     difficultyMultiplier,
     timedBonusMultiplier,
@@ -64,7 +64,7 @@ function createTask(seed: TaskSeed): TaskDefinition {
   };
 }
 
-function defaultTimeLimitMonths(difficulty: TaskDifficulty) {
+function defaultTimeLimitDays(difficulty: TaskDifficulty) {
   switch (difficulty) {
     case 'easy':
       return 2;
@@ -163,7 +163,7 @@ const TASK_SEEDS: TaskSeed[] = [
     title: '脆萝卜急单',
     difficulty: 'easy',
     isTimed: true,
-    timeLimitMonths: 2,
+    timeLimitDays: 2,
     requirements: [{ plantId: 'carrot', quantity: 9 }],
   },
   {
@@ -185,7 +185,7 @@ const TASK_SEEDS: TaskSeed[] = [
     title: '萝卜脆爽单',
     difficulty: 'medium',
     isTimed: false,
-    requirements: [{ plantId: 'green_radish', quantity: 6 }],
+    requirements: [{ plantId: 'green_radish', quantity: 4 }],
   },
 
   // ── MEDIUM（11 条）──────────────────────────────────────────
@@ -194,7 +194,7 @@ const TASK_SEEDS: TaskSeed[] = [
     title: '地窖土豆单',
     difficulty: 'medium',
     isTimed: false,
-    requirements: [{ plantId: 'potato', quantity: 36 }],
+    requirements: [{ plantId: 'potato', quantity: 24 }],
   },
   {
     id: 'task_medium_02',
@@ -202,8 +202,8 @@ const TASK_SEEDS: TaskSeed[] = [
     difficulty: 'medium',
     isTimed: false,
     requirements: [
-      { plantId: 'sunflower', quantity: 18 },
-      { plantId: 'rapeseed', quantity: 24 },
+      { plantId: 'sunflower', quantity: 12 },
+      { plantId: 'rapeseed', quantity: 16 },
     ],
   },
   {
@@ -211,10 +211,10 @@ const TASK_SEEDS: TaskSeed[] = [
     title: '水田宴席备货',
     difficulty: 'medium',
     isTimed: true,
-    timeLimitMonths: 3,
+    timeLimitDays: 3,
     requirements: [
-      { plantId: 'rice', quantity: 24 },
-      { plantId: 'lotus_root', quantity: 18 },
+      { plantId: 'rice', quantity: 16 },
+      { plantId: 'lotus_root', quantity: 12 },
     ],
   },
   {
@@ -223,9 +223,9 @@ const TASK_SEEDS: TaskSeed[] = [
     difficulty: 'medium',
     isTimed: false,
     requirements: [
-      { plantId: 'soybean', quantity: 30 },
-      { plantId: 'wheat', quantity: 24 },
-      { plantId: 'broad_bean', quantity: 24 },
+      { plantId: 'soybean', quantity: 20 },
+      { plantId: 'wheat', quantity: 16 },
+      { plantId: 'broad_bean', quantity: 16 },
     ],
   },
   {
@@ -234,8 +234,8 @@ const TASK_SEEDS: TaskSeed[] = [
     difficulty: 'medium',
     isTimed: false,
     requirements: [
-      { plantId: 'cabbage', quantity: 24 },
-      { plantId: 'carrot', quantity: 24 },
+      { plantId: 'cabbage', quantity: 16 },
+      { plantId: 'carrot', quantity: 16 },
     ],
   },
   {
@@ -244,8 +244,8 @@ const TASK_SEEDS: TaskSeed[] = [
     difficulty: 'medium',
     isTimed: false,
     requirements: [
-      { plantId: 'peanut', quantity: 18 },
-      { plantId: 'sorghum', quantity: 18 },
+      { plantId: 'peanut', quantity: 12 },
+      { plantId: 'sorghum', quantity: 12 },
     ],
   },
   {
@@ -253,10 +253,10 @@ const TASK_SEEDS: TaskSeed[] = [
     title: '黄瓜菜豆快货',
     difficulty: 'medium',
     isTimed: true,
-    timeLimitMonths: 3,
+    timeLimitDays: 3,
     requirements: [
-      { plantId: 'cucumber', quantity: 24 },
-      { plantId: 'cowpea', quantity: 20 },
+      { plantId: 'cucumber', quantity: 16 },
+      { plantId: 'cowpea', quantity: 13 },
     ],
   },
   {
@@ -265,8 +265,8 @@ const TASK_SEEDS: TaskSeed[] = [
     difficulty: 'medium',
     isTimed: false,
     requirements: [
-      { plantId: 'garlic', quantity: 24 },
-      { plantId: 'broad_bean', quantity: 24 },
+      { plantId: 'garlic', quantity: 16 },
+      { plantId: 'broad_bean', quantity: 16 },
     ],
   },
   {
@@ -275,8 +275,8 @@ const TASK_SEEDS: TaskSeed[] = [
     difficulty: 'medium',
     isTimed: false,
     requirements: [
-      { plantId: 'millet', quantity: 18 },
-      { plantId: 'oat', quantity: 18 },
+      { plantId: 'millet', quantity: 12 },
+      { plantId: 'oat', quantity: 12 },
     ],
   },
   {
@@ -284,9 +284,9 @@ const TASK_SEEDS: TaskSeed[] = [
     title: '红薯西瓜特供',
     difficulty: 'medium',
     isTimed: true,
-    timeLimitMonths: 3,
+    timeLimitDays: 3,
     requirements: [
-      { plantId: 'sweet_potato', quantity: 16 },
+      { plantId: 'sweet_potato', quantity: 11 },
       { plantId: 'watermelon', quantity: 8 },
     ],
   },
@@ -296,8 +296,8 @@ const TASK_SEEDS: TaskSeed[] = [
     difficulty: 'medium',
     isTimed: false,
     requirements: [
-      { plantId: 'pea', quantity: 20 },
-      { plantId: 'cotton', quantity: 10 },
+      { plantId: 'pea', quantity: 13 },
+      { plantId: 'cotton', quantity: 7 },
     ],
   },
   {
@@ -339,7 +339,7 @@ const TASK_SEEDS: TaskSeed[] = [
     title: '油坊出口单',
     difficulty: 'hard',
     isTimed: true,
-    timeLimitMonths: 4,
+    timeLimitDays: 4,
     requirements: [
       { plantId: 'sunflower', quantity: 18 },
       { plantId: 'peanut', quantity: 18 },
@@ -384,7 +384,7 @@ const TASK_SEEDS: TaskSeed[] = [
     title: '高价果蔬箱',
     difficulty: 'hard',
     isTimed: true,
-    timeLimitMonths: 4,
+    timeLimitDays: 4,
     requirements: [
       { plantId: 'watermelon', quantity: 10 },
       { plantId: 'cucumber', quantity: 20 },
@@ -396,7 +396,7 @@ const TASK_SEEDS: TaskSeed[] = [
     title: '水乡盛宴急件',
     difficulty: 'hard',
     isTimed: true,
-    timeLimitMonths: 4,
+    timeLimitDays: 4,
     requirements: [
       { plantId: 'rice', quantity: 36 },
       { plantId: 'water_chestnut', quantity: 30 },
@@ -455,7 +455,7 @@ const TASK_SEEDS: TaskSeed[] = [
     title: '经济作物冲榜单',
     difficulty: 'hell',
     isTimed: true,
-    timeLimitMonths: 5,
+    timeLimitDays: 5,
     requirements: [
       { plantId: 'sunflower', quantity: 24 },
       { plantId: 'sesame', quantity: 16 },
@@ -509,6 +509,202 @@ const TASK_SEEDS: TaskSeed[] = [
       { plantId: 'kiwi', quantity: 16 },
       { plantId: 'sesame', quantity: 14 },
       { plantId: 'apple', quantity: 8 },
+    ],
+  },
+
+  // ── EASY 限时（10 条）──────────────────────────────────────
+  {
+    id: 'task_easy_16',
+    title: '空心菜急送',
+    difficulty: 'easy',
+    isTimed: true,
+    timeLimitDays: 2,
+    requirements: [{ plantId: 'water_spinach', quantity: 12 }],
+  },
+  {
+    id: 'task_easy_17',
+    title: '大豆快收',
+    difficulty: 'easy',
+    isTimed: true,
+    timeLimitDays: 2,
+    requirements: [{ plantId: 'soybean', quantity: 10 }],
+  },
+  {
+    id: 'task_easy_18',
+    title: '莲藕鲜供',
+    difficulty: 'easy',
+    isTimed: true,
+    timeLimitDays: 2,
+    requirements: [{ plantId: 'lotus_root', quantity: 5 }],
+  },
+  {
+    id: 'task_easy_19',
+    title: '水芹限时',
+    difficulty: 'easy',
+    isTimed: true,
+    timeLimitDays: 2,
+    requirements: [{ plantId: 'water_celery', quantity: 8 }],
+  },
+  {
+    id: 'task_easy_20',
+    title: '茭白急单',
+    difficulty: 'easy',
+    isTimed: true,
+    timeLimitDays: 2,
+    requirements: [{ plantId: 'water_bamboo', quantity: 7 }],
+  },
+  {
+    id: 'task_easy_21',
+    title: '荸荠速递',
+    difficulty: 'easy',
+    isTimed: true,
+    timeLimitDays: 2,
+    requirements: [{ plantId: 'water_chestnut', quantity: 9 }],
+  },
+  {
+    id: 'task_easy_22',
+    title: '油菜快送',
+    difficulty: 'easy',
+    isTimed: true,
+    timeLimitDays: 2,
+    requirements: [{ plantId: 'rapeseed', quantity: 5 }],
+  },
+  {
+    id: 'task_easy_23',
+    title: '小麦急收',
+    difficulty: 'easy',
+    isTimed: true,
+    timeLimitDays: 2,
+    requirements: [{ plantId: 'wheat', quantity: 5 }],
+  },
+  {
+    id: 'task_easy_24',
+    title: '甘蓝限时',
+    difficulty: 'easy',
+    isTimed: true,
+    timeLimitDays: 2,
+    requirements: [{ plantId: 'cabbage', quantity: 7 }],
+  },
+  {
+    id: 'task_easy_25',
+    title: '玉米急送',
+    difficulty: 'easy',
+    isTimed: true,
+    timeLimitDays: 2,
+    requirements: [{ plantId: 'corn', quantity: 5 }],
+  },
+
+  // ── MEDIUM 限时（7 条）─────────────────────────────────────
+  {
+    id: 'task_medium_13',
+    title: '土豆限时单',
+    difficulty: 'medium',
+    isTimed: true,
+    timeLimitDays: 3,
+    requirements: [{ plantId: 'potato', quantity: 20 }],
+  },
+  {
+    id: 'task_medium_14',
+    title: '向日葵油菜限时',
+    difficulty: 'medium',
+    isTimed: true,
+    timeLimitDays: 3,
+    requirements: [
+      { plantId: 'sunflower', quantity: 10 },
+      { plantId: 'rapeseed', quantity: 14 },
+    ],
+  },
+  {
+    id: 'task_medium_15',
+    title: '胡萝卜甘蓝限时',
+    difficulty: 'medium',
+    isTimed: true,
+    timeLimitDays: 3,
+    requirements: [
+      { plantId: 'carrot', quantity: 14 },
+      { plantId: 'cabbage', quantity: 14 },
+    ],
+  },
+  {
+    id: 'task_medium_16',
+    title: '黄瓜豇豆限时',
+    difficulty: 'medium',
+    isTimed: true,
+    timeLimitDays: 3,
+    requirements: [
+      { plantId: 'cucumber', quantity: 14 },
+      { plantId: 'cowpea', quantity: 11 },
+    ],
+  },
+  {
+    id: 'task_medium_17',
+    title: '红薯西瓜限时',
+    difficulty: 'medium',
+    isTimed: true,
+    timeLimitDays: 3,
+    requirements: [
+      { plantId: 'sweet_potato', quantity: 10 },
+      { plantId: 'watermelon', quantity: 7 },
+    ],
+  },
+  {
+    id: 'task_medium_18',
+    title: '小米燕麦限时',
+    difficulty: 'medium',
+    isTimed: true,
+    timeLimitDays: 3,
+    requirements: [
+      { plantId: 'millet', quantity: 10 },
+      { plantId: 'oat', quantity: 10 },
+    ],
+  },
+  {
+    id: 'task_medium_19',
+    title: '花生高粱限时',
+    difficulty: 'medium',
+    isTimed: true,
+    timeLimitDays: 3,
+    requirements: [
+      { plantId: 'peanut', quantity: 10 },
+      { plantId: 'sorghum', quantity: 10 },
+    ],
+  },
+
+  // ── HARD 限时（3 条）───────────────────────────────────────
+  {
+    id: 'task_hard_12',
+    title: '湿地限时大单',
+    difficulty: 'hard',
+    isTimed: true,
+    timeLimitDays: 4,
+    requirements: [
+      { plantId: 'rice', quantity: 26 },
+      { plantId: 'lotus_root', quantity: 15 },
+      { plantId: 'water_bamboo', quantity: 20 },
+    ],
+  },
+  {
+    id: 'task_hard_13',
+    title: '三粮限时大车',
+    difficulty: 'hard',
+    isTimed: true,
+    timeLimitDays: 4,
+    requirements: [
+      { plantId: 'wheat', quantity: 26 },
+      { plantId: 'corn', quantity: 20 },
+      { plantId: 'soybean', quantity: 26 },
+    ],
+  },
+  {
+    id: 'task_hard_14',
+    title: '油料限时出口',
+    difficulty: 'hard',
+    isTimed: true,
+    timeLimitDays: 4,
+    requirements: [
+      { plantId: 'sunflower', quantity: 15 },
+      { plantId: 'peanut', quantity: 15 },
+      { plantId: 'rapeseed', quantity: 15 },
     ],
   },
 ];

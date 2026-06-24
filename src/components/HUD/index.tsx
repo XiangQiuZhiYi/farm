@@ -8,9 +8,9 @@ import styles from './HUD.module.css';
 
 const TIME_SCALES: TimeScale[] = [1, 1440, 2880, 4320];
 
-function formatGameDate(totalMinutes: number, month: number) {
+function formatGameDate(totalMinutes: number, day: number) {
   const year = Math.floor(totalMinutes / 1440 / 12) + 1;
-  return `第 ${year} 年 ${month} 月`;
+  return `第 ${year} 年 第 ${day} 天`;
 }
 
 export function HUD() {
@@ -26,7 +26,7 @@ export function HUD() {
       {/* 日期 */}
       <div className={styles.timeBlock}>
         <span className={styles.date}>
-          {formatGameDate(clock.totalMinutes, clock.month)}
+          {formatGameDate(clock.totalMinutes, clock.day)}
         </span>
       </div>
 
@@ -47,7 +47,7 @@ export function HUD() {
               onClick={() => setTimeScale(s)}
               className={`${styles.scaleBtn} ${clock.timeScale === s ? styles.active : ''}`}
             >
-              ×{s}
+              {s === 1 ? '×1' : `生长×${s}`}
             </button>
           ))
         ) : (

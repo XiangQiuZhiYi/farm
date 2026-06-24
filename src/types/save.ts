@@ -1,4 +1,4 @@
-import type { ClockState, Compendium, EconomyState, Inventory, MiscInventory, Seeds, SelectionState } from './game';
+import type { ClockState, Compendium, EconomyState, Inventory, MiscInventory, Seeds, SelectionState, StatsState } from './game';
 import type { PlotState } from './land';
 import type { TaskBoardState } from './task';
 import type { AchievementState } from './achievement';
@@ -22,6 +22,7 @@ export interface PersistedGameState {
   selection: SelectionState;
   achievements: AchievementState;
   weather: WeatherState;
+  stats: StatsState;
 }
 
 export interface SaveSlotSummary {
