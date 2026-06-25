@@ -19,9 +19,9 @@
   },
   "dependencies": {
     "code-inspector-plugin": "^1.5.3",
+    "echarts": "^6.1.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
-    "recharts": "^3.8.1",
     "zustand": "^5.0.14"
   },
   "devDependencies": {

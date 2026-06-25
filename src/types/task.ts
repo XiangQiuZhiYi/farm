@@ -15,10 +15,10 @@ export interface TaskRequirement {
 
 /** 任务板基础规则配置 */
 export interface TaskBoardRules {
-  /** 第一个游戏天不刷新任务 */
+  /** 第一个刷新周期不刷新任务 */
   skipFirstDay: boolean;
-  /** 除第一个游戏天外，每隔多少天刷新一次 */
-  offerIntervalDays: number;
+  /** 每隔多少游戏分钟刷新一次任务板（6 小时 = 360 分钟） */
+  offerIntervalMinutes: number;
   /** 每次刷新给玩家几个候选任务 */
   offerChoices: number;
   /** 任务必须一次性提交完成 */
@@ -59,16 +59,16 @@ export interface TaskDefinition {
 export interface TaskOffer {
   /** 任务 id */
   taskId: string;
-  /** 出现在任务板上的绝对天数序号 */
-  offeredDay: number;
+  /** 出现在任务板上的刷新周期序号 */
+  offeredPeriod: number;
   /** 到期真实时间戳（ms）；不限时为 null */
   expiresAt: number | null;
 }
 
 /** 玩家已接取的任务状态 */
 export interface ActiveTaskState extends TaskOffer {
-  /** 接取任务的绝对天数序号 */
-  acceptedDay: number;
+  /** 接取任务时的刷新周期序号 */
+  acceptedPeriod: number;
 }
 
 /** 任务板运行时状态 */
@@ -77,6 +77,6 @@ export interface TaskBoardState {
   currentOffers: TaskOffer[];
   /** 当前已接取任务；首版仅支持同时接 1 个 -> 已移除上限 */
   activeTasks: ActiveTaskState[];
-  /** 上次刷新任务板的绝对天数序号 */
-  lastRefreshDay: number | null;
+  /** 上次刷新任务板的刷新周期序号 */
+  lastRefreshPeriod: number | null;
 }

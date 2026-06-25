@@ -218,7 +218,6 @@
 .main,
 .compendiumMain {
   flex: 1;
-  overflow: auto;
 }
 
 /* 农场主视图：中性深色背景，把焦点留给像素画地块 */

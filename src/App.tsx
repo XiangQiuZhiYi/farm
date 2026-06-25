@@ -11,7 +11,7 @@ import { StatsPanel } from "./components/StatsPanel";
 import { AchievementToast } from "./components/AchievementToast";
 import { SeedDropToast } from "./components/SeedDropToast";
 import { WeatherBar } from "./components/WeatherBar";
-import { getTaskById } from "./config/tasks";
+import { getTaskById, TASK_BOARD_RULES } from "./config/tasks";
 import { getPlantById, ALL_PLANTS } from "./config/plants";
 import {
     createDefaultPersistedState,
@@ -33,10 +33,22 @@ import {
 import { REGION_CONFIGS } from "./config/regions";
 import { LAND_TYPE_CONFIGS } from "./config/lands";
 
-function formatGameDayByAbsoluteDay(absoluteDay: number) {
-    const year = Math.floor((absoluteDay - 1) / 12) + 1;
-    const day = ((absoluteDay - 1) % 12) + 1;
-    return `第 ${year} 年 第 ${day} 天`;
+/** 将刷新周期序号格式化为可读文案 */
+function formatRefreshPeriod(periodIndex: number) {
+    return `第 ${periodIndex + 1} 轮`;
+}
+
+/** 根据游戏总分钟计算距下次任务刷新的剩余时间文案 */
+function formatNextRefreshRemaining(totalMinutes: number) {
+    const interval = TASK_BOARD_RULES.offerIntervalMinutes;
+    const elapsedInPeriod = totalMinutes % interval;
+    const remainMinutes = interval - elapsedInPeriod;
+    const hours = Math.floor(remainMinutes / 60);
+    const mins = (remainMinutes % 60).toFixed(0);
+    if (hours > 0) {
+        return `${hours} 小时 ${mins} 分钟`;
+    }
+    return `${mins} 分钟`;
 }
 
 function formatTaskRemaining(expiresAt: number | null | undefined) {
@@ -45,7 +57,7 @@ function formatTaskRemaining(expiresAt: number | null | undefined) {
     const totalMinutes = Math.floor(remainMs / 60_000);
     const days = Math.floor(totalMinutes / 1440);
     const hours = Math.floor((totalMinutes % 1440) / 60);
-    const mins = totalMinutes % 60;
+    const mins = (totalMinutes % 60).toFixed(0);
 
     if (days > 0) {
         return `剩余 ${days} 天 ${hours} 小时 ${mins} 分钟`;
@@ -98,6 +110,7 @@ function TaskBoardModal({ onClose }: { onClose: () => void }) {
     const [activeTab, setActiveTab] = useState<"active" | "offers">("active");
     const inventory = useGameStore((s) => s.inventory);
     const taskBoard = useGameStore((s) => s.taskBoard);
+    const totalMinutes = useGameStore((s) => s.clock.totalMinutes);
     const acceptTask = useGameStore((s) => s.acceptTask);
     const submitActiveTask = useGameStore((s) => s.submitActiveTask);
 
@@ -133,6 +146,10 @@ function TaskBoardModal({ onClose }: { onClose: () => void }) {
                     >
                         ×
                     </button>
+                </div>
+
+                <div className="taskBoardNextRefresh">
+                    下次任务更新：{formatNextRefreshRemaining(totalMinutes)} 后
                 </div>
 
                 <div
@@ -296,8 +313,8 @@ function TaskBoardModal({ onClose }: { onClose: () => void }) {
                                                         </h4>
                                                         <p>
                                                             已接于{" "}
-                                                            {formatGameDayByAbsoluteDay(
-                                                                activeTaskState.acceptedDay,
+                                                            {formatRefreshPeriod(
+                                                                activeTaskState.acceptedPeriod,
                                                             )}
                                                             {" / "}
                                                             {formatTaskRemaining(
@@ -894,14 +911,13 @@ function BuffCard() {
 }
 
 function App() {
-    const [screen, setScreen] = useState<"game" | "compendium">("game");
+    const [screen, setScreen] = useState<"game" | "compendium" | "stats">("game");
     const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
     const [shopOpen, setShopOpen] = useState(false);
     const [warehouseOpen, setWarehouseOpen] = useState(false);
     const [expandOpen, setExpandOpen] = useState(false);
     const [taskBoardOpen, setTaskBoardOpen] = useState(false);
     const [achievementOpen, setAchievementOpen] = useState(false);
-    const [statsOpen, setStatsOpen] = useState(false);
     // 当前展示的农田区域
     const [activeRegion, setActiveRegion] = useState("region_paddy");
 
@@ -1263,6 +1279,16 @@ function App() {
                         <span className="navIcon">☆</span>
                         {!sidebarCollapsed ? "图鉴" : null}
                     </button>
+                    <button
+                        type="button"
+                        className={
+                            screen === "stats" ? "navBtn active" : "navBtn"
+                        }
+                        onClick={() => setScreen("stats")}
+                    >
+                        <span className="navIcon">📊</span>
+                        {!sidebarCollapsed ? "统计" : null}
+                    </button>
                 </nav>
                 <div
                     className={
@@ -1282,9 +1308,17 @@ function App() {
                         <p className="eyebrow">
                             {screen === "game"
                                 ? "FARM CONTROL"
-                                : "ACHIEVEMENTS"}
+                                : screen === "compendium"
+                                  ? "ACHIEVEMENTS"
+                                  : "STATISTICS"}
                         </p>
-                        <h1>{screen === "game" ? (saveProfile.slotName || "未选择档位") : "图鉴总览"}</h1>
+                        <h1>
+                            {screen === "game"
+                                ? (saveProfile.slotName || "未选择档位")
+                                : screen === "compendium"
+                                  ? "图鉴总览"
+                                  : "统计面板"}
+                        </h1>
                     </div>
                     {screen === "game" && (
                         <div
@@ -1339,13 +1373,6 @@ function App() {
                                 onClick={() => setAchievementOpen(true)}
                             >
                                 🏆 成就
-                            </button>
-                            <button
-                                type="button"
-                                className="toolbarBtn"
-                                onClick={() => setStatsOpen(true)}
-                            >
-                                📊 统计
                             </button>
                             <button
                                 type="button"
@@ -1534,12 +1561,6 @@ function App() {
                             />
                         )}
 
-                        {statsOpen && (
-                            <StatsPanel
-                                onClose={() => setStatsOpen(false)}
-                            />
-                        )}
-
                         <SaveManagerModal
                             open={saveModalOpen}
                             loading={saveLoading}
@@ -1554,7 +1575,11 @@ function App() {
                     </>
                 ) : (
                     <main className="compendiumMain">
-                        <Compendium />
+                        {screen === "compendium" ? (
+                            <Compendium />
+                        ) : (
+                            <StatsPanel />
+                        )}
                     </main>
                 )}
             </section>

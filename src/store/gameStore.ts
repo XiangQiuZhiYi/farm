@@ -157,7 +157,6 @@ interface GameStore {
 // ─────────────────────────────────────────────────────────────
 
 const MINUTES_PER_DAY = 1440;
-const GAME_START_ABSOLUTE_DAY = 1;
 
 function minutesToCalendar(total: number) {
   const absoluteDayIndex = Math.floor(total / MINUTES_PER_DAY);
@@ -229,10 +228,10 @@ function isTaskExpired(expiresAt: number | null) {
   return expiresAt !== null && Date.now() > expiresAt;
 }
 
-function buildTaskOffer(task: TaskDefinition, offeredDay: number): TaskOffer {
+function buildTaskOffer(task: TaskDefinition, offeredPeriod: number): TaskOffer {
   return {
     taskId: task.id,
-    offeredDay,
+    offeredPeriod,
     // 限时按真实时间计算：timeLimitDays 天 × 1440 分钟 × 60 秒
     expiresAt: task.timeLimitDays
       ? Date.now() + task.timeLimitDays * 1440 * 60_000
@@ -270,14 +269,20 @@ function difficultyTrendWeight(difficulty: TaskDefinition['difficulty'], refresh
   }
 }
 
-function shouldRefreshTaskBoard(absoluteDay: number) {
-  if (TASK_BOARD_RULES.skipFirstDay && absoluteDay <= GAME_START_ABSOLUTE_DAY) return false;
-  return (absoluteDay - GAME_START_ABSOLUTE_DAY) % TASK_BOARD_RULES.offerIntervalDays === 0;
+/** 将游戏总分钟换算为刷新周期序号（6 小时 = 360 分钟为一个周期） */
+function getRefreshPeriodIndex(totalMinutes: number) {
+  return Math.floor(totalMinutes / TASK_BOARD_RULES.offerIntervalMinutes);
+}
+
+function shouldRefreshTaskBoard(periodIndex: number) {
+  if (TASK_BOARD_RULES.skipFirstDay && periodIndex < 0) return false;
+  return true;
 }
 
 function createInitialTaskBoardState(unlockedPlants: string[]) {
+  const initialPeriod = 0;
   const initialOffers = selectTaskOffers({
-    absoluteDay: GAME_START_ABSOLUTE_DAY,
+    periodIndex: initialPeriod,
     unlockedPlants,
     discoveredTasks: [],
     completedTasks: [],
@@ -288,20 +293,20 @@ function createInitialTaskBoardState(unlockedPlants: string[]) {
     taskBoard: {
       currentOffers: initialOffers,
       activeTasks: [],
-      lastRefreshDay: initialOffers.length > 0 ? GAME_START_ABSOLUTE_DAY : null,
+      lastRefreshPeriod: initialOffers.length > 0 ? initialPeriod : null,
     },
     unlockedTasks: initialOffers.map((offer) => offer.taskId),
   };
 }
 
 function selectTaskOffers(params: {
-  absoluteDay: number;
+  periodIndex: number;
   unlockedPlants: string[];
   discoveredTasks: string[];
   completedTasks: string[];
   activeTasks: ActiveTaskState[];
 }) {
-  const refreshIndex = Math.max(1, Math.floor((params.absoluteDay - GAME_START_ABSOLUTE_DAY) / TASK_BOARD_RULES.offerIntervalDays));
+  const refreshIndex = Math.max(1, params.periodIndex + 1);
 
   const eligibleTasks = getEligibleTasksForBoard(
     params.unlockedPlants,
@@ -313,7 +318,7 @@ function selectTaskOffers(params: {
   const candidates = eligibleTasks
     .map((task) => {
       const trendWeight = difficultyTrendWeight(task.difficulty, refreshIndex);
-      const randomWeight = 0.72 + seededNoise(task.id, params.absoluteDay) * 0.9;
+      const randomWeight = 0.72 + seededNoise(task.id, params.periodIndex) * 0.9;
       return {
         task,
         score: trendWeight * randomWeight,
@@ -321,18 +326,18 @@ function selectTaskOffers(params: {
     })
     .sort((left, right) => right.score - left.score)
     .slice(0, TASK_BOARD_RULES.offerChoices)
-    .map(({ task }) => buildTaskOffer(task, params.absoluteDay));
+    .map(({ task }) => buildTaskOffer(task, params.periodIndex));
 
   // 再次兜底，防止后续改动绕过前置过滤步骤，把未满足解锁条件的任务塞回任务板。
   const eligibleTaskIdSet = new Set(eligibleTasks.map((task) => task.id));
   return candidates.filter((offer) => eligibleTaskIdSet.has(offer.taskId));
 }
 
-function processTaskBoardForDay(state: Pick<GameStore, 'taskBoard' | 'unlockedPlants' | 'completedTasks' | 'unlockedTasks'>, absoluteDay: number) {
+function processTaskBoardForPeriod(state: Pick<GameStore, 'taskBoard' | 'unlockedPlants' | 'completedTasks' | 'unlockedTasks'>, periodIndex: number) {
   let nextTaskBoard = state.taskBoard;
   let nextUnlockedTasks = state.unlockedTasks;
 
-  // 每天切换时先清理已过期的限时任务，已失败任务会重新回到候选池。
+  // 每个刷新周期先清理已过期的限时任务，已失败任务会重新回到候选池。
   const filteredOffers = nextTaskBoard.currentOffers.filter((offer) => !isTaskExpired(offer.expiresAt));
   const expiredActiveTasks = nextTaskBoard.activeTasks.filter((task) => isTaskExpired(task.expiresAt));
   const activeTasksAfterExpiry = nextTaskBoard.activeTasks.filter((task) => !isTaskExpired(task.expiresAt));
@@ -345,10 +350,10 @@ function processTaskBoardForDay(state: Pick<GameStore, 'taskBoard' | 'unlockedPl
     };
   }
 
-  // 每天都刷新任务板的 currentOffers，不受活跃任务数量影响
-  if (shouldRefreshTaskBoard(absoluteDay)) {
+  // 每个刷新周期都刷新任务板的 currentOffers，不受活跃任务数量影响
+  if (shouldRefreshTaskBoard(periodIndex)) {
     const nextOffers = selectTaskOffers({
-      absoluteDay,
+      periodIndex,
       unlockedPlants: state.unlockedPlants,
       discoveredTasks: nextUnlockedTasks,
       completedTasks: state.completedTasks,
@@ -359,7 +364,7 @@ function processTaskBoardForDay(state: Pick<GameStore, 'taskBoard' | 'unlockedPl
     nextTaskBoard = {
       ...nextTaskBoard,
       currentOffers: nextOffers,
-      lastRefreshDay: absoluteDay,
+      lastRefreshPeriod: periodIndex,
     };
     nextUnlockedTasks = [...new Set([...nextUnlockedTasks, ...offeredTaskIds])];
   }
@@ -496,16 +501,18 @@ export const useGameStore = create<GameStore>((set, get) => ({
     });
 
     let nextTaskState = { taskBoard, unlockedTasks };
-    if (nextAbsoluteDay > previousAbsoluteDay) {
-      for (let absoluteDay = previousAbsoluteDay + 1; absoluteDay <= nextAbsoluteDay; absoluteDay += 1) {
-        nextTaskState = processTaskBoardForDay(
+    const previousPeriod = getRefreshPeriodIndex(clock.totalMinutes);
+    const nextPeriod = getRefreshPeriodIndex(newTotal);
+    if (nextPeriod > previousPeriod) {
+      for (let periodIndex = previousPeriod; periodIndex < nextPeriod; periodIndex += 1) {
+        nextTaskState = processTaskBoardForPeriod(
           {
             taskBoard: nextTaskState.taskBoard,
             unlockedPlants,
             completedTasks,
             unlockedTasks: nextTaskState.unlockedTasks,
           },
-          absoluteDay,
+          periodIndex + 1,
         );
       }
     }
@@ -619,13 +626,16 @@ export const useGameStore = create<GameStore>((set, get) => ({
         toast: null,
       },
       weather: snapshot.weather ?? { current: null, startedAt: null, durationMinutes: 0 },
-      stats: snapshot.stats ?? {
-        perPlantHarvests: {},
-        perPlantSells: {},
-        perPlantSellRevenue: {},
-        dailyGoldHistory: [],
-        lastSnapshotDate: null,
-        totalPlayTimeMinutes: 0,
+      stats: {
+        ...(snapshot.stats ?? {
+          perPlantHarvests: {},
+          perPlantSells: {},
+          perPlantSellRevenue: {},
+          dailyGoldHistory: [],
+          lastSnapshotDate: null,
+          totalPlayTimeMinutes: 0,
+        }),
+        maxGold: snapshot.stats?.maxGold ?? 0,
       },
       // 兼容旧存档：activeTask → activeTasks + expiresOnMonth → expiresAt + month→day 字段迁移
       taskBoard: (() => {
@@ -642,10 +652,19 @@ export const useGameStore = create<GameStore>((set, get) => ({
           }
           return item;
         };
-        const migrateMonthToDay = (item: any) => {
+        const migrateToPeriod = (item: any) => {
           const out: any = { ...item };
-          if (out.offeredMonth !== undefined) { out.offeredDay = out.offeredMonth; delete out.offeredMonth; }
-          if (out.acceptedMonth !== undefined) { out.acceptedDay = out.acceptedMonth; delete out.acceptedMonth; }
+          // month→day→period 三级回退
+          if (out.offeredPeriod === undefined) {
+            out.offeredPeriod = out.offeredDay ?? out.offeredMonth ?? 0;
+          }
+          if (out.acceptedPeriod === undefined) {
+            out.acceptedPeriod = out.acceptedDay ?? out.acceptedMonth ?? 0;
+          }
+          delete out.offeredMonth;
+          delete out.acceptedMonth;
+          delete out.offeredDay;
+          delete out.acceptedDay;
           return out;
         };
         const raw = snapshot.taskBoard as any;
@@ -653,10 +672,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
           ?? (raw.activeTask
             ? [{ ...raw.activeTask, acceptedMonth: raw.offeredMonth ?? 0 }]
             : []);
+        const lastRefreshPeriod = raw.lastRefreshPeriod ?? raw.lastRefreshDay ?? raw.lastRefreshMonth ?? null;
         return {
-          currentOffers: (raw.currentOffers ?? []).map(migrateExpiry).map(migrateMonthToDay),
-          activeTasks: activeTasks.map(migrateExpiry).map(migrateMonthToDay),
-          lastRefreshDay: raw.lastRefreshDay ?? raw.lastRefreshMonth ?? null,
+          currentOffers: (raw.currentOffers ?? []).map(migrateExpiry).map(migrateToPeriod),
+          activeTasks: activeTasks.map(migrateExpiry).map(migrateToPeriod),
+          lastRefreshPeriod,
         };
       })(),
     });
@@ -754,12 +774,17 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const landCfg = getLandTypeById(plot.landTypeId);
     if (!landCfg) return false;
     const refund = Math.floor(landCfg.expandPrice * 0.5);
+    const newGold = economy.gold + refund;
 
     set({
       plots: plots.filter((p) => p.id !== plotId),
       economy: {
         ...economy,
-        gold: economy.gold + refund,
+        gold: newGold,
+      },
+      stats: {
+        ...get().stats,
+        maxGold: Math.max(get().stats.maxGold, newGold),
       },
     });
 
@@ -951,7 +976,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const offer = taskBoard.currentOffers.find((item) => item.taskId === taskId);
     if (!offer) return false;
 
-    const acceptedDay = getAbsoluteDayIndex(clock.totalMinutes);
+    const acceptedPeriod = getRefreshPeriodIndex(clock.totalMinutes);
 
     set((state) => ({
       taskBoard: {
@@ -961,7 +986,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
           ...state.taskBoard.activeTasks,
           {
             ...offer,
-            acceptedDay,
+            acceptedPeriod,
           },
         ],
       },
@@ -987,11 +1012,16 @@ export const useGameStore = create<GameStore>((set, get) => ({
         nextInventory[requirement.plantId] = (nextInventory[requirement.plantId] ?? 0) - requirement.quantity;
       });
 
+      const newGold = state.economy.gold + task.rewardGold;
       return {
         inventory: nextInventory,
         economy: {
-          gold: state.economy.gold + task.rewardGold,
+          gold: newGold,
           cumulativeEarned: state.economy.cumulativeEarned + task.rewardGold,
+        },
+        stats: {
+          ...state.stats,
+          maxGold: Math.max(state.stats.maxGold, newGold),
         },
         completedTasks: [...state.completedTasks, task.id],
         taskBoard: {
@@ -1035,16 +1065,23 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const sellPricePerFertilizer = Math.ceil(fertilizer.purchasePrice / 10);
     const income = sellPricePerFertilizer * quantity;
 
-    set((state) => ({
-      miscInventory: {
-        ...state.miscInventory,
-        [fertilizerId]: qty - quantity,
-      },
-      economy: {
-        gold: state.economy.gold + income,
-        cumulativeEarned: state.economy.cumulativeEarned + income,
-      },
-    }));
+    set((state) => {
+      const newGold = state.economy.gold + income;
+      return {
+        miscInventory: {
+          ...state.miscInventory,
+          [fertilizerId]: qty - quantity,
+        },
+        economy: {
+          gold: newGold,
+          cumulativeEarned: state.economy.cumulativeEarned + income,
+        },
+        stats: {
+          ...state.stats,
+          maxGold: Math.max(state.stats.maxGold, newGold),
+        },
+      };
+    });
 
     get()._checkUnlocks();
     return true;
@@ -1302,6 +1339,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     dailyGoldHistory: [],
     lastSnapshotDate: null,
     totalPlayTimeMinutes: 0,
+    maxGold: 0,
   },
 
   _snapshotGoldDaily: () => {
@@ -1607,6 +1645,7 @@ export function createDefaultPersistedState(): PersistedGameState {
       dailyGoldHistory: [],
       lastSnapshotDate: null,
       totalPlayTimeMinutes: 0,
+      maxGold: 0,
     },
   };
 }
@@ -1658,6 +1697,7 @@ export function createSandboxPersistedState(): PersistedGameState {
       dailyGoldHistory: [],
       lastSnapshotDate: null,
       totalPlayTimeMinutes: 0,
+      maxGold: 0,
     },
   };
 }

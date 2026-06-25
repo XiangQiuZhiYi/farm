@@ -73,4 +73,6 @@ export interface StatsState {
   lastSnapshotDate: string | null;
   /** 累计游玩真实分钟数 */
   totalPlayTimeMinutes: number;
+  /** 历史最高金币（仅增不减） */
+  maxGold: number;
 }

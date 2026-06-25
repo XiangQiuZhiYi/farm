@@ -9,7 +9,7 @@ import type { TaskBoardRules, TaskDefinition, TaskDifficulty, TaskRequirement } 
 /** 任务板固定刷新规则 */
 export const TASK_BOARD_RULES: TaskBoardRules = {
   skipFirstDay: false,
-  offerIntervalDays: 1,
+  offerIntervalMinutes: 360, // 每 6 小时刷新一次
   offerChoices: 2,
   submissionMode: 'all-at-once',
   completedTasksRemoved: true,

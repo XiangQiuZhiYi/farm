@@ -1,26 +1,16 @@
-/* ── 统计面板 ───────────────────────────── */
-.overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 1000;
-  background: rgba(0, 0, 0, 0.55);
+/* ── 统计面板（页面级） ───────────────────── */
+.page {
+  position: relative;
   display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.panel {
-  width: 680px;
-  max-height: 85vh;
+  flex-direction: column;
+  gap: 0;
+  min-height: 100%;
   background: #1a2a1e;
   border: 1px solid rgba(229, 159, 74, 0.35);
   border-radius: 8px;
   color: #c9d8cc;
   font-family: Georgia, 'Times New Roman', serif;
-  display: flex;
-  flex-direction: column;
   overflow: hidden;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
 }
 
 .header {
@@ -38,18 +28,10 @@
   font-weight: normal;
 }
 
-.closeBtn {
-  background: none;
-  border: none;
+.snapshotBadge {
+  font-size: 12px;
   color: #7f968d;
-  font-size: 22px;
-  cursor: pointer;
-  padding: 0 4px;
-  line-height: 1;
-}
-
-.closeBtn:hover {
-  color: #e07050;
+  font-family: Georgia, serif;
 }
 
 /* ── Tabs ──────────────────────────────── */
@@ -134,26 +116,11 @@
   font-weight: normal;
 }
 
+/* ECharts tooltip 样式覆盖 — ECharts tooltip 使用内联样式，无需全局覆盖 */
+
 .empty {
-  text-align: center;
   color: #7f968d;
-  padding: 40px 0;
   font-size: 14px;
-}
-
-/* Recharts 文本颜色覆盖 */
-:global(.recharts-text) {
-  fill: #c9d8cc !important;
-  font-size: 11px;
-}
-
-:global(.recharts-cartesian-grid-horizontal line),
-:global(.recharts-cartesian-grid-vertical line) {
-  stroke: rgba(229, 159, 74, 0.12);
-}
-
-:global(.recharts-tooltip-wrapper .recharts-default-tooltip) {
-  background: #1a2a1e !important;
-  border: 1px solid rgba(229, 159, 74, 0.3) !important;
-  border-radius: 4px;
+  text-align: center;
+  padding: 40px 0;
 }
