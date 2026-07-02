@@ -19,6 +19,7 @@ import {
     useGameStore,
 } from "./store/gameStore";
 import type { SaveSlotSummary, SaveSlotType } from "./types/save";
+import type { RegionId } from "./types/land";
 import type { ActiveTaskState } from "./types/task";
 import {
     createSaveSlot,
@@ -32,6 +33,7 @@ import {
 } from "./services/saveClient";
 import { REGION_CONFIGS } from "./config/regions";
 import { LAND_TYPE_CONFIGS } from "./config/lands";
+import { resetLoopTimeAnchor } from "./systems/gameLoop";
 
 /** 将刷新周期序号格式化为可读文案 */
 function formatRefreshPeriod(periodIndex: number) {
@@ -861,7 +863,7 @@ function MultiSelectHint() {
     if (count === 0) return null;
     return (
         <div className="multiSelectHint">
-            <span>已选 {count} 块地，继续 Shift+点击可多选</span>
+            <span>已选 {count} 块地，Shift+点击可多选，Ctrl+Shift+点击可选中同属性地块</span>
             <div className="multiSelectActions">
                 <button
                     type="button"
@@ -919,7 +921,7 @@ function App() {
     const [taskBoardOpen, setTaskBoardOpen] = useState(false);
     const [achievementOpen, setAchievementOpen] = useState(false);
     // 当前展示的农田区域
-    const [activeRegion, setActiveRegion] = useState("region_paddy");
+    const [activeRegion, setActiveRegion] = useState<RegionId>("region_paddy");
 
     const unlockedRegions = useGameStore((s) => s.unlockedRegions);
     const plots = useGameStore((s) => s.plots);
@@ -933,6 +935,7 @@ function App() {
     const [saveLoading, setSaveLoading] = useState(true);
     const electronRuntime = isElectronRuntime();
     const pendingSaveRef = useRef<number | null>(null);
+    const backgroundAtRef = useRef<number | null>(null);
     const [saveError, setSaveError] = useState<string | null>(null);
     const [saveSlots, setSaveSlots] = useState<SaveSlotSummary[]>([]);
     const [activeSlotId, setActiveSlotId] = useState<string | null>(null);
@@ -1012,6 +1015,7 @@ function App() {
         if (offlineMinutes > 0) {
             applyOfflineMinutes(offlineMinutes);
         }
+        resetLoopTimeAnchor();
 
         await updateSaveSlot({
             id: slot.id,
@@ -1077,6 +1081,71 @@ function App() {
             cancelled = true;
         };
     }, [applyOfflineMinutes, hydrateFromSnapshot, setSaveProfile]);
+
+    useEffect(() => {
+        const markBackground = () => {
+            backgroundAtRef.current = Date.now();
+        };
+
+        const applyBackgroundProgress = () => {
+            const backgroundAt = backgroundAtRef.current;
+            backgroundAtRef.current = null;
+            if (!backgroundAt) return;
+
+            const offlineMinutes = Math.max(
+                0,
+                Math.floor((Date.now() - backgroundAt) / 60000),
+            );
+            if (offlineMinutes > 0) {
+                applyOfflineMinutes(offlineMinutes);
+            }
+            resetLoopTimeAnchor();
+        };
+
+        const onVisibilityChange = () => {
+            if (document.hidden) {
+                markBackground();
+            } else {
+                applyBackgroundProgress();
+            }
+        };
+
+        const onBlur = () => {
+            markBackground();
+        };
+
+        const onFocus = () => {
+            if (document.hidden) {
+                markBackground();
+            } else {
+                applyBackgroundProgress();
+            }
+        };
+
+        const onPageHide = () => {
+            markBackground();
+        };
+
+        const onPageShow = () => {
+            if (!document.hidden) {
+                applyBackgroundProgress();
+            }
+        };
+
+        document.addEventListener("visibilitychange", onVisibilityChange);
+        window.addEventListener("blur", onBlur);
+        window.addEventListener("focus", onFocus);
+        window.addEventListener("pagehide", onPageHide);
+        window.addEventListener("pageshow", onPageShow);
+
+        return () => {
+            document.removeEventListener("visibilitychange", onVisibilityChange);
+            window.removeEventListener("blur", onBlur);
+            window.removeEventListener("focus", onFocus);
+            window.removeEventListener("pagehide", onPageHide);
+            window.removeEventListener("pageshow", onPageShow);
+        };
+    }, [applyOfflineMinutes]);
 
     useEffect(() => {
         if (!electronRuntime || !activeSlotId || saveLoading) return;
@@ -1428,7 +1497,7 @@ function App() {
                                             ].join(" ")}
                                             disabled={locked}
                                             onClick={() =>
-                                                setActiveRegion(tab.id)
+                                                setActiveRegion(tab.id as RegionId)
                                             }
                                         >
                                             <span className="regionTabIcon">

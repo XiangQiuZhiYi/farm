@@ -36,9 +36,12 @@ function BatchPanel() {
   const selectedLandTypes = [...new Set(plantablePlots.map((p) => p.landTypeId))];
   const hasMixedLandTypes = selectedLandTypes.length > 1;
 
-  // 批量播种：显示种子库中有库存的所有种子（store 层会自动按土地类型过滤）
-  const plantableList = ALL_PLANTS.filter((p): p is NonNullable<typeof p> =>
+  const availableSeedList = ALL_PLANTS.filter((p): p is NonNullable<typeof p> =>
     (seeds[p.id] ?? 0) > 0
+  );
+  // 批量播种：只显示当前选中可播种地块真正能种上的种子
+  const plantableList = availableSeedList.filter((p) =>
+    selectedLandTypes.includes(p.allowedLandTypeId)
   );
 
   // 按土地类型分组统计可播种的地块数量
@@ -72,7 +75,9 @@ function BatchPanel() {
               )}
               <div className={styles.plantList}>
                 {plantableList.length === 0 ? (
-                  <span className={styles.empty}>背包无种子，请购买</span>
+                  <span className={styles.empty}>
+                    {availableSeedList.length === 0 ? '背包无种子，请购买' : '当前选中地块没有可种植的种子'}
+                  </span>
                 ) : (
                   plantableList.map((p) => {
                     // 计算该种子能种在多少块选中土地上

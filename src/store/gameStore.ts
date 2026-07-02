@@ -53,6 +53,7 @@ interface GameStore {
 
   // ── 地块 ────────────────────────────────────────────────────
   plots: PlotState[];
+  plotIdCounters: Partial<Record<RegionId, number>>;
   /** 购买扩展一块地（扣除购买费用） */
   expandPlot: (regionId: RegionId, landTypeId: LandTypeId) => boolean;
   /** 移除地块上的作物（不返还种子） */
@@ -132,11 +133,15 @@ interface GameStore {
   selectPlot: (plotId: string | null) => void;
   /** 切换地块多选状态，已在集合中则移除，否则添加 */
   togglePlotSelection: (plotId: string) => void;
+  /** 直接设置一组多选地块 */
+  selectPlotGroup: (plotIds: string[]) => void;
   /** 手动打开批量面板 */
   openBatchPanel: () => void;
   /** 清空多选 */
   clearSelection: () => void;
   setPanelMode: (mode: SelectionState['panelMode']) => void;
+  /** 拖动调整当前区域内地块顺序 */
+  reorderPlotsInRegion: (regionId: RegionId, fromIndex: number, toIndex: number) => void;
   /** 对多选地块批量种植 */
   batchPlantSeed: (plotIds: string[], plantId: string) => void;
   /** 对多选地块批量施肥 */
@@ -432,6 +437,90 @@ function buildInitialPlots(): PlotState[] {
   return plots;
 }
 
+function buildPlotIdCounters(plots: PlotState[]): Partial<Record<RegionId, number>> {
+  return plots.reduce<Partial<Record<RegionId, number>>>((acc, plot) => {
+    const match = plot.id.match(/_(\d+)$/);
+    const nextIndex = match ? parseInt(match[1], 10) + 1 : (acc[plot.regionId] ?? 0);
+    acc[plot.regionId] = Math.max(acc[plot.regionId] ?? 0, nextIndex);
+    return acc;
+  }, {});
+}
+
+function migratePlotIds(plots: PlotState[]): PlotState[] {
+  const nextCounters = buildPlotIdCounters(plots);
+  const seenPlotIds = new Set<string>();
+
+  return plots.map((plot) => {
+    if (!seenPlotIds.has(plot.id)) {
+      seenPlotIds.add(plot.id);
+      return plot;
+    }
+
+    const nextIndex = nextCounters[plot.regionId] ?? 0;
+    const nextId = `${plot.regionId}_${nextIndex}`;
+    nextCounters[plot.regionId] = nextIndex + 1;
+    seenPlotIds.add(nextId);
+    return {
+      ...plot,
+      id: nextId,
+    };
+  });
+}
+
+function reorderPlotsByRegion(
+  plots: PlotState[],
+  regionId: RegionId,
+  fromIndex: number,
+  toIndex: number,
+): PlotState[] {
+  if (fromIndex === toIndex) return plots;
+
+  const regionPlots = plots.filter((plot) => plot.regionId === regionId);
+  if (fromIndex < 0 || toIndex < 0 || fromIndex >= regionPlots.length || toIndex >= regionPlots.length) {
+    return plots;
+  }
+
+  const reorderedRegionPlots = [...regionPlots];
+  const [movedPlot] = reorderedRegionPlots.splice(fromIndex, 1);
+  reorderedRegionPlots.splice(toIndex, 0, movedPlot);
+
+  let regionCursor = 0;
+  return plots.map((plot) => {
+    if (plot.regionId !== regionId) return plot;
+    const nextPlot = reorderedRegionPlots[regionCursor];
+    regionCursor += 1;
+    return nextPlot;
+  });
+}
+
+function sanitizeSelection(selection: SelectionState, plots: PlotState[]): SelectionState {
+  const validPlotIds = new Set(plots.map((plot) => plot.id));
+  const selectedPlotId = selection.selectedPlotId && validPlotIds.has(selection.selectedPlotId)
+    ? selection.selectedPlotId
+    : null;
+  const selectedPlotIds = (selection.selectedPlotIds ?? []).filter((plotId) => validPlotIds.has(plotId));
+
+  if (!selectedPlotId && selectedPlotIds.length === 0) {
+    return {
+      selectedPlotId: null,
+      selectedPlotIds: [],
+      batchPanelOpen: false,
+      panelMode: 'none',
+    };
+  }
+
+  return {
+    ...selection,
+    selectedPlotId,
+    selectedPlotIds,
+    batchPanelOpen: selectedPlotIds.length > 0 && selection.batchPanelOpen,
+    panelMode: selection.panelMode === 'none' ? 'action' : selection.panelMode,
+  };
+}
+
+const INITIAL_PLOTS = buildInitialPlots();
+const INITIAL_PLOT_ID_COUNTERS = buildPlotIdCounters(INITIAL_PLOTS);
+
 // ─────────────────────────────────────────────────────────────
 // Store 实现
 // ─────────────────────────────────────────────────────────────
@@ -586,6 +675,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   hydrateFromSnapshot: (snapshot) => {
     // 恢复完整存档时，需要一次性覆盖所有游戏态字段，避免跨档串数据。
     // 兼容旧存档：clock.month → clock.day
+    const migratedPlots = migratePlotIds(snapshot.plots);
     const rawClock = snapshot.clock as any;
     const migratedClock = {
       totalMinutes: rawClock.totalMinutes ?? 0,
@@ -601,7 +691,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
     };
     set({
       clock: migratedClock,
-      plots: snapshot.plots,
+      plots: migratedPlots,
+      plotIdCounters: buildPlotIdCounters(migratedPlots),
       economy: snapshot.economy,
       inventory: snapshot.inventory,
       seeds: snapshot.seeds,
@@ -611,7 +702,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
       unlockedTasks: snapshot.unlockedTasks,
       completedTasks: snapshot.completedTasks,
       compendium: snapshot.compendium,
-    selection: snapshot.selection ?? { selectedPlotId: null, selectedPlotIds: [], batchPanelOpen: false, panelMode: 'none' },
+      selection: sanitizeSelection(
+        snapshot.selection ?? { selectedPlotId: null, selectedPlotIds: [], batchPanelOpen: false, panelMode: 'none' },
+        migratedPlots,
+      ),
       achievements: snapshot.achievements
         ? { ...snapshot.achievements, progress: migratedProgress }
         : {
@@ -686,16 +780,18 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   // ── 地块 ─────────────────────────────────────────────────────
-  plots: buildInitialPlots(),
+  plots: INITIAL_PLOTS,
+  plotIdCounters: INITIAL_PLOT_ID_COUNTERS,
 
   expandPlot: (regionId, landTypeId) => {
-    const { plots, economy, unlockedRegions } = get();
+    const { plots, economy, unlockedRegions, plotIdCounters } = get();
     if (!unlockedRegions.includes(regionId)) return false;
 
     const regionCfg = REGION_CONFIGS.find((r) => r.id === regionId);
     if (!regionCfg) return false;
 
-    const existing = plots.filter((p) => p.regionId === regionId).length;
+    const regionPlots = plots.filter((p) => p.regionId === regionId);
+    const existing = regionPlots.length;
     if (existing >= regionCfg.maxPlotCount) return false;
 
     const landCfg = getLandTypeById(landTypeId);
@@ -713,8 +809,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     if (economy.gold < price) return false;
 
+    // 删除地块后也不复用旧 id，避免选中态和新地块串号。
+    const newIndex = plotIdCounters[regionId] ?? buildPlotIdCounters(plots)[regionId] ?? 0;
+
     const newPlot: PlotState = {
-      id: `${regionId}_${existing}`,
+      id: `${regionId}_${newIndex}`,
       regionId,
       landTypeId,
       waterState: landCfg.defaultWaterState,
@@ -730,6 +829,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     set((s) => ({
       plots: [...s.plots, newPlot],
+      plotIdCounters: {
+        ...s.plotIdCounters,
+        [regionId]: newIndex + 1,
+      },
       economy: {
         ...s.economy,
         gold: s.economy.gold - price,
@@ -765,7 +868,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   removePlot: (plotId) => {
-    const { plots, economy } = get();
+    const { plots, economy, selection } = get();
     if (plots.length <= 1) return false; // 至少保留一块地
     const plot = plots.find((p) => p.id === plotId);
     if (!plot) return false;
@@ -775,9 +878,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (!landCfg) return false;
     const refund = Math.floor(landCfg.expandPrice * 0.5);
     const newGold = economy.gold + refund;
+    const nextPlots = plots.filter((p) => p.id !== plotId);
+    const nextSelection = sanitizeSelection(selection, nextPlots);
 
     set({
-      plots: plots.filter((p) => p.id !== plotId),
+      plots: nextPlots,
+      selection: nextSelection,
       economy: {
         ...economy,
         gold: newGold,
@@ -1565,6 +1671,21 @@ export const useGameStore = create<GameStore>((set, get) => ({
       };
     }),
 
+  selectPlotGroup: (plotIds) =>
+    set((s) => {
+      const validPlotIds = new Set(s.plots.map((plot) => plot.id));
+      const next = [...new Set(plotIds)].filter((plotId) => validPlotIds.has(plotId));
+      return {
+        selection: {
+          ...s.selection,
+          selectedPlotId: null,
+          selectedPlotIds: next,
+          batchPanelOpen: false,
+          panelMode: next.length > 0 ? 'action' : 'none',
+        },
+      };
+    }),
+
   openBatchPanel: () =>
     set((s) => ({
       selection: { ...s.selection, batchPanelOpen: true },
@@ -1577,6 +1698,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   setPanelMode: (mode) =>
     set((s) => ({ selection: { ...s.selection, panelMode: mode } })),
+
+  reorderPlotsInRegion: (regionId, fromIndex, toIndex) =>
+    set((s) => ({
+      plots: reorderPlotsByRegion(s.plots, regionId, fromIndex, toIndex),
+    })),
 
   batchPlantSeed: (plotIds, plantId) => {
     // 批量播种时，仅对与植物允许的土地类型匹配的地块生效

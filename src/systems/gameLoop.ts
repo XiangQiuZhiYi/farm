@@ -15,9 +15,6 @@ import { useGameStore } from '../store/gameStore';
  */
 const REAL_MS_TO_GAME_MINUTES = 1 / 60000;
 
-/** 单次 delta 上限（24 小时）：防止异常时间跳跃 */
-const MAX_DELTA_MS = 86_400_000; // 24 小时
-
 let lastRealTime: number | null = null;
 let rafId: number | null = null;
 
@@ -28,12 +25,10 @@ function loop() {
   }
 
   let deltaMs = now - lastRealTime;
-  lastRealTime = now;
-
-  // 限制单帧最大推进量，避免锁屏数小时导致作物瞬间成熟
-  if (deltaMs > MAX_DELTA_MS) {
-    deltaMs = MAX_DELTA_MS;
+  if (deltaMs < 0) {
+    deltaMs = 0;
   }
+  lastRealTime = now;
 
   const { clock, tickMinutes } = useGameStore.getState();
 
@@ -65,4 +60,9 @@ export function stopGameLoop() {
     rafId = null;
     lastRealTime = null;
   }
+}
+
+/** 锁屏/切后台恢复后重置主循环时间锚点，避免下一帧重复补算。 */
+export function resetLoopTimeAnchor(atMs: number = Date.now()) {
+  lastRealTime = atMs;
 }
